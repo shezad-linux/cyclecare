@@ -54,7 +54,10 @@ class CycleRecordValidatorTest {
     }
 
     @Test
-    fun validate_rejectsCycleLengthsOutsideExpectedRange() {
+    fun validate_ignoresDeprecatedCycleLengthWhenJudgingValidity() {
+        // A stale cycleLength must not invalidate an otherwise sound
+        // record. The domain now derives intervals from consecutive
+        // starts, so the stored field carries no authority.
         val result = validator.validate(
             candidate = CycleRecord(
                 id = "candidate",
@@ -66,8 +69,7 @@ class CycleRecordValidatorTest {
             existingRecords = emptyList(),
         )
 
-        assertThat(result.isValid).isFalse()
-        assertThat(result.message).contains("Cycle length")
+        assertThat(result.isValid).isTrue()
     }
 
     @Test
