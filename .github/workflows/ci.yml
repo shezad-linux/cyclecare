@@ -125,9 +125,15 @@ jobs:
   # core:data 8, feature:onboarding 1.
   # ─────────────────────────────────────────────────────────────────
   instrumented:
-    name: Instrumented tests (API 36)
+    name: Instrumented tests (API 36, advisory)
     runs-on: ubuntu-latest
     needs: build
+    # Advisory only. Local runs against the cc36 AVD are authoritative:
+    #   ./gradlew connectedDebugAndroidTest --continue
+    # The runner image moves and emulator startup has already broken twice
+    # on infrastructure grounds. This job reports signal when it can run
+    # but must not gate a merge.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v5
 

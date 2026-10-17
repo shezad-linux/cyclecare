@@ -23,6 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.cyclecare.core.designsystem.DashboardSectionCard
@@ -136,7 +138,11 @@ fun PrivacyPinIndicatorRow(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = "PIN entry, $pinLength of 4 digits entered"
+            },
         horizontalArrangement = Arrangement.Center,
     ) {
         repeat(4) { index ->
@@ -145,6 +151,14 @@ fun PrivacyPinIndicatorRow(
                 modifier = Modifier
                     .padding(horizontal = 8.dp)
                     .testTag("${PrivacyUiTags.PIN_DOT_PREFIX}$index")
+                    // Filled and empty dots differ only by colour, which
+                    // is not conveyed to a screen reader. Each dot states
+                    // its own state so the PIN length is readable without
+                    // sight.
+                    .semantics {
+                        contentDescription = "Digit ${index + 1}, " +
+                            if (filled) "entered" else "empty"
+                    }
                     .size(16.dp)
                     .clip(CircleShape)
                     .background(
