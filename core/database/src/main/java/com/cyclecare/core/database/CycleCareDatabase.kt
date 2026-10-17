@@ -240,7 +240,7 @@ val migration1To2 = object : Migration(1, 2) {
                 CASE WHEN type = 'OvulationEstimate' AND id = 'OvulationEstimate' THEN 'FertileWindowStart' ELSE id END,
                 CASE WHEN type = 'OvulationEstimate' THEN 'FertileWindowStart' ELSE type END,
                 enabled,
-                CASE WHEN type = 'PeriodPrep' THEN -daysBefore ELSE 0 END,
+                CASE WHEN type = 'LatePeriod' THEN daysBefore ELSE -daysBefore END,
                 hourOfDay,
                 minute
             FROM reminder_rules
