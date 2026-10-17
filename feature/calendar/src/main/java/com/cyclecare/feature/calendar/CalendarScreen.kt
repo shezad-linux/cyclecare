@@ -8,7 +8,6 @@ package com.cyclecare.feature.calendar
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,6 +52,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.cyclecare.core.designsystem.token.extendedColors
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -1040,16 +1040,16 @@ private fun CalendarDayCell(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val darkTheme = isSystemInDarkTheme()
+    val extended = extendedColors
     val fillType = calendarDayFillType(day)
     val hasCustomFill = fillType != null
 
     val containerColor = when (fillType) {
-        CalendarLegendType.Period -> if (darkTheme) Color(0xFF6A3B4B) else Color(0xFFF7CCD6)
-        CalendarLegendType.Ovulation -> if (darkTheme) Color(0xFF31556C) else Color(0xFFCFE8F7)
-        CalendarLegendType.Fertile -> if (darkTheme) Color(0xFF2E5B47) else Color(0xFFD8F5E6)
+        CalendarLegendType.Period -> extended.calendarPeriodFill
+        CalendarLegendType.Ovulation -> extended.calendarOvulationFill
+        CalendarLegendType.Fertile -> extended.calendarFertileFill
         else -> if (day.isSelected) {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (darkTheme) 0.3f else 0.4f)
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
         } else {
             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (day.isCurrentMonth) 0.74f else 0.4f)
         }
@@ -1161,11 +1161,11 @@ private fun StatusPill(summary: SelectedDaySummary) {
 
 @Composable
 private fun selectedDayPanelColor(type: CalendarLegendType): Color {
-    val darkTheme = isSystemInDarkTheme()
+    val extended = extendedColors
     return when (type) {
-        CalendarLegendType.Period -> if (darkTheme) Color(0xFF3F2531) else Color(0xFFFFEEF3)
-        CalendarLegendType.Fertile -> if (darkTheme) Color(0xFF213E31) else Color(0xFFEAF8EF)
-        CalendarLegendType.Ovulation -> if (darkTheme) Color(0xFF213D4D) else Color(0xFFEAF5FB)
+        CalendarLegendType.Period -> extended.calendarPeriodSelected
+        CalendarLegendType.Fertile -> extended.calendarFertileSelected
+        CalendarLegendType.Ovulation -> extended.calendarOvulationSelected
         CalendarLegendType.TodaySelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.52f)
         CalendarLegendType.Neutral -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     }
@@ -1227,11 +1227,11 @@ internal fun buildCalendarDays(
 
 @Composable
 private fun legendColor(type: CalendarLegendType): Color {
-    val darkTheme = isSystemInDarkTheme()
+    val extended = extendedColors
     return when (type) {
-        CalendarLegendType.Period -> if (darkTheme) Color(0xFFB78493) else Color(0xFFF7CCD6)
-        CalendarLegendType.Fertile -> if (darkTheme) Color(0xFF86C0A2) else Color(0xFFD8F5E6)
-        CalendarLegendType.Ovulation -> if (darkTheme) Color(0xFF8AB6D1) else Color(0xFFCFE8F7)
+        CalendarLegendType.Period -> extended.calendarPeriodSwatch
+        CalendarLegendType.Fertile -> extended.calendarFertileSwatch
+        CalendarLegendType.Ovulation -> extended.calendarOvulationSwatch
         CalendarLegendType.TodaySelected -> MaterialTheme.colorScheme.primary
         CalendarLegendType.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant
     }

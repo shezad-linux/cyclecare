@@ -16,7 +16,12 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Typography
+import androidx.compose.runtime.CompositionLocalProvider
+import com.cyclecare.core.designsystem.token.CycleCareShapes
+import com.cyclecare.core.designsystem.token.CycleCareTypography
+import com.cyclecare.core.designsystem.token.DarkExtendedColors
+import com.cyclecare.core.designsystem.token.LightExtendedColors
+import com.cyclecare.core.designsystem.token.LocalExtendedColors
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -99,31 +104,6 @@ private val DarkColors = darkColorScheme(
     scrim = Color(0xFF000000),
 )
 
-private val AppTypography = Typography(
-    displayMedium = TextStyle(
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 44.sp,
-        lineHeight = 48.sp,
-        letterSpacing = 0.sp,
-    ),
-    headlineSmall = TextStyle(
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 28.sp,
-        lineHeight = 34.sp,
-    ),
-    titleMedium = TextStyle(
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 18.sp,
-        lineHeight = 24.sp,
-    ),
-    labelLarge = TextStyle(
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 14.sp,
-        lineHeight = 18.sp,
-        letterSpacing = 0.sp,
-    ),
-)
-
 @Immutable
 data class CycleCareSpacing(
     val xs: PaddingValues = PaddingValues(4.dp),
@@ -139,13 +119,18 @@ fun CycleCareTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
+    val extended = if (darkTheme) DarkExtendedColors else LightExtendedColors
+
+    CompositionLocalProvider(LocalExtendedColors provides extended) {
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
-        typography = AppTypography,
+        typography = CycleCareTypography.all,
+        shapes = CycleCareShapes.all,
     ) {
         Surface(color = MaterialTheme.colorScheme.background) {
             content()
         }
+    }
     }
 }
 

@@ -1,6 +1,16 @@
 package com.cyclecare.core.designsystem.token
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -197,3 +207,190 @@ object CycleCareA11y {
     /** Previews must be produced at this scale as well as 1.0. */
     const val PREVIEW_FONT_SCALE = 1.3
 }
+// ── Typography ───────────────────────────────────────────────────
+//
+// All fifteen Material roles are defined. Only four were, so the
+// remaining eleven silently inherited Material defaults and the app
+// had no consistent type ramp.
+//
+// No FontFamily is set anywhere: the platform default is used
+// throughout. Bundling a typeface would narrow localisation coverage
+// and grow the APK for no functional gain. Brand character comes from
+// weight, size and rhythm instead.
+//
+// Spec table: 14-design-system.md §4.
+
+object CycleCareTypography {
+    val displayLarge = TextStyle(
+        fontWeight = FontWeight.SemiBold, fontSize = 44.sp, lineHeight = 48.sp, letterSpacing = (-0.5).sp,
+    )
+    val displayMedium = TextStyle(
+        fontWeight = FontWeight.SemiBold, fontSize = 36.sp, lineHeight = 42.sp, letterSpacing = (-0.25).sp,
+    )
+    val displaySmall = TextStyle(
+        fontWeight = FontWeight.SemiBold, fontSize = 30.sp, lineHeight = 36.sp, letterSpacing = 0.sp,
+    )
+    val headlineLarge = TextStyle(
+        fontWeight = FontWeight.SemiBold, fontSize = 28.sp, lineHeight = 34.sp, letterSpacing = (-0.25).sp,
+    )
+    val headlineMedium = TextStyle(
+        fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 30.sp, letterSpacing = 0.sp,
+    )
+    val headlineSmall = TextStyle(
+        fontWeight = FontWeight.SemiBold, fontSize = 22.sp, lineHeight = 28.sp, letterSpacing = 0.sp,
+    )
+    val titleLarge = TextStyle(
+        fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 24.sp, letterSpacing = 0.sp,
+    )
+    val titleMedium = TextStyle(
+        fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 22.sp, letterSpacing = 0.1.sp,
+    )
+    val titleSmall = TextStyle(
+        fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.1.sp,
+    )
+    val bodyLarge = TextStyle(
+        fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 24.sp, letterSpacing = 0.15.sp,
+    )
+    val bodyMedium = TextStyle(
+        fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.2.sp,
+    )
+    val bodySmall = TextStyle(
+        fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.3.sp,
+    )
+    val labelLarge = TextStyle(
+        fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 18.sp, letterSpacing = 0.1.sp,
+    )
+    val labelMedium = TextStyle(
+        fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp,
+    )
+    val labelSmall = TextStyle(
+        fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 16.sp, letterSpacing = 0.4.sp,
+    )
+
+    /**
+     * Numeric readouts use tabular figures so digits do not jitter as a
+     * cycle day advances in place. Without this, the hero number visibly
+     * shifts width once per second-level update.
+     */
+    val numericHero = displayLarge.copy(fontFeatureSettings = "tnum")
+    val numericLarge = displayMedium.copy(fontFeatureSettings = "tnum")
+
+    val all: Typography = Typography(
+        displayLarge = displayLarge,
+        displayMedium = displayMedium,
+        displaySmall = displaySmall,
+        headlineLarge = headlineLarge,
+        headlineMedium = headlineMedium,
+        headlineSmall = headlineSmall,
+        titleLarge = titleLarge,
+        titleMedium = titleMedium,
+        titleSmall = titleSmall,
+        bodyLarge = bodyLarge,
+        bodyMedium = bodyMedium,
+        bodySmall = bodySmall,
+        labelLarge = labelLarge,
+        labelMedium = labelMedium,
+        labelSmall = labelSmall,
+    )
+}
+
+// ── Shapes ───────────────────────────────────────────────────────
+//
+// The app previously supplied no Shapes(), so every card fell back to
+// Material's defaults and the radius scale above was decorative.
+
+object CycleCareShapes {
+    val extraSmall = RoundedCornerShape(CycleCareRadius.xs)
+    val small = RoundedCornerShape(CycleCareRadius.sm)
+    val medium = RoundedCornerShape(CycleCareRadius.md)
+    val large = RoundedCornerShape(CycleCareRadius.lg)
+    val extraLarge = RoundedCornerShape(CycleCareRadius.xl)
+
+    val all: Shapes = Shapes(
+        extraSmall = extraSmall,
+        small = small,
+        medium = medium,
+        large = large,
+        extraLarge = extraLarge,
+    )
+}
+
+// ── Calendar legend colours ──────────────────────────────────────
+//
+// These lived as inline `if (darkTheme) Color(0x...) else Color(0x...)`
+// expressions in CalendarScreen, which meant hardcoded colours outside
+// the theme file and three direct isSystemInDarkTheme() reads. Both are
+// spec violations, and the latter also ignored any explicitly forced
+// theme, so previews and screenshots rendered the light branch.
+//
+// Exposed as theme-provided extended colours instead: the values are
+// chosen once, here, and consumers read the active scheme.
+
+object CalendarLegendColors {
+    val LightPeriodFill = Color(0xFFF7CCD6)
+    val LightOvulationFill = Color(0xFFCFE8F7)
+    val LightFertileFill = Color(0xFFD8F5E6)
+    val LightPeriodSelected = Color(0xFFFFEEF3)
+    val LightFertileSelected = Color(0xFFEAF8EF)
+    val LightOvulationSelected = Color(0xFFEAF5FB)
+    // Swatches sit on the bare page background, not behind text, so
+    // they use the deep end of each hue. The previous pale values were
+    // the same as the fills and landed near 1.1:1 against the surface.
+    val LightPeriodSwatch = Color(0xFF8F2430)
+    val LightFertileSwatch = Color(0xFF2F6B4F)
+    val LightOvulationSwatch = Color(0xFF1F4E63)
+
+    val DarkPeriodFill = Color(0xFF6A3B4B)
+    val DarkOvulationFill = Color(0xFF31556C)
+    val DarkFertileFill = Color(0xFF2E5B47)
+    val DarkPeriodSelected = Color(0xFF3F2531)
+    val DarkFertileSelected = Color(0xFF213E31)
+    val DarkOvulationSelected = Color(0xFF213D4D)
+    val DarkPeriodSwatch = Color(0xFFB78493)
+    val DarkFertileSwatch = Color(0xFF86C0A2)
+    val DarkOvulationSwatch = Color(0xFF8AB6D1)
+}
+
+@Immutable
+data class ExtendedColors(
+    val calendarPeriodFill: Color,
+    val calendarOvulationFill: Color,
+    val calendarFertileFill: Color,
+    val calendarPeriodSelected: Color,
+    val calendarFertileSelected: Color,
+    val calendarOvulationSelected: Color,
+    val calendarPeriodSwatch: Color,
+    val calendarFertileSwatch: Color,
+    val calendarOvulationSwatch: Color,
+)
+
+val LightExtendedColors = ExtendedColors(
+    calendarPeriodFill = CalendarLegendColors.LightPeriodFill,
+    calendarOvulationFill = CalendarLegendColors.LightOvulationFill,
+    calendarFertileFill = CalendarLegendColors.LightFertileFill,
+    calendarPeriodSelected = CalendarLegendColors.LightPeriodSelected,
+    calendarFertileSelected = CalendarLegendColors.LightFertileSelected,
+    calendarOvulationSelected = CalendarLegendColors.LightOvulationSelected,
+    calendarPeriodSwatch = CalendarLegendColors.LightPeriodSwatch,
+    calendarFertileSwatch = CalendarLegendColors.LightFertileSwatch,
+    calendarOvulationSwatch = CalendarLegendColors.LightOvulationSwatch,
+)
+
+val DarkExtendedColors = ExtendedColors(
+    calendarPeriodFill = CalendarLegendColors.DarkPeriodFill,
+    calendarOvulationFill = CalendarLegendColors.DarkOvulationFill,
+    calendarFertileFill = CalendarLegendColors.DarkFertileFill,
+    calendarPeriodSelected = CalendarLegendColors.DarkPeriodSelected,
+    calendarFertileSelected = CalendarLegendColors.DarkFertileSelected,
+    calendarOvulationSelected = CalendarLegendColors.DarkOvulationSelected,
+    calendarPeriodSwatch = CalendarLegendColors.DarkPeriodSwatch,
+    calendarFertileSwatch = CalendarLegendColors.DarkFertileSwatch,
+    calendarOvulationSwatch = CalendarLegendColors.DarkOvulationSwatch,
+)
+
+val LocalExtendedColors = staticCompositionLocalOf { LightExtendedColors }
+
+/** The active extended colours. Never branches on the system setting. */
+val extendedColors: ExtendedColors
+    @Composable @ReadOnlyComposable
+    get() = LocalExtendedColors.current

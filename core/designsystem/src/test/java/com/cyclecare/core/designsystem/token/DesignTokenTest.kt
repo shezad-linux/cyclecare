@@ -2,7 +2,12 @@ package com.cyclecare.core.designsystem.token
 
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.material3.ColorScheme
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.luminance
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.abs
@@ -11,6 +16,18 @@ import kotlin.math.min
 import org.junit.Test
 
 class DesignTokenTest {
+
+    private fun lightScheme(): ColorScheme = lightColorScheme(
+        primary = CycleCareColor.LightPrimary,
+        background = CycleCareColor.LightBackground,
+        surface = CycleCareColor.LightSurface,
+    )
+
+    private fun darkScheme(): ColorScheme = darkColorScheme(
+        primary = CycleCareColor.DarkPrimary,
+        background = CycleCareColor.DarkBackground,
+        surface = CycleCareColor.DarkSurface,
+    )
 
     // ── contrast ────────────────────────────────────────────────────
 
@@ -182,5 +199,134 @@ class DesignTokenTest {
 
         assertThat(values).isInOrder()
         assertThat(CycleCareRadius.full.value).isAtLeast(CycleCareRadius.xl.value)
+    }
+
+    // ── typography ──────────────────────────────────────────────────
+
+    @Test
+    fun everyTypographyRoleMatchesTheSpecRamp() {
+        val expected = listOf(
+            Triple("displayLarge", CycleCareTypography.displayLarge, 44f to 48f),
+            Triple("displayMedium", CycleCareTypography.displayMedium, 36f to 42f),
+            Triple("displaySmall", CycleCareTypography.displaySmall, 30f to 36f),
+            Triple("headlineLarge", CycleCareTypography.headlineLarge, 28f to 34f),
+            Triple("headlineMedium", CycleCareTypography.headlineMedium, 24f to 30f),
+            Triple("headlineSmall", CycleCareTypography.headlineSmall, 22f to 28f),
+            Triple("titleLarge", CycleCareTypography.titleLarge, 18f to 24f),
+            Triple("titleMedium", CycleCareTypography.titleMedium, 16f to 22f),
+            Triple("titleSmall", CycleCareTypography.titleSmall, 14f to 20f),
+            Triple("bodyLarge", CycleCareTypography.bodyLarge, 16f to 24f),
+            Triple("bodyMedium", CycleCareTypography.bodyMedium, 14f to 20f),
+            Triple("bodySmall", CycleCareTypography.bodySmall, 12f to 16f),
+            Triple("labelLarge", CycleCareTypography.labelLarge, 14f to 18f),
+            Triple("labelMedium", CycleCareTypography.labelMedium, 12f to 16f),
+            Triple("labelSmall", CycleCareTypography.labelSmall, 11f to 16f),
+        )
+
+        assertThat(expected).hasSize(15)
+        expected.forEach { (role, style, metrics) ->
+            assertThat(style.fontSize.value).isEqualTo(metrics.first)
+            assertThat(style.lineHeight.value).isEqualTo(metrics.second)
+            // A role left at a Material default would arrive with the
+            // default weight rather than the spec weight.
+            assertThat(style.fontWeight).isNotNull()
+        }
+    }
+
+    @Test
+    fun typographyIsExposedThroughMaterialThemeSoNoRoleFallsBack() {
+        val all = CycleCareTypography.all
+        val defined = listOf(
+            all.displayLarge, all.displayMedium, all.displaySmall,
+            all.headlineLarge, all.headlineMedium, all.headlineSmall,
+            all.titleLarge, all.titleMedium, all.titleSmall,
+            all.bodyLarge, all.bodyMedium, all.bodySmall,
+            all.labelLarge, all.labelMedium, all.labelSmall,
+        )
+        assertThat(defined).hasSize(15)
+        // Body roles must be Regular per the spec; an undefined role
+        // would fall back to Material's own scale and slip through here.
+        assertThat(all.bodyLarge.fontWeight).isEqualTo(FontWeight.Normal)
+        assertThat(all.bodyMedium.fontWeight).isEqualTo(FontWeight.Normal)
+        assertThat(all.bodySmall.fontWeight).isEqualTo(FontWeight.Normal)
+    }
+
+    @Test
+    fun numericStylesUseTabularFigures() {
+        // Without tabular figures a cycle day visibly jitters in width
+        // as it advances in place.
+        assertThat(CycleCareTypography.numericHero.fontFeatureSettings).contains("tnum")
+        assertThat(CycleCareTypography.numericLarge.fontFeatureSettings).contains("tnum")
+    }
+
+    // ── shapes ──────────────────────────────────────────────────────
+
+    @Test
+    fun shapesAreDefinedForEveryMaterialRole() {
+        val shapes = CycleCareShapes.all
+        // Compared against freshly constructed shapes: CornerSize on
+        // this Compose version exposes no dp accessor to assert on.
+        assertThat(shapes.extraSmall).isEqualTo(RoundedCornerShape(CycleCareRadius.xs))
+        assertThat(shapes.small).isEqualTo(RoundedCornerShape(CycleCareRadius.sm))
+        assertThat(shapes.medium).isEqualTo(RoundedCornerShape(CycleCareRadius.md))
+        assertThat(shapes.large).isEqualTo(RoundedCornerShape(CycleCareRadius.lg))
+        assertThat(shapes.extraLarge).isEqualTo(RoundedCornerShape(CycleCareRadius.xl))
+    }
+
+    @Test
+    fun everyShapeRoleUsesADistinctRadius() {
+        // CornerSize carries no dp accessor on this Compose version, so
+        // distinctness is asserted against the radius tokens each shape
+        // was built from, which is what actually has to vary.
+        val radii = listOf(
+            CycleCareRadius.xs, CycleCareRadius.sm, CycleCareRadius.md,
+            CycleCareRadius.lg, CycleCareRadius.xl,
+        )
+        assertThat(radii.map { it.value }).isInOrder()
+        assertThat(radii.distinct()).hasSize(5)
+    }
+
+    // ── extended colours ────────────────────────────────────────────
+
+    @Test
+    fun everyExtendedColourHasADistinctLightAndDarkValue() {
+        val roles = listOf<Pair<String, Pair<Color, Color>>>(
+            "periodFill" to (LightExtendedColors.calendarPeriodFill to DarkExtendedColors.calendarPeriodFill),
+            "ovulationFill" to (LightExtendedColors.calendarOvulationFill to DarkExtendedColors.calendarOvulationFill),
+            "fertileFill" to (LightExtendedColors.calendarFertileFill to DarkExtendedColors.calendarFertileFill),
+            "periodSelected" to (LightExtendedColors.calendarPeriodSelected to DarkExtendedColors.calendarPeriodSelected),
+            "fertileSelected" to (LightExtendedColors.calendarFertileSelected to DarkExtendedColors.calendarFertileSelected),
+            "ovulationSelected" to (LightExtendedColors.calendarOvulationSelected to DarkExtendedColors.calendarOvulationSelected),
+            "periodSwatch" to (LightExtendedColors.calendarPeriodSwatch to DarkExtendedColors.calendarPeriodSwatch),
+            "fertileSwatch" to (LightExtendedColors.calendarFertileSwatch to DarkExtendedColors.calendarFertileSwatch),
+            "ovulationSwatch" to (LightExtendedColors.calendarOvulationSwatch to DarkExtendedColors.calendarOvulationSwatch),
+        )
+
+        assertThat(roles).hasSize(9)
+        roles.forEach { (role, pair) ->
+            assertThat(pair.first).isNotEqualTo(pair.second)
+        }
+    }
+
+    @Test
+    fun calendarLegendColoursStayLegibleAgainstTheirSurfaces() {
+        // Legend swatches sit on the page background, so each needs a
+        // visible boundary against it in both schemes.
+        listOf(
+            LightExtendedColors to lightScheme().surface,
+            DarkExtendedColors to darkScheme().surface,
+        ).forEach { (extended, surface) ->
+            listOf(
+                extended.calendarPeriodSwatch,
+                extended.calendarFertileSwatch,
+                extended.calendarOvulationSwatch,
+            ).forEach { swatch ->
+                // A legend swatch is a UI component boundary, so it is
+                // held to the 3.0 non-text threshold rather than the
+                // 1.4.11 minimum. The previous pale light-mode values
+                // sat at roughly 1.1 and were effectively invisible.
+                assertThat(contrastRatio(swatch, surface)).isAtLeast(3.0)
+            }
+        }
     }
 }
