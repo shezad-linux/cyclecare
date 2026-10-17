@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: '21'
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────
+  # Guards. These run first and are the cheapest, so a privacy or
+  # secret regression fails in seconds rather than after a full build.
+  # ─────────────────────────────────────────────────────────────────
+  guards:
+    name: Privacy and secret guards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # gitleaks needs full history to scan it
+          fetch-depth: 0
+
+      - name: No ad-targeting APIs in the app module
+        run: ./scripts/guard-no-ad-targeting.sh
+
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
+
+      - name: Confirm signing secrets are not tracked
+        run: |
+          set -euo pipefail
+          for pattern in keystore.properties '*.jks' '*.keystore' \
+                        google-services.json 'app/signing/'; do
+            if git ls-files --error-unmatch "$pattern" >/dev/null 2>&1; then
+              echo "FAIL: signing or Firebase config is tracked: $pattern"
+              git ls-files | grep "$pattern"
+              exit 1
+            fi
+          done
+          echo "  OK: no signing secret or Firebase config is tracked."
+
+  # ─────────────────────────────────────────────────────────────────
+  # Build and unit tests.
+  #
+  # No instrumented tests run here. Every Compose UI test in the
+  # repository currently fails on modern API levels with
+  # InputManager.getInstance() NoSuchMethodException, because the
+  # Compose BOM is older than the available system images. That needs
+  # resolving before an emulator job can be added; see the note in
+  # CycleCare-Redesign-Docs/06-testing-and-acceptance.md.
+  # ─────────────────────────────────────────────────────────────────
+  build:
+    name: Build and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest --stacktrace
+
+      - name: Compile instrumented test sources
+        run: ./gradlew compileDebugAndroidTestKotlin --stacktrace
+
+      - name: Debug build
+        run: ./gradlew assembleDebug --stacktrace
+
+      # Exercises the R8 rules in app/proguard-rules.pro and
+      # lintVitalRelease, which fails the build on lint errors.
+      # Unsigned by design: no signing material is present in CI.
+      - name: Release build (R8 + lint)
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            **/build/reports/tests/
+            **/build/reports/lint-results-*.html
+          retention-days: 7
