@@ -153,7 +153,10 @@ jobs:
           api-level: 36
           arch: x86_64
           target: google_apis
-          profile: Pixel_6
+          # No explicit profile: profile names vary between emulator
+          # releases and an unrecognised name fails the whole job with
+          # "No device found matching --device ...". The default profile
+          # is adequate for these tests.
           disable-animations: true
           emulator-options: -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
           script: ./gradlew connectedDebugAndroidTest
