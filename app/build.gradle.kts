@@ -69,6 +69,25 @@ android {
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
+
+            // R8 is enabled. See app/proguard-rules.pro.
+            //
+            // The model-enum keep rule is load-bearing: enums are persisted
+            // as constant names and read back with enumValueOf(), so
+            // shrinking without it would silently rewrite persisted user
+            // values on the first run of a release build.
+            isMinifyEnabled = true
+
+            // Resource shrinking is deliberately deferred. AdMob and UMP
+            // resolve some resources dynamically, and gradle.properties
+            // already disables R8 optimized resource shrinking. Enable this
+            // only after the shrunk build has been verified on a device.
+            isShrinkResources = false
+
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
