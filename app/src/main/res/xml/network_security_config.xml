@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  CycleCare network security configuration.
+
+  Without this file, cleartext behaviour was governed by the implicit
+  targetSdk >= 28 default rather than by anything written down here,
+  so the app's network posture was a side effect of a build setting
+  rather than a decision.
+
+  This app makes no plain-HTTP requests. Its only network traffic is to
+  Google AdMob and Google User Messaging Platform, and both are HTTPS.
+
+  Declared here, explicitly:
+    * cleartext traffic is refused everywhere, in every build type
+    * trust is anchored only in the system CA store
+
+  Certificate pinning is deliberately NOT used. Pinning would be
+  impractical against the ad and consent SDKs, which rotate
+  infrastructure independently, and a wrongly pinned bundle fails closed
+  for every affected user.
+
+  When cloud sync lands (CycleCare-Redesign-Docs/17-sync-and-key-management.md),
+  add a debug-only override here permitting cleartext to the emulator
+  host loopback for local development. Do not widen the base config.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
