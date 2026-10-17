@@ -1,0 +1,550 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "e2a930a806e23ffebe6e17b5d0b18a7f",
+    "entities": [
+      {
+        "tableName": "user_profile",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `ageBand` TEXT NOT NULL, `averageCycleLength` INTEGER NOT NULL, `periodLength` INTEGER NOT NULL, `lastPeriodStartEpochDay` INTEGER NOT NULL, `trackingGoal` TEXT NOT NULL, `remindersEnabled` INTEGER NOT NULL, `privacyModeEnabled` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ageBand",
+            "columnName": "ageBand",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "averageCycleLength",
+            "columnName": "averageCycleLength",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "periodLength",
+            "columnName": "periodLength",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastPeriodStartEpochDay",
+            "columnName": "lastPeriodStartEpochDay",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "trackingGoal",
+            "columnName": "trackingGoal",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remindersEnabled",
+            "columnName": "remindersEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "privacyModeEnabled",
+            "columnName": "privacyModeEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "cycle_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `startEpochDay` INTEGER NOT NULL, `endEpochDay` INTEGER, `cycleLength` INTEGER NOT NULL, `source` TEXT NOT NULL, `notes` TEXT, `createdAtEpochMillis` INTEGER NOT NULL, `updatedAtEpochMillis` INTEGER NOT NULL, `deletedAtEpochMillis` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startEpochDay",
+            "columnName": "startEpochDay",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endEpochDay",
+            "columnName": "endEpochDay",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "cycleLength",
+            "columnName": "cycleLength",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAtEpochMillis",
+            "columnName": "createdAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtEpochMillis",
+            "columnName": "updatedAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deletedAtEpochMillis",
+            "columnName": "deletedAtEpochMillis",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_cycle_records_startEpochDay",
+            "unique": false,
+            "columnNames": [
+              "startEpochDay"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_cycle_records_startEpochDay` ON `${TABLE_NAME}` (`startEpochDay`)"
+          }
+        ]
+      },
+      {
+        "tableName": "symptom_logs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `dateEpochDay` INTEGER NOT NULL, `mood` TEXT, `painLevel` TEXT, `energyLevel` TEXT, `dischargeType` TEXT, `medication` TEXT, `notes` TEXT, `createdAtEpochMillis` INTEGER NOT NULL, `updatedAtEpochMillis` INTEGER NOT NULL, `deletedAtEpochMillis` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dateEpochDay",
+            "columnName": "dateEpochDay",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mood",
+            "columnName": "mood",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "painLevel",
+            "columnName": "painLevel",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "energyLevel",
+            "columnName": "energyLevel",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "dischargeType",
+            "columnName": "dischargeType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "medication",
+            "columnName": "medication",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAtEpochMillis",
+            "columnName": "createdAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtEpochMillis",
+            "columnName": "updatedAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deletedAtEpochMillis",
+            "columnName": "deletedAtEpochMillis",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_symptom_logs_dateEpochDay",
+            "unique": false,
+            "columnNames": [
+              "dateEpochDay"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_symptom_logs_dateEpochDay` ON `${TABLE_NAME}` (`dateEpochDay`)"
+          }
+        ]
+      },
+      {
+        "tableName": "daily_symptoms",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `dailyLogId` TEXT NOT NULL, `symptomType` TEXT NOT NULL, `severity` TEXT, `note` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dailyLogId",
+            "columnName": "dailyLogId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "symptomType",
+            "columnName": "symptomType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "severity",
+            "columnName": "severity",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_daily_symptoms_dailyLogId",
+            "unique": false,
+            "columnNames": [
+              "dailyLogId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_daily_symptoms_dailyLogId` ON `${TABLE_NAME}` (`dailyLogId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "reminder_rules",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `type` TEXT NOT NULL, `enabled` INTEGER NOT NULL, `offsetDays` INTEGER NOT NULL, `hourOfDay` INTEGER NOT NULL, `minute` INTEGER NOT NULL, `userPinnedTime` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enabled",
+            "columnName": "enabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "offsetDays",
+            "columnName": "offsetDays",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hourOfDay",
+            "columnName": "hourOfDay",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "minute",
+            "columnName": "minute",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userPinnedTime",
+            "columnName": "userPinnedTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "reminder_events",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `ruleId` TEXT NOT NULL, `type` TEXT NOT NULL, `channelKey` TEXT NOT NULL, `scheduledAtEpochMillis` INTEGER NOT NULL, `deliveredAtEpochMillis` INTEGER NOT NULL, `title` TEXT NOT NULL, `body` TEXT NOT NULL, `privateBody` TEXT NOT NULL, `deepLinkTarget` TEXT NOT NULL, `targetEpochDay` INTEGER, `readAtEpochMillis` INTEGER, `dismissedAtEpochMillis` INTEGER, `deliveryState` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ruleId",
+            "columnName": "ruleId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "channelKey",
+            "columnName": "channelKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scheduledAtEpochMillis",
+            "columnName": "scheduledAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deliveredAtEpochMillis",
+            "columnName": "deliveredAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "body",
+            "columnName": "body",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "privateBody",
+            "columnName": "privateBody",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deepLinkTarget",
+            "columnName": "deepLinkTarget",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetEpochDay",
+            "columnName": "targetEpochDay",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "readAtEpochMillis",
+            "columnName": "readAtEpochMillis",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "dismissedAtEpochMillis",
+            "columnName": "dismissedAtEpochMillis",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "deliveryState",
+            "columnName": "deliveryState",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_reminder_events_scheduledAtEpochMillis",
+            "unique": false,
+            "columnNames": [
+              "scheduledAtEpochMillis"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_reminder_events_scheduledAtEpochMillis` ON `${TABLE_NAME}` (`scheduledAtEpochMillis`)"
+          }
+        ]
+      },
+      {
+        "tableName": "sync_outbox",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mutationId` TEXT NOT NULL, `recordId` TEXT NOT NULL, `operation` TEXT NOT NULL, `localRevision` INTEGER NOT NULL, `createdAtEpochMillis` INTEGER NOT NULL, `attemptCount` INTEGER NOT NULL, `lastErrorCategory` TEXT, `state` TEXT NOT NULL, PRIMARY KEY(`mutationId`))",
+        "fields": [
+          {
+            "fieldPath": "mutationId",
+            "columnName": "mutationId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordId",
+            "columnName": "recordId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "operation",
+            "columnName": "operation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localRevision",
+            "columnName": "localRevision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtEpochMillis",
+            "columnName": "createdAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attemptCount",
+            "columnName": "attemptCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastErrorCategory",
+            "columnName": "lastErrorCategory",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "mutationId"
+          ]
+        }
+      },
+      {
+        "tableName": "engagement_profile",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `hourHistogram` TEXT NOT NULL, `interactionCount` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hourHistogram",
+            "columnName": "hourHistogram",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "interactionCount",
+            "columnName": "interactionCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "app_settings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `value` TEXT, PRIMARY KEY(`key`))",
+        "fields": [
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "key"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e2a930a806e23ffebe6e17b5d0b18a7f')"
+    ]
+  }
+}

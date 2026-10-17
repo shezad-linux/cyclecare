@@ -154,7 +154,7 @@ class LoggingPresentationTest {
         assertThat(uiState.entryStatusLabel).isEqualTo("Editing today's saved check-in")
         assertThat(uiState.cycleProgressLabel).isEqualTo("Day 6 / 28")
         assertThat(uiState.isDetailsExpanded).isTrue()
-        assertThat(uiState.dischargeType.displayLabel()).isEqualTo("Egg white")
+        assertThat(uiState.dischargeType?.displayLabel()).isEqualTo("Egg white")
     }
 
     @Test

@@ -24,7 +24,7 @@ class InsightEngine {
             .takeLast(HISTORY_LIMIT)
 
         val recentCycleLengths = historicalCycles.map { it.cycleLength }
-        val recentPeriodLengths = historicalCycles.map(::periodLength)
+        val recentPeriodLengths = historicalCycles.mapNotNull(::periodLength)
         val averageCycleLength = recentCycleLengths.ifEmpty { listOf(DEFAULT_CYCLE_LENGTH) }.average().roundToInt()
         val averagePeriodLength = recentPeriodLengths.ifEmpty { listOf(DEFAULT_PERIOD_LENGTH) }.average().roundToInt()
         val irregularCycles = recentCycleLengths.any { abs(it - averageCycleLength) >= 6 }
@@ -241,8 +241,8 @@ class InsightEngine {
         }
     }
 
-    private fun periodLength(cycle: CycleRecord): Int =
-        (cycle.endDate.toEpochDay() - cycle.startDate.toEpochDay()).toInt() + 1
+    /** Null while a period is still in progress. */
+    private fun periodLength(cycle: CycleRecord): Int? = cycle.periodLengthDays
 
     private fun fertileWindowFor(cycle: CycleRecord): Pair<LocalDate, LocalDate> {
         val ovulationDate = cycle.startDate.plusDays(cycle.cycleLength.toLong() - 14L)
@@ -251,9 +251,16 @@ class InsightEngine {
 
     private fun monthYear(date: LocalDate): String = date.format(monthFormatter)
 
+    /**
+     * Counts how often each tracked value appears.
+     *
+     * Untracked entries (null) are excluded rather than defaulted.
+     * Defaulting would count a day the user never rated as though they
+     * had reported that value.
+     */
     private inline fun <reified T : Enum<T>> enumCounts(
         symptoms: List<SymptomLog>,
-        selector: (SymptomLog) -> T,
+        selector: (SymptomLog) -> T?,
     ): Map<T, Int> = enumValues<T>().associateWith { value ->
         symptoms.count { selector(it) == value }
     }

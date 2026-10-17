@@ -107,11 +107,11 @@ class RoomCycleRepository(
         database.cycleRecordDao().observeAll().map { records -> records.map { it.toModel(logger) } }
 
     override suspend fun upsertCycle(record: CycleRecord) {
-        database.cycleRecordDao().upsert(record.toEntity())
+        database.cycleRecordDao().upsert(record.toEntity(System.currentTimeMillis()))
     }
 
     override suspend fun deleteCycle(id: String) {
-        database.cycleRecordDao().delete(id)
+        database.cycleRecordDao().softDelete(id, System.currentTimeMillis())
     }
 }
 
@@ -128,7 +128,7 @@ class RoomSymptomRepository(
             .map { it?.toModel(logger) }
 
     override suspend fun upsertSymptom(log: SymptomLog) {
-        database.symptomLogDao().upsert(log.toEntity())
+        database.symptomLogDao().upsert(log.toEntity(System.currentTimeMillis()))
     }
 }
 
@@ -456,33 +456,39 @@ private fun UserProfileEntity.toModel(logger: AppLogger) = UserProfile(
     privacyModeEnabled = privacyModeEnabled,
 )
 
-private fun CycleRecord.toEntity() = CycleRecordEntity(
+private fun CycleRecord.toEntity(nowEpochMillis: Long) = CycleRecordEntity(
     id = id,
     startEpochDay = startDate.toEpochDay(),
-    endEpochDay = endDate.toEpochDay(),
+    endEpochDay = endDate?.toEpochDay(),
     cycleLength = cycleLength,
     source = source.name,
     notes = notes,
+    createdAtEpochMillis = nowEpochMillis,
+    updatedAtEpochMillis = nowEpochMillis,
+    deletedAtEpochMillis = null,
 )
 
 private fun CycleRecordEntity.toModel(logger: AppLogger) = CycleRecord(
     id = id,
     startDate = LocalDate.ofEpochDay(startEpochDay),
-    endDate = LocalDate.ofEpochDay(endEpochDay),
+    endDate = endEpochDay?.let { LocalDate.ofEpochDay(it) },
     cycleLength = cycleLength,
     source = source.toCycleSource(logger),
     notes = notes,
 )
 
-private fun SymptomLog.toEntity() = SymptomLogEntity(
+private fun SymptomLog.toEntity(nowEpochMillis: Long) = SymptomLogEntity(
     id = id,
     dateEpochDay = date.toEpochDay(),
-    mood = mood.name,
-    painLevel = painLevel.name,
-    energyLevel = energyLevel.name,
-    dischargeType = dischargeType.name,
+    mood = mood?.name,
+    painLevel = painLevel?.name,
+    energyLevel = energyLevel?.name,
+    dischargeType = dischargeType?.name,
     medication = medication,
     notes = notes,
+    createdAtEpochMillis = nowEpochMillis,
+    updatedAtEpochMillis = nowEpochMillis,
+    deletedAtEpochMillis = null,
 )
 
 private fun SymptomLogEntity.toModel(logger: AppLogger) = SymptomLog(
@@ -503,6 +509,9 @@ private fun ReminderRule.toEntity() = ReminderRuleEntity(
     offsetDays = daysBefore,
     hourOfDay = hourOfDay,
     minute = minute,
+    // Any time reaching the database before v3 came from a seed, never
+    // from the user, so nothing is marked pinned yet.
+    userPinnedTime = false,
 )
 
 private fun ReminderRuleEntity.toModel(logger: AppLogger) = ReminderRule(
@@ -528,6 +537,7 @@ private fun ReminderEvent.toEntity() = ReminderEventEntity(
     targetEpochDay = targetEpochDay,
     readAtEpochMillis = readAtEpochMillis,
     dismissedAtEpochMillis = dismissedAtEpochMillis,
+    deliveryState = "DELIVERED",
 )
 
 private fun ReminderEventEntity.toModel(logger: AppLogger) = ReminderEvent(
@@ -596,7 +606,18 @@ private fun String.toCycleSource(logger: AppLogger): CycleSource = parseEnumSafe
     logger = logger,
 )
 
-private fun String.toMood(logger: AppLogger): Mood = parseEnumSafely(
+/**
+ * Null means not tracked and is preserved as null.
+ *
+ * This must not fall back to a default: the v2 schema declared these
+ * NOT NULL and neither Mood nor EnergyLevel has a "None" variant, so
+ * every user was forced to answer both on every log. Defaulting an
+ * untracked day would count a value the user never gave.
+ *
+ * An unrecognised non-null value still falls back, and is logged, so
+ * that an unexpected stored string degrades rather than throwing.
+ */
+private fun String?.toMood(logger: AppLogger): Mood? = parseEnumOrNull(
     raw = this,
     fallback = Mood.Stable,
     tag = "SymptomRepository",
@@ -604,7 +625,8 @@ private fun String.toMood(logger: AppLogger): Mood = parseEnumSafely(
     logger = logger,
 )
 
-private fun String.toPainLevel(logger: AppLogger): PainLevel = parseEnumSafely(
+/** Null means not tracked, which is distinct from a recorded "None". */
+private fun String?.toPainLevel(logger: AppLogger): PainLevel? = parseEnumOrNull(
     raw = this,
     fallback = PainLevel.None,
     tag = "SymptomRepository",
@@ -612,7 +634,7 @@ private fun String.toPainLevel(logger: AppLogger): PainLevel = parseEnumSafely(
     logger = logger,
 )
 
-private fun String.toEnergyLevel(logger: AppLogger): EnergyLevel = parseEnumSafely(
+private fun String?.toEnergyLevel(logger: AppLogger): EnergyLevel? = parseEnumOrNull(
     raw = this,
     fallback = EnergyLevel.Steady,
     tag = "SymptomRepository",
@@ -620,7 +642,8 @@ private fun String.toEnergyLevel(logger: AppLogger): EnergyLevel = parseEnumSafe
     logger = logger,
 )
 
-private fun String.toDischargeType(logger: AppLogger): DischargeType = parseEnumSafely(
+/** Null means not tracked, which is distinct from a recorded "None". */
+private fun String?.toDischargeType(logger: AppLogger): DischargeType? = parseEnumOrNull(
     raw = this,
     fallback = DischargeType.None,
     tag = "SymptomRepository",
@@ -659,6 +682,36 @@ private fun String.toReminderDeepLinkTarget(logger: AppLogger): ReminderDeepLink
     field = "deepLinkTarget",
     logger = logger,
 )
+
+/**
+ * Nullable variant used by the daily log fields.
+ *
+ * A null column means the user did not track that field, and that is a
+ * real answer that must survive the round trip. Only a non-null but
+ * unrecognised value falls back, and that is logged.
+ */
+private inline fun <reified T : Enum<T>> parseEnumOrNull(
+    raw: String?,
+    fallback: T,
+    tag: String,
+    field: String,
+    logger: AppLogger,
+): T? {
+    if (raw == null) return null
+    return runCatching { enumValueOf<T>(raw) }
+        .getOrElse {
+            logger.warn(
+                tag = tag,
+                event = "invalid_enum_fallback",
+                attributes = mapOf(
+                    "field" to field,
+                    "raw" to raw,
+                    "fallback" to fallback.name,
+                ),
+            )
+            fallback
+        }
+}
 
 private inline fun <reified T : Enum<T>> parseEnumSafely(
     raw: String,

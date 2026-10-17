@@ -205,12 +205,21 @@ internal fun formatMonthLabel(month: YearMonth): String = month.format(monthForm
 
 internal fun formatCalendarDate(date: LocalDate): String = date.format(selectedDateFormatter)
 
-internal fun formatCycleRangeLabel(startDate: LocalDate, endDate: LocalDate): String = when {
-    startDate.year != endDate.year -> {
-        "${startDate.format(crossYearRangeFormatter)} - ${endDate.format(crossYearRangeFormatter)}"
+/**
+ * A null end date means the period is still in progress, which is shown
+ * as an open range rather than being hidden or guessed at.
+ */
+internal fun formatCycleRangeLabel(startDate: LocalDate, endDate: LocalDate?): String {
+    if (endDate == null) {
+        return "${startDate.format(dayRangeFormatter)} - ongoing"
     }
-    else -> {
-        "${startDate.format(dayRangeFormatter)} - ${endDate.format(dayRangeFormatter)}"
+    return when {
+        startDate.year != endDate.year -> {
+            "${startDate.format(crossYearRangeFormatter)} - ${endDate.format(crossYearRangeFormatter)}"
+        }
+        else -> {
+            "${startDate.format(dayRangeFormatter)} - ${endDate.format(dayRangeFormatter)}"
+        }
     }
 }
 

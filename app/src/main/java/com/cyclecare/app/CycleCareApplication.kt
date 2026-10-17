@@ -17,7 +17,7 @@ import com.cyclecare.core.data.RoomReminderEventsRepository
 import com.cyclecare.core.data.RoomReminderRepository
 import com.cyclecare.core.data.RoomSymptomRepository
 import com.cyclecare.core.database.CycleCareDatabase
-import com.cyclecare.core.database.migration1To2
+import com.cyclecare.core.database.ALL_MIGRATIONS
 import com.cyclecare.core.domain.CyclePredictionEngine
 import com.cyclecare.core.domain.InsightEngine
 import com.cyclecare.core.domain.ReminderDefaults
@@ -45,7 +45,7 @@ class CycleCareApplication : Application() {
             applicationContext,
             CycleCareDatabase::class.java,
             "cyclecare.db",
-        ).addMigrations(migration1To2).build()
+        ).addMigrations(*ALL_MIGRATIONS).build()
 
         val profileRepository = RoomProfileRepository(database, appLogger)
         val cycleRepository = RoomCycleRepository(database, appLogger)

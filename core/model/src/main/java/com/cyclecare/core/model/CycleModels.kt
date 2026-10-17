@@ -103,22 +103,48 @@ data class UserProfile(
 data class CycleRecord(
     val id: String,
     val startDate: LocalDate,
-    val endDate: LocalDate,
+    /** Null while the period is still in progress. */
+    val endDate: LocalDate?,
+    /**
+     * Deprecated. Must not be read as a cycle length: cycle length is
+     * derived from consecutive start dates, and this field has never
+     * been cross-validated against them.
+     */
     val cycleLength: Int,
     val source: CycleSource,
     val notes: String? = null,
-)
+) {
+    val isInProgress: Boolean get() = endDate == null
 
+    /** Null when the period has not ended yet. */
+    val periodLengthDays: Int? get() = endDate?.let { java.time.temporal.ChronoUnit.DAYS.between(startDate, it).toInt() + 1 }
+}
+
+/**
+ * A daily log.
+ *
+ * Every tracked field is nullable and null means "not tracked", which is
+ * a first-class answer the user can give. This is distinct from a
+ * recorded "None" such as PainLevel.None, which means explicitly none.
+ *
+ * The distinction matters: treating an untracked day as "no pain" would
+ * invent a symptom the user never reported.
+ */
 data class SymptomLog(
     val id: String,
     val date: LocalDate,
-    val mood: Mood,
-    val painLevel: PainLevel,
-    val energyLevel: EnergyLevel,
-    val dischargeType: DischargeType,
+    val mood: Mood?,
+    val painLevel: PainLevel?,
+    val energyLevel: EnergyLevel?,
+    val dischargeType: DischargeType?,
     val medication: String? = null,
     val notes: String? = null,
-)
+) {
+    /** True when the user recorded nothing at all for this day. */
+    val isEmpty: Boolean
+        get() = mood == null && painLevel == null && energyLevel == null &&
+            dischargeType == null && medication.isNullOrBlank() && notes.isNullOrBlank()
+}
 
 data class PredictionSnapshot(
     val generatedAt: LocalDate,

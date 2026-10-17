@@ -283,9 +283,13 @@ internal fun progressStateDescription(cycleDay: Int?, cycleLength: Int): String 
         "Day $cycleDay of $cycleLength"
     }
 
-internal fun formatCycleRange(record: CycleRecord?): String = when (record) {
-    null -> "No logged period yet."
-    else -> "${record.startDate.format(dashboardDateFormatter)} - ${record.endDate.format(dashboardDateFormatter)}"
+internal fun formatCycleRange(record: CycleRecord?): String = when {
+    record == null -> "No logged period yet."
+    // A null end means the period has not finished yet.
+    record.endDate == null ->
+        "${record.startDate.format(dashboardDateFormatter)} - ongoing"
+    else ->
+        "${record.startDate.format(dashboardDateFormatter)} - ${record.endDate!!.format(dashboardDateFormatter)}"
 }
 
 private fun buildCycleModeLabel(

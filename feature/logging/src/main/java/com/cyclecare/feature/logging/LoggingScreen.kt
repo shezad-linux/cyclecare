@@ -93,10 +93,12 @@ data class LoggingUiState(
     val saveMessage: String? = null,
     val completedSections: Int = 0,
     val totalSections: Int = 4,
-    val mood: Mood = Mood.Stable,
-    val painLevel: PainLevel = PainLevel.None,
-    val energyLevel: EnergyLevel = EnergyLevel.Steady,
-    val dischargeType: DischargeType = DischargeType.None,
+    // Null means not tracked, which is a first-class answer and not a
+    // missing value. It must never be coerced into a real selection.
+    val mood: Mood? = null,
+    val painLevel: PainLevel? = null,
+    val energyLevel: EnergyLevel? = null,
+    val dischargeType: DischargeType? = null,
     val medication: String = "",
     val notes: String = "",
     val isDetailsExpanded: Boolean = false,
@@ -121,10 +123,12 @@ private data class LoggingContext(
 internal data class LoggingEditorState(
     val hydrationKey: String = "",
     val existingEntryId: String? = null,
-    val mood: Mood = Mood.Stable,
-    val painLevel: PainLevel = PainLevel.None,
-    val energyLevel: EnergyLevel = EnergyLevel.Steady,
-    val dischargeType: DischargeType = DischargeType.None,
+    // Null means not tracked, which is a first-class answer and not a
+    // missing value. It must never be coerced into a real selection.
+    val mood: Mood? = null,
+    val painLevel: PainLevel? = null,
+    val energyLevel: EnergyLevel? = null,
+    val dischargeType: DischargeType? = null,
     val medication: String = "",
     val notes: String = "",
     val isDetailsExpanded: Boolean = false,
@@ -149,6 +153,7 @@ internal object LoggingTags {
     const val HeroCard = "logging_hero_card"
     const val SaveBar = "logging_save_bar"
     fun mood(mood: Mood): String = "logging_mood_${mood.name}"
+    fun notTrackedChip(): String = "logging_not_tracked"
     const val NotesField = "logging_notes_field"
     const val NotesError = "logging_notes_error"
 }
@@ -497,7 +502,7 @@ class LoggingViewModel(
         } else {
             updateEditor { current ->
                 current.copy(
-                    mood = Mood.Stable,
+                    mood = null,
                     painLevel = PainLevel.None,
                     energyLevel = EnergyLevel.Steady,
                     dischargeType = DischargeType.None,
@@ -513,13 +518,13 @@ class LoggingViewModel(
         saveMessageFlow.value = null
     }
 
-    fun selectMood(mood: Mood) = updateEditor { it.copy(mood = mood) }
+    fun selectMood(mood: Mood?) = updateEditor { it.copy(mood = if (it.mood == mood) null else mood) }
 
-    fun selectPainLevel(painLevel: PainLevel) = updateEditor { it.copy(painLevel = painLevel) }
+    fun selectPainLevel(painLevel: PainLevel?) = updateEditor { it.copy(painLevel = if (it.painLevel == painLevel) null else painLevel) }
 
-    fun selectEnergy(energyLevel: EnergyLevel) = updateEditor { it.copy(energyLevel = energyLevel) }
+    fun selectEnergy(energyLevel: EnergyLevel?) = updateEditor { it.copy(energyLevel = if (it.energyLevel == energyLevel) null else energyLevel) }
 
-    fun selectDischarge(dischargeType: DischargeType) = updateEditor { it.copy(dischargeType = dischargeType) }
+    fun selectDischarge(dischargeType: DischargeType?) = updateEditor { it.copy(dischargeType = if (it.dischargeType == dischargeType) null else dischargeType) }
 
     fun updateMedication(medication: String) = updateEditor {
         it.copy(
@@ -603,10 +608,10 @@ fun LoggingRoute(factory: LoggingViewModelFactory) {
 @Composable
 internal fun LoggingScreen(
     uiState: LoggingUiState,
-    onMoodSelected: (Mood) -> Unit,
-    onPainSelected: (PainLevel) -> Unit,
-    onEnergySelected: (EnergyLevel) -> Unit,
-    onDischargeSelected: (DischargeType) -> Unit,
+    onMoodSelected: (Mood?) -> Unit,
+    onPainSelected: (PainLevel?) -> Unit,
+    onEnergySelected: (EnergyLevel?) -> Unit,
+    onDischargeSelected: (DischargeType?) -> Unit,
     onMedicationChanged: (String) -> Unit,
     onNotesChanged: (String) -> Unit,
     onToggleDetailsExpanded: () -> Unit,
@@ -652,6 +657,10 @@ internal fun LoggingScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
+                        NotTrackedChip(
+                            selected = uiState.mood == null,
+                            onClick = { onMoodSelected(null) },
+                        )
                         Mood.entries.forEach { mood ->
                             SelectionChip(
                                 selected = uiState.mood == mood,
@@ -666,13 +675,17 @@ internal fun LoggingScreen(
             item {
                 SelectionSectionCard(
                     title = "Pain",
-                    helperText = uiState.painLevel.helperText(),
+                    helperText = uiState.painLevel?.helperText() ?: "Not tracked",
                     accent = MaterialTheme.colorScheme.surface,
                 ) {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
+                        NotTrackedChip(
+                            selected = uiState.painLevel == null,
+                            onClick = { onPainSelected(null) },
+                        )
                         PainLevel.entries.forEach { painLevel ->
                             SelectionChip(
                                 selected = uiState.painLevel == painLevel,
@@ -693,6 +706,10 @@ internal fun LoggingScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
+                        NotTrackedChip(
+                            selected = uiState.energyLevel == null,
+                            onClick = { onEnergySelected(null) },
+                        )
                         EnergyLevel.entries.forEach { energyLevel ->
                             SelectionChip(
                                 selected = uiState.energyLevel == energyLevel,
@@ -713,6 +730,10 @@ internal fun LoggingScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
+                        NotTrackedChip(
+                            selected = uiState.dischargeType == null,
+                            onClick = { onDischargeSelected(null) },
+                        )
                         DischargeType.entries.forEach { dischargeType ->
                             SelectionChip(
                                 selected = uiState.dischargeType == dischargeType,
@@ -738,10 +759,10 @@ internal fun LoggingScreen(
 @Composable
 private fun LoggingHeroCard(
     uiState: LoggingUiState,
-    onMoodSelected: (Mood) -> Unit,
-    onPainSelected: (PainLevel) -> Unit,
-    onEnergySelected: (EnergyLevel) -> Unit,
-    onDischargeSelected: (DischargeType) -> Unit,
+    onMoodSelected: (Mood?) -> Unit,
+    onPainSelected: (PainLevel?) -> Unit,
+    onEnergySelected: (EnergyLevel?) -> Unit,
+    onDischargeSelected: (DischargeType?) -> Unit,
     onApplyYesterdayPattern: () -> Unit,
 ) {
     val isActivePeriod = uiState.heroMode == PeriodHeroMode.Active
@@ -1036,6 +1057,25 @@ private fun DetailsCard(
     }
 }
 
+/**
+ * Explicit "not tracked" option, offered as a real choice alongside the
+ * tracked values so a skipped field is visibly a decision rather than an
+ * accidental omission.
+ */
+@Composable
+private fun NotTrackedChip(
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SelectionChip(
+        text = "Not tracked",
+        selected = selected,
+        onClick = onClick,
+        modifier = modifier.testTag(LoggingTags.notTrackedChip()),
+    )
+}
+
 @Composable
 private fun SelectionChip(
     text: String,
@@ -1123,10 +1163,13 @@ internal fun SavedStateHandle.toLoggingEditorState(): LoggingEditorState =
 internal fun SavedStateHandle.persistLoggingEditorState(state: LoggingEditorState) {
     this[LoggingStateKeys.HydrationKey] = state.hydrationKey
     this[LoggingStateKeys.ExistingEntryId] = state.existingEntryId
-    this[LoggingStateKeys.Mood] = state.mood.name
-    this[LoggingStateKeys.PainLevel] = state.painLevel.name
-    this[LoggingStateKeys.EnergyLevel] = state.energyLevel.name
-    this[LoggingStateKeys.DischargeType] = state.dischargeType.name
+    // Persisted as the constant name, or absent when not tracked.
+    // Round-tripping null is what preserves an untracked field across
+    // process death instead of restoring a fabricated default.
+    this[LoggingStateKeys.Mood] = state.mood?.name
+    this[LoggingStateKeys.PainLevel] = state.painLevel?.name
+    this[LoggingStateKeys.EnergyLevel] = state.energyLevel?.name
+    this[LoggingStateKeys.DischargeType] = state.dischargeType?.name
     this[LoggingStateKeys.Medication] = state.medication
     this[LoggingStateKeys.Notes] = state.notes
     this[LoggingStateKeys.DetailsExpanded] = state.isDetailsExpanded

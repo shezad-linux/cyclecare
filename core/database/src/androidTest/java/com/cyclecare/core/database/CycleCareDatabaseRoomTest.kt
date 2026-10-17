@@ -73,7 +73,7 @@ class CycleCareDatabaseRoomTest {
         val cycle = cycleEntity(id = "delete-me", start = LocalDate.of(2026, 3, 10), end = LocalDate.of(2026, 3, 14))
         database.cycleRecordDao().upsert(cycle)
 
-        database.cycleRecordDao().delete(cycle.id)
+        database.cycleRecordDao().softDelete(cycle.id, 1234L)
 
         assertThat(database.cycleRecordDao().count()).isEqualTo(0)
         assertThat(database.cycleRecordDao().findForDate(LocalDate.of(2026, 3, 12).toEpochDay())).isNull()
@@ -93,6 +93,9 @@ class CycleCareDatabaseRoomTest {
                 dischargeType = "None",
                 medication = null,
                 notes = "Round trip",
+                createdAtEpochMillis = 0L,
+                updatedAtEpochMillis = 0L,
+                deletedAtEpochMillis = null,
             ),
         )
 
@@ -113,6 +116,127 @@ class CycleCareDatabaseRoomTest {
         seedV1(reminderRules = emptyList())
 
         migrationHelper.runMigrationsAndValidate(TEST_DATABASE, 2, true, migration1To2)
+    }
+
+    // ── migration2To3 ───────────────────────────────────────────────
+
+    @Test
+    fun migration2To3_producesSchemaMatchingVersion3() {
+        seedV2(reminderRules = listOf("('PeriodPrep', 'PeriodPrep', 1, -2, 9, 0)"))
+
+        migrationHelper.runMigrationsAndValidate(TEST_DATABASE, 3, true, migration1To2, migration2To3)
+    }
+
+    @Test
+    fun migration2To3_preservesEveryCycleRecordUnchanged() {
+        seedV2(
+            cycleRecords = listOf(
+                "('jan', 20456, 20460, 28, 'User', 'first note')",
+                "('feb', 20485, 20489, 31, 'Imported', NULL)",
+            ),
+        )
+
+        val rows = migrate2To3AndQuery(
+            "SELECT id, startEpochDay, endEpochDay, cycleLength, source, notes, deletedAtEpochMillis FROM cycle_records ORDER BY id",
+        )
+
+        assertThat(rows.map { it[0] }).containsExactly("feb", "jan").inOrder()
+        assertThat(rows.map { it[1] }).containsExactly("20485", "20456").inOrder()
+        assertThat(rows.map { it[2] }).containsExactly("20489", "20460").inOrder()
+        assertThat(rows.map { it[4] }).containsExactly("Imported", "User").inOrder()
+        assertThat(rows.last()[5]).isEqualTo("first note")
+        assertThat(rows.first()[5]).isNull()
+        assertThat(rows.map { it[6] }).containsExactly(null, null)
+    }
+
+    @Test
+    fun migration2To3_preservesNoneAsNoneRatherThanNull() {
+        seedV2(
+            symptomLogs = listOf(
+                "('log-a', 20456, 'Stable', 'None', 'Steady', 'None', NULL, 'kept')",
+                "('log-b', 20457, 'Low', 'Light', 'High', 'Creamy', 'Ibuprofen', NULL)",
+            ),
+        )
+
+        val rows = migrate2To3AndQuery(
+            "SELECT id, mood, painLevel, energyLevel, dischargeType, medication, notes FROM symptom_logs ORDER BY id",
+        )
+
+        // "None" is a recorded value meaning explicitly none. It must NOT
+        // become NULL, which would mean not tracked.
+        assertThat(rows[0][2]).isEqualTo("None")
+        assertThat(rows[0][4]).isEqualTo("None")
+        assertThat(rows[0][1]).isEqualTo("Stable")
+        assertThat(rows[1][2]).isEqualTo("Light")
+        assertThat(rows[1][6]).isNull()
+        assertThat(rows[0][6]).isEqualTo("kept")
+    }
+
+    @Test
+    fun migration2To3_backfillsAuditTimestampsAndNoDeletions() {
+        seedV2(
+            symptomLogs = listOf("('log-a', 20456, 'Stable', 'None', 'Steady', 'None', NULL, NULL)"),
+            cycleRecords = listOf("('jan', 20456, 20460, 28, 'User', NULL)"),
+        )
+
+        val logs = migrate2To3AndQuery("SELECT createdAtEpochMillis, updatedAtEpochMillis, deletedAtEpochMillis FROM symptom_logs")
+        val cycles = migrate2To3AndQuery("SELECT createdAtEpochMillis, updatedAtEpochMillis, deletedAtEpochMillis FROM cycle_records")
+
+        listOf(logs, cycles).forEach { rows ->
+            assertThat(rows).hasSize(1)
+            assertThat(rows[0][0].toString().toLong()).isGreaterThan(0L)
+            assertThat(rows[0][1].toString().toLong()).isGreaterThan(0L)
+            assertThat(rows[0][2]).isNull()
+        }
+    }
+
+    @Test
+    fun migration2To3_collapsesDuplicateSymptomRowsForOneDate() {
+        seedV2(
+            symptomLogs = listOf(
+                "('older', 20456, 'Stable', 'None', 'Steady', 'None', NULL, NULL)",
+                "('newer', 20456, 'Low', 'Light', 'High', 'None', NULL, NULL)",
+            ),
+        )
+
+        val rows = migrate2To3AndQuery("SELECT id FROM symptom_logs")
+
+        assertThat(rows).hasSize(1)
+        assertThat(rows[0][0]).isEqualTo("newer")
+    }
+
+    @Test
+    fun migration2To3_addsUserPinnedTimeDefaultingToFalse() {
+        seedV2(reminderRules = listOf("('PeriodPrep', 'PeriodPrep', 1, -2, 9, 0)"))
+
+        val rows = migrate2To3AndQuery("SELECT id, userPinnedTime FROM reminder_rules")
+
+        assertThat(rows).hasSize(1)
+        assertThat(rows[0][1].toString()).isEqualTo("0")
+    }
+
+    @Test
+    fun migration2To3_addsDeliveryStateAndBackfillsExistingEvents() {
+        seedV2(
+            reminderRules = listOf("('PeriodPrep', 'PeriodPrep', 1, -2, 9, 0)"),
+            reminderEvents = listOf(
+                "('ev-1', 'PeriodPrep', 'PeriodPrep', 'CycleAlerts', 1000, 2000, 't', 'b', 'p', 'Home', NULL, NULL, NULL)",
+            ),
+        )
+
+        val rows = migrate2To3AndQuery("SELECT id, deliveryState FROM reminder_events")
+
+        assertThat(rows).hasSize(1)
+        assertThat(rows[0][1]).isEqualTo("DELIVERED")
+    }
+
+    @Test
+    fun migration2To3_createsOutboxEngagementAndSettingsTables() {
+        seedV2()
+
+        assertThat(migrate2To3AndQuery("SELECT COUNT(*) FROM sync_outbox")[0][0].toString()).isEqualTo("0")
+        assertThat(migrate2To3AndQuery("SELECT COUNT(*) FROM app_settings")[0][0].toString()).isEqualTo("0")
+        assertThat(migrate2To3AndQuery("SELECT COUNT(*) FROM engagement_profile")[0][0].toString()).isEqualTo("1")
     }
 
     @Test
@@ -234,6 +358,44 @@ class CycleCareDatabaseRoomTest {
 
     // ── helpers ──────────────────────────────────────────────────────
 
+    private fun seedV2(
+        reminderRules: List<String> = emptyList(),
+        cycleRecords: List<String> = emptyList(),
+        symptomLogs: List<String> = emptyList(),
+        reminderEvents: List<String> = emptyList(),
+    ) {
+        migrationHelper.createDatabase(TEST_DATABASE, 2).apply {
+            execSQL(
+                "INSERT INTO user_profile (id, ageBand, averageCycleLength, periodLength, " +
+                    "lastPeriodStartEpochDay, trackingGoal, remindersEnabled, privacyModeEnabled) " +
+                    "VALUES (1, 'Twenties', 28, 5, 20456, 'PeriodPrep', 1, 1)",
+            )
+            cycleRecords.forEach { execSQL("INSERT INTO cycle_records VALUES $it") }
+            symptomLogs.forEach { execSQL("INSERT INTO symptom_logs VALUES $it") }
+            reminderRules.forEach {
+                execSQL(
+                    "INSERT INTO reminder_rules (id, type, enabled, offsetDays, hourOfDay, minute) " +
+                        "VALUES $it",
+                )
+            }
+            reminderEvents.forEach { execSQL("INSERT INTO reminder_events VALUES $it") }
+            close()
+        }
+    }
+
+    private fun migrate2To3AndQuery(sql: String): List<List<Any?>> =
+        migrationHelper.runMigrationsAndValidate(
+            TEST_DATABASE, 3, true, migration1To2, migration2To3,
+        ).use { db ->
+            db.query(sql).use { cursor ->
+                buildList {
+                    while (cursor.moveToNext()) {
+                        add((0 until cursor.columnCount).map { cursor.getString(it) })
+                    }
+                }
+            }
+        }
+
     private fun seedV1(
         trackingGoal: String = "PeriodPrep",
         reminderRules: List<String> = emptyList(),
@@ -287,14 +449,17 @@ class CycleCareDatabaseRoomTest {
     private fun cycleEntity(
         id: String,
         start: LocalDate,
-        end: LocalDate,
+        end: LocalDate?,
     ) = CycleRecordEntity(
         id = id,
         startEpochDay = start.toEpochDay(),
-        endEpochDay = end.toEpochDay(),
+        endEpochDay = end?.toEpochDay(),
         cycleLength = 28,
         source = "User",
         notes = null,
+        createdAtEpochMillis = 0L,
+        updatedAtEpochMillis = 0L,
+        deletedAtEpochMillis = null,
     )
 
     private companion object {
