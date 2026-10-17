@@ -147,7 +147,13 @@ jobs:
           # against even with -noaudio. Without this the emulator binary
           # cannot start at all:
           #   error while loading shared libraries: libpulse.so.0
-          sudo apt-get install -y libpulse0 libnss3 libxcb1 libxkbcommon-x11-0
+          # libpulse0: qemu links it even with -noaudio.
+          # libgl1/libx11-6/libxext6: the Qt platform plugin cannot
+          # initialise without them, which surfaced as
+          #   "failed to start because no Qt platform plugin could be
+          #    initialized"
+          sudo apt-get install -y libpulse0 libnss3 libxcb1 libxkbcommon-x11-0 \
+            libgl1 libx11-6 libxext6 libxrender1 libxi6
 
       - name: Enable KVM for the emulator
         run: |
@@ -167,7 +173,8 @@ jobs:
           # "No device found matching --device ...". The default profile
           # is adequate for these tests.
           disable-animations: true
-          emulator-options: -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
+          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
+          env: QT_QPA_PLATFORM=offscreen
           script: ./gradlew connectedDebugAndroidTest
 
       - name: Upload reports on failure
