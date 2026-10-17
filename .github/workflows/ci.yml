@@ -175,7 +175,11 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
           env: QT_QPA_PLATFORM=offscreen
-          script: ./gradlew connectedDebugAndroidTest
+          # --continue so every module's instrumented tests run. Without
+          # it Gradle stops at the first failing module, which hid the
+          # results of core:database, core:data and every feature module
+          # behind a single :app failure.
+          script: ./gradlew connectedDebugAndroidTest --continue
 
       - name: Upload reports on failure
         if: failure()
