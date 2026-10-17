@@ -102,3 +102,68 @@ jobs:
             **/build/reports/tests/
             **/build/reports/lint-results-*.html
           retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────
+  # Instrumented tests on an API 36 emulator.
+  #
+  # WHY API 36 AND NOT 37 — do not "upgrade" this without reading first.
+  #
+  # On Android 37 every Compose UI test fails with
+  #   NoSuchMethodException: android.hardware.input.InputManager.getInstance []
+  # InputManager.getInstance() is a hidden framework method that Android 37
+  # removed, and androidx.test calls it directly. This is not version skew:
+  # verified by moving Compose BOM 2024.12.01 -> 2026.06.01 (ui-test-junit4
+  # 1.7.6 -> 1.11.4) and androidx.test to its latest stable, which changed
+  # nothing. Only androidx.test alphas handle it.
+  #
+  # API 36 is also the current Google Play target requirement, so it is the
+  # most representative level to verify against regardless.
+  #
+  # Compose UI tests: 40 across home, calendar, logging, insights,
+  # onboarding, privacy and the app shell.
+  # Non-Compose instrumented tests: core:database 12 (the migration suite),
+  # core:data 8, feature:onboarding 1.
+  # ─────────────────────────────────────────────────────────────────
+  instrumented:
+    name: Instrumented tests (API 36)
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run instrumented tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          arch: x86_64
+          target: google_apis
+          profile: Pixel_6
+          disable-animations: true
+          emulator-options: -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: ./gradlew connectedDebugAndroidTest
+
+      - name: Upload reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumented-reports
+          path: |
+            **/build/reports/androidTests/
+            **/build/outputs/androidTest-results/
+          retention-days: 7
