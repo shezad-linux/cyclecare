@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CycleCare Mobile v1</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <span class="token-chip">CycleCare Mobile v1</span>
+        <h1>Screen boards and first-pass mobile nodes for the Android Compose app.</h1>
+        <p>
+          Each phone artboard maps to a named Figma screen node and acts as the visual source for later MCP-based
+          implementation refinement.
+        </p>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <span class="token-chip">01 Onboarding</span>
+            <h2>Onboarding and dashboard</h2>
+          </div>
+          <p>Nodes: `SCR/Onboarding/*`, `SCR/Home/*`, `FLOW/Home/*`</p>
+        </div>
+        <div class="phone-grid">
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel gradient compact">
+                <p class="small">SCR/Onboarding/Welcome/Default</p>
+                <h2>Private cycle tracking</h2>
+                <p>Set your baseline once and keep everything on-device by default.</p>
+              </div>
+              <div class="panel stack form-card">
+                <p class="small">SCR/Onboarding/CycleSetup/Default</p>
+                <div class="section-block">
+                  <div class="section-label">
+                    <span class="icon-dot">A</span>
+                    <h3>Age band</h3>
+                  </div>
+                  <div class="choice-row">
+                    <span class="choice-pill active">20s</span>
+                    <span class="choice-pill">Teen (13-19)</span>
+                    <span class="choice-pill">30s</span>
+                    <span class="choice-pill">40+</span>
+                  </div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="section-block">
+                  <div class="section-label">
+                    <span class="icon-dot">C</span>
+                    <h3>Typical cycle length</h3>
+                  </div>
+                  <strong class="value-display">28 days</strong>
+                  <div class="range-track">
+                    <span class="range-fill"></span>
+                    <span class="range-thumb"></span>
+                  </div>
+                  <p>Use your usual cycle length. You can refine this later.</p>
+                  <p class="helper-copy">Range: 20-45 days</p>
+                </div>
+                <div class="section-divider"></div>
+                <div class="section-block">
+                  <div class="section-label">
+                    <span class="icon-dot">P</span>
+                    <h3>Typical period length</h3>
+                  </div>
+                  <div class="stepper">
+                    <button class="stepper-btn">-</button>
+                    <strong class="value-display">5 days</strong>
+                    <button class="stepper-btn">+</button>
+                  </div>
+                </div>
+                <button class="cta">Start tracking</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel stack form-card">
+                <p class="small">SCR/Onboarding/CycleSetup/DatePickerOpen</p>
+                <div class="section-block">
+                  <div class="section-label">
+                    <span class="icon-dot">G</span>
+                    <h3>Wellness goal</h3>
+                  </div>
+                  <p class="helper-copy">Choose your primary goal</p>
+                  <div class="choice-row">
+                    <span class="choice-pill active">Period Preparation</span>
+                    <span class="choice-pill">Symptom Tracking</span>
+                    <span class="choice-pill">Pregnancy Planning</span>
+                  </div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="section-block">
+                  <div class="section-label">
+                    <span class="icon-dot">D</span>
+                    <h3>Last period start</h3>
+                  </div>
+                  <div class="date-card">
+                    <div>
+                      <strong>March 11, 2026</strong>
+                      <p>Tap to choose a date</p>
+                    </div>
+                    <span class="calendar-mark">CAL</span>
+                  </div>
+                  <div class="picker-sheet">
+                    <strong>Choose date</strong>
+                    <div class="calendar mini">
+                      <div class="day">9</div><div class="day">10</div><div class="day selected">11</div><div class="day">12</div><div class="day">13</div><div class="day">14</div><div class="day">15</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="section-block">
+                  <div class="toggle-row">
+                    <div class="toggle-copy">
+                      <strong>Smart reminders</strong>
+                      <p>Get a local reminder before your next period and a daily check-in prompt.</p>
+                    </div>
+                    <span class="toggle on"></span>
+                  </div>
+                  <div class="toggle-row">
+                    <div class="toggle-copy">
+                      <strong>Hide sensitive details in notifications</strong>
+                      <p>Keep previews private while still allowing reminder alerts.</p>
+                    </div>
+                    <span class="toggle on"></span>
+                  </div>
+                </div>
+                <button class="cta">Start tracking</button>
+                <p class="trust-note">Your data stays private on your device.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel gradient">
+                <p class="small">SCR/Home/Dashboard/Advanced</p>
+                <div class="hero-row">
+                  <div class="stack" style="gap:10px">
+                    <h2>Next period in 23 days</h2>
+                    <p>Expected Apr 9 &bull; Day 6 / 28 &bull; Baseline estimate</p>
+                    <div class="pill-row">
+                      <span class="legend-pill outline">Baseline forecast</span>
+                      <span class="legend-pill mint">Stored locally</span>
+                    </div>
+                    <p class="subtle-label on-hero">Cycle progress</p>
+                    <div class="progress-bar"><span style="width:22%"></span></div>
+                    <p>Predictions combine your saved baseline and recent local history.</p>
+                  </div>
+                  <button class="hero-action">Edit cycle</button>
+                </div>
+              </div>
+              <div class="panel stack metric-surface">
+                <div class="metric-row">
+                  <div class="metric"><span>Avg cycle</span><strong>28 days</strong></div>
+                  <div class="metric"><span>Avg period</span><strong>5 days</strong></div>
+                </div>
+                <div class="metric-row">
+                  <div class="metric"><span>Variability</span><strong>26-29d range</strong></div>
+                  <div class="metric"><span>Unread reminders</span><strong>2</strong></div>
+                </div>
+              </div>
+              <div class="panel stack">
+                <p class="small">FLOW/Home/01-Dashboard</p>
+                <h3>Dashboard cards</h3>
+                <div class="detail-card">
+                  <p class="subtle-label">Fertility focus</p>
+                  <strong>Mar 21 - Mar 26</strong>
+                  <p>Ovulation estimate Mar 25 &bull; Baseline estimate</p>
+                  <button class="cta alt">Open fertility detail</button>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Reminder center</p>
+                  <strong>Daily check-in</strong>
+                  <p>Next up Mar 18 &bull; 8:00 PM</p>
+                  <button class="cta alt">Open reminder center</button>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Insights workspace</p>
+                  <strong>Recent rhythm snapshot</strong>
+                  <p>Recent cycle lengths are staying close to your saved baseline.</p>
+                  <button class="cta alt">Open insights workspace</button>
+                </div>
+                <h3>Today</h3>
+                <div class="action-list">
+                  <button class="action-card">
+                    <span class="icon-dot">L</span>
+                    <div>
+                      <strong>Log symptoms</strong>
+                      <p>Capture mood, pain, energy, and notes.</p>
+                    </div>
+                  </button>
+                  <button class="action-card">
+                    <span class="icon-dot">C</span>
+                    <div>
+                      <strong>Open calendar</strong>
+                      <p>View history and upcoming dates.</p>
+                    </div>
+                  </button>
+                  <button class="action-card">
+                    <span class="icon-dot">I</span>
+                    <div>
+                      <strong>View insights</strong>
+                      <p>See patterns from your saved timeline.</p>
+                    </div>
+                  </button>
+                </div>
+                <div class="section-divider"></div>
+                <p>Your cycle data stays on this device by default.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel stack form-card">
+                <p class="small">SCR/Home/Detail/CycleStatus/Animated</p>
+                <h2>Cycle status</h2>
+                <p>Full-screen operational detail for cycle progress, baseline, and the latest logged record.</p>
+                <div class="metric-row">
+                  <div class="metric"><span>Avg cycle</span><strong>28 days</strong></div>
+                  <div class="metric"><span>Avg period</span><strong>5 days</strong></div>
+                </div>
+                <div class="metric-row">
+                  <div class="metric"><span>Variability</span><strong>26-29d range</strong></div>
+                  <div class="metric"><span>Next period</span><strong>Apr 9</strong></div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Current status</p>
+                  <strong>Most recent logged period • Feb 12 - Feb 16</strong>
+                  <p>Predictions combine your latest logged cycle with the saved baseline from setup.</p>
+                </div>
+                <button class="cta">Edit cycle</button>
+                <button class="cta alt">Open calendar</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel stack form-card">
+                <p class="small">SCR/Home/Detail/Fertility</p>
+                <h2>Fertility detail</h2>
+                <p>Dedicated estimate view for fertile-window timing, ovulation date, and confidence context.</p>
+                <div class="metric-row">
+                  <div class="metric"><span>Fertile window</span><strong>Mar 21 - Mar 26</strong></div>
+                  <div class="metric"><span>Ovulation</span><strong>Mar 25</strong></div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">How this estimate is built</p>
+                  <p>Fertility timing is estimated from your saved baseline and recent logged cycle history.</p>
+                </div>
+                <button class="cta">Open calendar</button>
+                <button class="cta alt">Open insights</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <span class="token-chip">03 Calendar + 04 Log Symptoms</span>
+            <h2>Daily rhythm screens</h2>
+          </div>
+          <p>Nodes: `SCR/Calendar/*`, `SCR/Log/*`</p>
+        </div>
+        <div class="phone-grid">
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel stack">
+                <p class="small">SCR/Calendar/Month/HistoryInline</p>
+                <div class="calendar-topbar">
+                  <button class="nav-icon">&lsaquo;</button>
+                  <div>
+                    <p class="subtle-label">Cycle calendar</p>
+                    <h2>March 2026</h2>
+                  </div>
+                  <button class="nav-icon">&rsaquo;</button>
+                </div>
+                <div class="weekday-row">
+                  <span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span>
+                </div>
+                <div class="calendar-preview-grid">
+                  <div class="calendar-tile muted">1</div><div class="calendar-tile muted">2</div><div class="calendar-tile muted">3</div><div class="calendar-tile muted">4</div><div class="calendar-tile muted">5</div><div class="calendar-tile today">6</div><div class="calendar-tile">7</div>
+                  <div class="calendar-tile">8</div><div class="calendar-tile">9</div><div class="calendar-tile period">10</div><div class="calendar-tile period">11</div><div class="calendar-tile period">12</div><div class="calendar-tile">13</div><div class="calendar-tile">14</div>
+                  <div class="calendar-tile">15</div><div class="calendar-tile">16</div><div class="calendar-tile selected">17</div><div class="calendar-tile">18</div><div class="calendar-tile fertile">19</div><div class="calendar-tile fertile">20</div><div class="calendar-tile fertile">21</div>
+                  <div class="calendar-tile fertile">22</div><div class="calendar-tile ovulation">23</div><div class="calendar-tile fertile">24</div><div class="calendar-tile">25</div><div class="calendar-tile">26</div><div class="calendar-tile">27</div><div class="calendar-tile">28</div>
+                  <div class="calendar-tile muted">29</div><div class="calendar-tile muted">30</div><div class="calendar-tile muted">31</div><div class="calendar-tile muted">1</div><div class="calendar-tile muted">2</div><div class="calendar-tile muted">3</div><div class="calendar-tile muted">4</div>
+                </div>
+                <div class="legend-wrap">
+                  <span class="legend-pill rose">Period</span>
+                  <span class="legend-pill mint">Fertile window</span>
+                  <span class="legend-pill lake">Ovulation</span>
+                  <span class="legend-pill outline">Today / selected</span>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Selected day</p>
+                  <h3>Tuesday, Mar 17</h3>
+                  <span class="status-chip neutral">Neutral day</span>
+                  <p>No logged period entry or current cycle estimate highlights this date yet.</p>
+                  <button class="cta">Log period on this date</button>
+                </div>
+                <div class="history-list">
+                  <div class="history-card">
+                    <strong>Mar 11 - Mar 15</strong>
+                    <p>28 day cycle</p>
+                    <button class="cta alt">Edit entry</button>
+                  </div>
+                  <div class="history-card">
+                    <strong>Feb 12 - Feb 16</strong>
+                    <p>29 day cycle</p>
+                    <p class="helper-copy">Cycle felt regular and low-pain.</p>
+                    <button class="cta alt">Edit entry</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel stack">
+                <p class="small">SCR/Log/Daily/Polished</p>
+                <div class="detail-card log-snapshot">
+                  <div class="stack" style="gap:8px">
+                    <h2>Log today</h2>
+                    <p>Monday, Mar 16</p>
+                  </div>
+                  <div class="pill-row">
+                    <span class="legend-pill outline">Day 6 / 28</span>
+                    <span class="legend-pill outline">Baseline estimate</span>
+                  </div>
+                  <p>Your symptom check-in stays on this device by default.</p>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Mood</p>
+                  <p>Pick the closest overall feeling.</p>
+                  <div class="pill-row">
+                    <span class="pill active">Stable</span>
+                    <span class="pill">Happy</span>
+                    <span class="pill">Low</span>
+                    <span class="pill">Irritable</span>
+                    <span class="pill">Anxious</span>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Pain</p>
+                  <p>Choose the level that feels closest today.</p>
+                  <div class="segmented-row">
+                    <span class="segment">None</span>
+                    <span class="segment">Light</span>
+                    <span class="segment active">Moderate</span>
+                    <span class="segment">Strong</span>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Energy</p>
+                  <div class="pill-row">
+                    <span class="pill">Low</span>
+                    <span class="pill active">Steady</span>
+                    <span class="pill">High</span>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Body cues</p>
+                  <div class="pill-row">
+                    <span class="pill active">None</span>
+                    <span class="pill">Dry</span>
+                    <span class="pill">Creamy</span>
+                    <span class="pill">Sticky</span>
+                    <span class="pill">Egg white</span>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <div class="toggle-row">
+                    <div class="toggle-copy">
+                      <strong>Add details</strong>
+                      <p>Medication and notes are optional for a quick check-in.</p>
+                    </div>
+                    <button class="cta alt compact">Expand</button>
+                  </div>
+                </div>
+                <div class="save-bar-preview">
+                  <button class="cta">Save today&apos;s entry</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel stack">
+                <p class="small">SCR/Log/Daily/EditingExisting</p>
+                <div class="detail-card log-snapshot">
+                  <div class="stack" style="gap:8px">
+                    <h2>Log today</h2>
+                    <p>Monday, Mar 16</p>
+                  </div>
+                  <div class="pill-row">
+                    <span class="legend-pill outline">Day 6 / 28</span>
+                    <span class="legend-pill outline">Baseline estimate</span>
+                    <span class="legend-pill rose">Editing today&apos;s saved check-in</span>
+                  </div>
+                  <p>Your symptom check-in stays on this device by default.</p>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Mood</p>
+                  <div class="pill-row">
+                    <span class="pill">Stable</span>
+                    <span class="pill active">Happy</span>
+                    <span class="pill">Low</span>
+                    <span class="pill">Irritable</span>
+                    <span class="pill">Anxious</span>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Pain</p>
+                  <div class="segmented-row">
+                    <span class="segment active">None</span>
+                    <span class="segment">Light</span>
+                    <span class="segment">Moderate</span>
+                    <span class="segment">Strong</span>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Energy</p>
+                  <div class="pill-row">
+                    <span class="pill">Low</span>
+                    <span class="pill">Steady</span>
+                    <span class="pill active">High</span>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Body cues</p>
+                  <div class="pill-row">
+                    <span class="pill">None</span>
+                    <span class="pill">Dry</span>
+                    <span class="pill active">Egg white</span>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <div class="toggle-row">
+                    <div class="toggle-copy">
+                      <strong>Add details</strong>
+                      <p>Medication and notes are optional for a quick check-in.</p>
+                    </div>
+                    <button class="cta alt compact">Hide</button>
+                  </div>
+                  <div class="field-card">
+                    <label>Medication</label>
+                    <strong>Ibuprofen</strong>
+                  </div>
+                  <div class="field-card">
+                    <label>Notes</label>
+                    <p>Felt light cramps after lunch.</p>
+                  </div>
+                </div>
+                <div class="save-bar-preview">
+                  <p>Saved to your local timeline.</p>
+                  <button class="cta">Update today&apos;s entry</button>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <span class="token-chip">05 Insights + Reminders + 08 Export</span>
+            <h2>Insights, reminders, and reporting</h2>
+          </div>
+          <p>Nodes: `SCR/Reminders/*`, `SCR/Insights/*`, `SCR/Export/*`</p>
+        </div>
+        <div class="phone-grid">
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel gradient compact stack">
+                <p class="small">SCR/Reminders/Center/Default</p>
+                <h2>Reminder center</h2>
+                <p>Unread reminders, next scheduled cue, and recent activity stay grouped in one local inbox.</p>
+                <div class="pill-row">
+                  <span class="legend-pill outline">Private by default</span>
+                  <span class="legend-pill mint">2 unread</span>
+                </div>
+              </div>
+              <div class="panel stack">
+                <p class="small">FLOW/Reminders/01-Center</p>
+                <div class="metric-row">
+                  <div class="metric"><span>Unread</span><strong>2</strong></div>
+                  <div class="metric"><span>Next up</span><strong>8:00 PM</strong></div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Next scheduled reminder</p>
+                  <strong>Daily check-in</strong>
+                  <p>Tonight at 8:00 PM on the daily check-in channel.</p>
+                  <button class="cta alt">Open log</button>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Unread feed</p>
+                  <div class="stack">
+                    <div>
+                      <strong>Cycle reminder</strong>
+                      <p>Open the app for details about your upcoming cycle timing.</p>
+                    </div>
+                    <div class="section-divider"></div>
+                    <div>
+                      <strong>Daily check-in</strong>
+                      <p>Capture mood, pain, energy, and notes before the day ends.</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="detail-card insight-summary">
+                  <p class="subtle-label">Reminder routing</p>
+                  <p>Cycle reminders open Home, fertility reminders open Calendar, and daily check-ins jump straight into Log.</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel gradient compact stack">
+                <p class="small">SCR/Insights/Overview/Default</p>
+                <h2>Insights</h2>
+                <p>Deeper patterns from your local cycle history and symptom logs.</p>
+                <div class="pill-row">
+                  <span class="legend-pill outline">Stored locally</span>
+                  <span class="legend-pill mint">Steady lately</span>
+                </div>
+              </div>
+              <div class="panel stack">
+                <div class="metric-row">
+                  <div class="metric"><span>Avg cycle</span><strong>29 days</strong></div>
+                  <div class="metric"><span>Avg period</span><strong>5 days</strong></div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Cycle variability</p>
+                  <span class="status-chip good">27-31 day range</span>
+                  <p>Recent cycle lengths are staying close to your usual rhythm.</p>
+                  <p class="small">Based on 6 logged cycles from Oct 2025 to Mar 2026.</p>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Recent cycle trends</p>
+                  <div class="pill-row">
+                    <span class="pill">C1 28d</span>
+                    <span class="pill">C2 30d</span>
+                    <span class="pill">C3 27d</span>
+                    <span class="pill">C4 29d</span>
+                    <span class="pill">C5 31d</span>
+                    <span class="pill">C6 29d</span>
+                  </div>
+                  <p>Recent logged cycles average 29 days, with period lengths around 5 days.</p>
+                  <button class="cta alt">View cycle trends</button>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Symptom patterns</p>
+                  <div class="stack">
+                    <div>
+                      <strong>Period phase pattern</strong>
+                      <p>Moderate pain and lower energy show up most often during period days.</p>
+                    </div>
+                    <div class="section-divider"></div>
+                    <div>
+                      <strong>Fertile window pattern</strong>
+                      <p>Egg white discharge and steadier energy cluster around fertile-window days.</p>
+                    </div>
+                  </div>
+                  <button class="cta alt">View symptom patterns</button>
+                </div>
+                <div class="detail-card insight-summary">
+                  <p class="subtle-label">Pattern summary</p>
+                  <p>Recent history shows 27 to 31 day cycles across 6 logged cycles. Stable mood shows up most often, with moderate pain appearing most frequently in symptom logs.</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel gradient compact stack">
+                <p class="small">SCR/Insights/Overview/LowData</p>
+                <h2>Insights</h2>
+                <p>Your local timeline is still building. Keep logging cycles and symptoms to unlock deeper patterns.</p>
+                <div class="pill-row">
+                  <span class="legend-pill outline">Stored locally</span>
+                  <span class="legend-pill rose">More logging needed</span>
+                </div>
+              </div>
+              <div class="panel stack">
+                <div class="metric-row">
+                  <div class="metric"><span>Avg cycle</span><strong>28 days</strong></div>
+                  <div class="metric"><span>Avg period</span><strong>5 days</strong></div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Cycle variability</p>
+                  <span class="status-chip">Early baseline</span>
+                  <p>Trend charts unlock after two logged cycles.</p>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Trend charts are still building</p>
+                  <p>Once you have two logged cycles, this section will show the shape of your recent cycle lengths and period lengths.</p>
+                </div>
+                <div class="detail-card insight-summary">
+                  <p class="subtle-label">Build stronger patterns</p>
+                  <p>Keep logging mood, pain, energy, and body cues to unlock grouped symptom clusters and phase-based insights.</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel gradient compact stack">
+                <p class="small">SCR/Insights/Detail/CycleTrends</p>
+                <h2>Cycle trends</h2>
+                <p>Based on 6 logged cycles from Oct 2025 to Mar 2026.</p>
+                <div class="pill-row">
+                  <span class="legend-pill mint">Steady lately</span>
+                  <span class="legend-pill outline">Logged cycles only</span>
+                </div>
+              </div>
+              <div class="panel stack">
+                <div class="detail-card">
+                  <p class="subtle-label">Last six cycle lengths</p>
+                  <div class="pill-row">
+                    <span class="pill">28d</span>
+                    <span class="pill">30d</span>
+                    <span class="pill">27d</span>
+                    <span class="pill">29d</span>
+                    <span class="pill">31d</span>
+                    <span class="pill">29d</span>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Period length strip</p>
+                  <div class="pill-row">
+                    <span class="pill">5d</span>
+                    <span class="pill">5d</span>
+                    <span class="pill">4d</span>
+                    <span class="pill">5d</span>
+                    <span class="pill">6d</span>
+                    <span class="pill">5d</span>
+                  </div>
+                </div>
+                <div class="metric-row">
+                  <div class="metric"><span>Average</span><strong>29 days</strong></div>
+                  <div class="metric"><span>Range</span><strong>27-31 days</strong></div>
+                </div>
+                <div class="detail-card insight-summary">
+                  <p class="subtle-label">Read this trend</p>
+                  <p>This chart only uses recent logged or imported cycles. Predicted future cycles do not affect these metrics.</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel gradient compact stack">
+                <p class="small">SCR/Insights/Detail/SymptomPatterns</p>
+                <h2>Symptom patterns</h2>
+                <p>Grouped from recent symptom logs inside your current insight window.</p>
+                <div class="pill-row">
+                  <span class="legend-pill mint">Pattern depth unlocked</span>
+                  <span class="legend-pill outline">Local analysis</span>
+                </div>
+              </div>
+              <div class="panel stack">
+                <div class="detail-card">
+                  <p class="subtle-label">Phase callouts</p>
+                  <div class="stack">
+                    <div>
+                      <strong>Period phase pattern</strong>
+                      <p>Moderate pain and lower energy show up most often during period days.</p>
+                    </div>
+                    <div class="section-divider"></div>
+                    <div>
+                      <strong>Fertile window pattern</strong>
+                      <p>Egg white discharge and steadier energy cluster around fertile-window days.</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Mood</p>
+                  <div class="pill-row">
+                    <span class="pill">Stable 6</span>
+                    <span class="pill">Low 3</span>
+                    <span class="pill">Happy 2</span>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Pain</p>
+                  <div class="pill-row">
+                    <span class="pill">Moderate 4</span>
+                    <span class="pill">None 3</span>
+                    <span class="pill">Light 2</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel gradient">
+                <p class="small">SCR/Export/Report/Default</p>
+                <h2>Cycle report ready</h2>
+                <p>Local PDF and markdown exports stay on-device until you choose to share them.</p>
+              </div>
+              <div class="panel stack">
+                <div class="pill-row">
+                  <span class="pill">Cycle history</span>
+                  <span class="pill">Symptom trends</span>
+                  <span class="pill">Pattern summary</span>
+                </div>
+                <button class="cta">Share report</button>
+                <button class="cta alt">Export markdown</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <span class="token-chip">06 Settings + 07 Privacy + 08 Export</span>
+            <h2>Control surfaces</h2>
+          </div>
+          <p>Nodes: `SCR/Settings/*`, `SCR/Privacy/*`, `SCR/Export/*`</p>
+        </div>
+        <div class="phone-grid">
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel gradient compact stack">
+                <p class="small">SCR/Settings/Main/Default</p>
+                <h2>Settings</h2>
+                <p>Local-first controls for reminders, privacy, and export.</p>
+                <div class="pill-row">
+                  <span class="legend-pill outline">Stored locally</span>
+                  <span class="legend-pill rose">Notifications blocked</span>
+                </div>
+              </div>
+              <div class="panel stack">
+                <div class="detail-card">
+                  <p class="subtle-label">Notifications are blocked</p>
+                  <p>Period and daily check-in reminders stay local, but Android will not show them until access is restored.</p>
+                  <button class="cta alt">Open notification settings</button>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Notification privacy</p>
+                  <div class="toggle-row">
+                    <div class="toggle-copy">
+                      <strong>Hide notification previews</strong>
+                      <p>Show a generic reminder body until the app is unlocked.</p>
+                    </div>
+                    <div class="toggle on"></div>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Reminder rules</p>
+                  <div class="stack">
+                    <div class="toggle-row">
+                      <div class="toggle-copy">
+                        <strong>Daily check-in</strong>
+                        <p><span class="subtle-label">Daily • 8:00 PM</span><br>Prompt to capture mood, pain, energy, and notes.</p>
+                      </div>
+                      <div class="toggle on"></div>
+                    </div>
+                    <div class="section-divider"></div>
+                    <div class="toggle-row">
+                      <div class="toggle-copy">
+                        <strong>Period preparation</strong>
+                        <p><span class="subtle-label">2 days before • 9:00 AM</span><br>Heads-up before your predicted start date.</p>
+                      </div>
+                      <div class="toggle on"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Privacy lock</p>
+                  <p>Set or update your PIN before sensitive screens open.</p>
+                  <button class="cta alt">Open privacy lock</button>
+                </div>
+                <div class="detail-card">
+                  <p class="subtle-label">Export and share</p>
+                  <p>Create local markdown or PDF reports only when you choose to share them.</p>
+                  <button class="cta alt">Open export</button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="phone">
+            <div class="phone-inner">
+              <div class="panel stack">
+                <p class="small">SCR/Privacy/PinLock/Setup</p>
+                <h2>Protect sensitive screens</h2>
+                <div class="grid grid-3">
+                  <button class="cta alt">1</button><button class="cta alt">2</button><button class="cta alt">3</button>
+                  <button class="cta alt">4</button><button class="cta alt">5</button><button class="cta alt">6</button>
+                </div>
+                <button class="cta">Save PIN</button>
+              </div>
+              <div class="panel stack">
+                <p class="small">SCR/Export/Report/Default</p>
+                <h3>Generate report</h3>
+                <p>Local markdown report for personal review or sharing.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+    <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+  </body>
+</html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CycleCare – Privacy Policy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --clr-bg: #fdf6f0;
+      --clr-surface: #ffffff;
+      --clr-primary: #d4577a;
+      --clr-primary-light: #f5dce4;
+      --clr-text: #2d2d2d;
+      --clr-text-muted: #6b6b6b;
+      --clr-border: #e8ddd5;
+      --clr-accent: #a14b6a;
+      --radius: 16px;
+      --shadow: 0 2px 24px rgba(180, 120, 140, 0.08);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--clr-bg);
+      color: var(--clr-text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ───────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #d4577a 0%, #a14b6a 100%);
+      color: #fff;
+      text-align: center;
+      padding: 56px 24px 48px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      margin-top: 8px;
+      font-size: 0.95rem;
+      opacity: 0.85;
+    }
+
+    /* ── Table of Contents ────────────────── */
+    .toc {
+      max-width: 720px;
+      margin: -28px auto 0;
+      background: var(--clr-surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px 32px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .toc h2 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--clr-text-muted);
+      margin-bottom: 12px;
+    }
+
+    .toc ol {
+      list-style: none;
+      counter-reset: toc-counter;
+      padding: 0;
+    }
+
+    .toc li {
+      counter-increment: toc-counter;
+      margin-bottom: 6px;
+    }
+
+    .toc li::before {
+      content: counter(toc-counter) ".";
+      display: inline-block;
+      width: 24px;
+      color: var(--clr-primary);
+      font-weight: 600;
+    }
+
+    .toc a {
+      color: var(--clr-text);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+
+    .toc a:hover {
+      color: var(--clr-primary);
+    }
+
+    /* ── Main Content ─────────────────────── */
+    main {
+      max-width: 720px;
+      margin: 40px auto 80px;
+      padding: 0 24px;
+    }
+
+    section {
+      background: var(--clr-surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px;
+      margin-bottom: 24px;
+      border: 1px solid var(--clr-border);
+      transition: box-shadow 0.3s;
+    }
+
+    section:hover {
+      box-shadow: 0 4px 32px rgba(180, 120, 140, 0.14);
+    }
+
+    section h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--clr-accent);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    section h2 .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--clr-primary-light);
+      border-radius: 8px;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    section p,
+    section li {
+      font-size: 0.95rem;
+      color: var(--clr-text);
+    }
+
+    section p + p {
+      margin-top: 12px;
+    }
+
+    section ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 12px;
+    }
+
+    section ul li {
+      position: relative;
+      padding-left: 20px;
+      margin-bottom: 8px;
+    }
+
+    section ul li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 10px;
+      width: 8px;
+      height: 8px;
+      background: var(--clr-primary);
+      border-radius: 50%;
+    }
+
+    .highlight-box {
+      background: var(--clr-primary-light);
+      border-left: 4px solid var(--clr-primary);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-top: 16px;
+      font-size: 0.9rem;
+      color: var(--clr-accent);
+    }
+
+    /* ── Footer ───────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      font-size: 0.85rem;
+      color: var(--clr-text-muted);
+      border-top: 1px solid var(--clr-border);
+    }
+
+    footer strong {
+      color: var(--clr-primary);
+    }
+
+    /* ── Responsive ───────────────────────── */
+    @media (max-width: 600px) {
+      header {
+        padding: 40px 20px 36px;
+      }
+
+      header h1 {
+        font-size: 1.5rem;
+      }
+
+      .toc,
+      section {
+        padding: 20px;
+      }
+
+      main {
+        padding: 0 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Privacy Policy</h1>
+    <p>CycleCare — Menstrual Cycle &amp; Wellness Tracker</p>
+  </header>
+
+  <!-- Table of Contents -->
+  <nav class="toc" aria-label="Table of contents">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#data-collection">Information We Collect</a></li>
+      <li><a href="#data-storage">How Your Data Is Stored</a></li>
+      <li><a href="#data-sharing">Data Sharing</a></li>
+      <li><a href="#permissions">App Permissions</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="#children">Children's Privacy</a></li>
+      <li><a href="#disclaimer">Health Disclaimer</a></li>
+      <li><a href="#changes">Changes to This Policy</a></li>
+      <li><a href="#contact">Contact Us</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <!-- 1 ── Overview -->
+    <section id="overview">
+      <h2><span class="icon">📋</span> 1. Overview</h2>
+      <p>
+        CycleCare is a <strong>local-first</strong> menstrual cycle and wellness tracking
+        application for Android. We are committed to protecting your privacy. This policy explains
+        what data the app handles, what stays on your device, and how ad privacy choices work.
+      </p>
+      <p><strong>Effective Date:</strong> 23 March 2026</p>
+    </section>
+
+    <!-- 2 ── Information We Collect -->
+    <section id="data-collection">
+      <h2><span class="icon">📝</span> 2. Information We Collect</h2>
+      <p>
+        CycleCare does <strong>not</strong> collect, transmit, or store your cycle and wellness
+        information on remote servers. All health data you enter — including cycle dates, symptoms,
+        mood, medication, and notes — is stored exclusively on your device.
+      </p>
+      <ul>
+        <li><strong>No account or sign-up required</strong> — the app works immediately after install.</li>
+        <li><strong>No analytics or tracking SDKs</strong> — we do not embed third-party analytics.</li>
+        <li><strong>Ads and consent</strong> — AdMob and Google UMP may process ad consent, device, network, and advertising-related data.</li>
+      </ul>
+    </section>
+
+    <!-- 3 ── How Your Data Is Stored -->
+    <section id="data-storage">
+      <h2><span class="icon">💾</span> 3. How Your Data Is Stored</h2>
+      <p>
+        All health and cycle data is persisted in a <strong>local database</strong> on your device.
+        Data is never uploaded to the cloud unless you explicitly choose to export it.
+      </p>
+      <ul>
+        <li>Data remains on your device and under your control at all times.</li>
+        <li>Uninstalling the app permanently deletes all stored data.</li>
+        <li>Optional data export produces files that are saved to your device's local storage.</li>
+      </ul>
+    </section>
+
+    <!-- 4 ── Data Sharing -->
+    <section id="data-sharing">
+      <h2><span class="icon">🔗</span> 4. Data Sharing</h2>
+      <p>
+        CycleCare does <strong>not</strong> share, sell, or transfer your cycle history, symptoms,
+        notes, profile details, or exported reports to third parties. Google AdMob and Google UMP are
+        used for ads and ad privacy choices, and they may process ad consent, device, network, and
+        advertising-related data under Google's policies.
+      </p>
+    </section>
+
+    <!-- 5 ── App Permissions -->
+    <section id="permissions">
+      <h2><span class="icon">🔑</span> 5. App Permissions</h2>
+      <p>CycleCare requests only the minimum permissions necessary to function:</p>
+      <ul>
+        <li>
+          <strong>Notifications</strong> — Used to send optional cycle and wellness reminders that you
+          configure. Notification content is designed to be discreet; no sensitive health details are
+          shown on the lock screen.
+        </li>
+        <li>
+          <strong>Boot Completed</strong> — Used to reschedule your reminders after a device restart so
+          you never miss a notification you set up.
+        </li>
+      </ul>
+      <div class="highlight-box">
+        CycleCare requests Internet access for ads and ad privacy consent. It does <strong>not</strong>
+        request Camera, Location, Contacts, or other sensitive permissions.
+      </div>
+    </section>
+
+    <!-- 6 ── Security -->
+    <section id="security">
+      <h2><span class="icon">🛡️</span> 6. Security</h2>
+      <p>We take the following measures to protect your data:</p>
+      <ul>
+        <li><strong>PIN Lock</strong> — An optional in-app PIN lock prevents unauthorised access to the app.</li>
+        <li><strong>Hidden Notification Previews</strong> — Sensitive information is hidden from lock-screen notification previews.</li>
+        <li><strong>Local Health Data</strong> — Cycle history, symptoms, notes, profile details, and exports are not sent to the ad SDK.</li>
+      </ul>
+    </section>
+
+    <!-- 7 ── Children's Privacy -->
+    <section id="children">
+      <h2><span class="icon">👶</span> 7. Children's Privacy</h2>
+      <p>
+        CycleCare is not directed at children under 13. We do not knowingly collect personal
+        information from children. Cycle and wellness data is stored locally and is not transmitted
+        to CycleCare servers.
+      </p>
+    </section>
+
+    <!-- 8 ── Health Disclaimer -->
+    <section id="disclaimer">
+      <h2><span class="icon">⚕️</span> 8. Health Disclaimer</h2>
+      <p>
+        CycleCare provides <strong>estimates and trend summaries</strong> for personal wellness
+        tracking only. The app is <strong>not</strong> intended to be used for:
+      </p>
+      <ul>
+        <li>Medical diagnosis or treatment decisions</li>
+        <li>Contraception planning or fertility advice</li>
+        <li>Emergency health guidance</li>
+      </ul>
+      <div class="highlight-box">
+        Always consult a qualified healthcare professional for medical advice. CycleCare is a wellness
+        tool, not a medical device.
+      </div>
+    </section>
+
+    <!-- 9 ── Changes to This Policy -->
+    <section id="changes">
+      <h2><span class="icon">🔄</span> 9. Changes to This Policy</h2>
+      <p>
+        We may update this Privacy Policy from time to time. Any changes will be reflected on this
+        page with an updated effective date. We encourage you to review this policy periodically.
+      </p>
+    </section>
+
+    <!-- 10 ── Contact Us -->
+    <section id="contact">
+      <h2><span class="icon">✉️</span> 10. Contact Us</h2>
+      <p>
+        If you have any questions or concerns about this Privacy Policy, please reach out to us at:
+      </p>
+      <p>
+        <strong>Email:</strong>
+        <a href="mailto:support@cyclecare.app" style="color: var(--clr-primary);">support@cyclecare.app</a>
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 <strong>CycleCare</strong>. All rights reserved.</p>
+  </footer>
+</body>
+</html>

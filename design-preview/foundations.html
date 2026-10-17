@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CycleCare Foundations</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <span class="token-chip">CycleCare Foundations</span>
+        <h1>Wellness foundations for a local-first Android app.</h1>
+        <p>
+          Figma source scaffold for tokens, components, motion direction, and handoff naming. The visual system
+          favors warm editorial surfaces, mulberry brand anchors, coral warmth, and restrained health-state accents.
+        </p>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <span class="token-chip">01 Color Tokens</span>
+            <h2>Core palette</h2>
+          </div>
+          <p>Node set: `CMP/Token/Color/*`</p>
+        </div>
+        <div class="grid grid-4">
+          <div class="card"><div class="swatch" style="background:#f8f3ec"><span>bgCanvas</span></div></div>
+          <div class="card"><div class="swatch" style="background:#fffaf5"><span>bgSurface</span></div></div>
+          <div class="card"><div class="swatch" style="background:#7a3458"><span>brandPrimary</span></div></div>
+          <div class="card"><div class="swatch" style="background:#dc6c57"><span>brandAccent</span></div></div>
+          <div class="card"><div class="swatch" style="background:#6f8d7e"><span>successTone</span></div></div>
+          <div class="card"><div class="swatch" style="background:#211821"><span>textPrimary</span></div></div>
+          <div class="card"><div class="swatch" style="background:#f7ccd6"><span>statePeriod</span></div></div>
+          <div class="card"><div class="swatch" style="background:#d8f5e6"><span>stateFertile</span></div></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <span class="token-chip">02 Type Tokens</span>
+            <h2>Editorial hierarchy</h2>
+          </div>
+          <p>Node set: `CMP/Token/Typography/*`</p>
+        </div>
+        <div class="grid grid-3">
+          <div class="card stack">
+            <h1>Display Medium</h1>
+            <p>Used for hero moments and dashboard cards.</p>
+          </div>
+          <div class="card stack">
+            <h2>Headline Small</h2>
+            <p>Used for section titles and sheets.</p>
+          </div>
+          <div class="card stack">
+            <h3>Title / Label</h3>
+            <p>Used for chips, stat labels, and controls.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <span class="token-chip">03 Spacing-Radius-Elevation</span>
+            <h2>Shape and rhythm</h2>
+          </div>
+          <p>Node set: `CMP/Token/Layout/*`</p>
+        </div>
+        <div class="grid grid-3">
+          <div class="card stack"><h3>Spacing</h3><p>4 / 8 / 12 / 16 / 24 / 32</p></div>
+          <div class="card stack"><h3>Radii</h3><p>12 / 20 / 28 / 44</p></div>
+          <div class="card stack"><h3>Elevation</h3><p>Soft ambient shadow, no hard black stroke.</p></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <span class="token-chip">05 Components</span>
+            <h2>Component inventory</h2>
+          </div>
+          <p>Node set: `CMP/*`</p>
+        </div>
+        <div class="grid grid-3">
+          <div class="card stack">
+            <h3>CMP/Card/CycleSummary/Default</h3>
+            <div class="panel gradient">
+              <h3>Next period in 5 days</h3>
+              <p>Cycle day 17 • High confidence estimate</p>
+            </div>
+          </div>
+          <div class="card stack">
+            <h3>CMP/Control/Segmented/Default</h3>
+            <div class="pill-row">
+              <span class="pill">Stable</span>
+              <span class="pill">Happy</span>
+              <span class="pill">Low</span>
+            </div>
+          </div>
+          <div class="card stack">
+            <h3>CMP/Button/Primary/Enabled</h3>
+            <button class="cta">Start tracking</button>
+            <button class="cta alt">Export report</button>
+          </div>
+          <div class="card stack">
+            <h3>CMP/Calendar/DayCell/Predicted</h3>
+            <div class="calendar">
+              <div class="day period">12</div>
+              <div class="day period">13</div>
+              <div class="day fertile">21</div>
+              <div class="day ovulation">25</div>
+            </div>
+          </div>
+          <div class="card stack">
+            <h3>CMP/Card/Chart/Default</h3>
+            <div class="metric-row">
+              <div class="metric"><span>Avg cycle</span><strong>28d</strong></div>
+              <div class="metric"><span>Avg period</span><strong>5d</strong></div>
+            </div>
+          </div>
+          <div class="card stack">
+            <h3>CMP/Keypad/Pin/Default</h3>
+            <div class="grid grid-3">
+              <button class="cta alt">1</button>
+              <button class="cta alt">2</button>
+              <button class="cta alt">3</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <span class="token-chip">07 Motion</span>
+            <h2>Motion cues</h2>
+          </div>
+          <p>Node set: `CMP/Motion/*`</p>
+        </div>
+        <div class="grid grid-3">
+          <div class="card stack"><h3>Entrance</h3><p>Soft staggered rise for dashboard cards.</p></div>
+          <div class="card stack"><h3>Selection</h3><p>Subtle tint bloom on calendar and chip taps.</p></div>
+          <div class="card stack"><h3>Spotlight</h3><p>Slow gradient sweep on major summary cards only.</p></div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

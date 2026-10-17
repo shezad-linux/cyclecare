@@ -1,0 +1,43 @@
+# ── Gradle / Android build output ──────────────────────────────────
+.gradle/
+.gradle-home/
+build/
+**/build/
+local.properties
+captures/
+*.iml
+.kotlin/
+.externalNativeBuild/
+.cxx/
+*.hprof
+
+# ── IDE ───────────────────────────────────────────────────────────
+.idea/
+
+# ── Signing secrets — NEVER commit ────────────────────────────────
+keystore.properties
+*.jks
+*.keystore
+signing/
+
+# ── Firebase ──────────────────────────────────────────────────────
+# Per-project, environment-specific. Release builds need it locally,
+# but it does not belong in version control.
+google-services.json
+
+# ── Stale IntelliJ "Kotlin output dir" ────────────────────────────
+# core/model/bin, core/domain/bin and core/testing/bin contain 15
+# DUPLICATE copies of real source files. They are not Gradle source
+# sets, so committing them duplicates every file in the tree and
+# corrupts search, indexing and code review.
+**/bin/
+
+# ── One-off maintenance scripts ────────────────────────────────────
+# patch.py / patch2.py were used to patch sources in place during the
+# original build. They are superseded, can contain stale copies of
+# source, and have no place in the tree.
+patch.py
+patch2.py
+
+# ── OS ────────────────────────────────────────────────────────────
+.DS_Store
