@@ -14,6 +14,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -42,6 +43,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -61,6 +63,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.stringResource
+import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -109,13 +113,21 @@ private data class TopLevelDestination(
     val icon: ImageVector,
 )
 
+/**
+ * Four tabs, per spec 15. Settings is deliberately not one of them:
+ * it is a destination reached from the app bar, so the bar carries no
+ * more items than the content it frames. A fifth tab competed with
+ * Today for attention and was the least-revisited screen in the app.
+ */
 private val topLevelDestinations = listOf(
-    TopLevelDestination("home", "Home", Icons.Rounded.Home),
+    TopLevelDestination("home", "Today", Icons.Rounded.Home),
     TopLevelDestination("calendar", "Calendar", Icons.Rounded.DateRange),
-    TopLevelDestination("log", "Track", Icons.Rounded.Edit),
+    TopLevelDestination("log", "Log", Icons.Rounded.Edit),
     TopLevelDestination("insights", "Insights", Icons.Rounded.Favorite),
-    TopLevelDestination("settings", "Settings", Icons.Rounded.Settings),
 )
+
+/** Reachable from the app bar, not a tab. */
+private const val SETTINGS_ROUTE = "settings"
 private val topLevelRoutes = topLevelDestinations.map { it.route }.toSet()
 internal fun navTag(route: String): String = "nav_$route"
 
@@ -430,6 +442,17 @@ private fun MainShell(
 
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing,
+        topBar = {
+            // One shared app bar for the four tabs. Settings used to be
+            // a fifth tab; it now lives here, where a destination that is
+            // visited occasionally belongs. Detail routes keep their own
+            // bars, so this is shown only on top-level routes.
+            if (selectedTopLevelRoute != null) {
+                CycleCareTopBar(
+                    onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
+                )
+            }
+        },
         bottomBar = {
             if (showBottomBar) {
                 CycleCareBottomNavigation(
@@ -494,6 +517,33 @@ private fun MainShell(
                     scope.launch { container.reminderEventsRepository.dismiss(event.id) }
                 },
             )
+        }
+    }
+}
+
+@Composable
+private fun CycleCareTopBar(
+    onOpenSettings: () -> Unit,
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = CycleCareSpace.space4, vertical = CycleCareSpace.space2),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(
+                onClick = onOpenSettings,
+                modifier = Modifier.testTag("app_bar_settings"),
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Settings,
+                    contentDescription = stringResource(R.string.settings_title),
+                )
+            }
         }
     }
 }

@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">CycleCare</string>
+    <string name="settings_title">Settings</string>
+    <string name="nav_today">Today</string>
+    <string name="nav_calendar">Calendar</string>
+    <string name="nav_log">Log</string>
+    <string name="nav_insights">Insights</string>
 </resources>
 
