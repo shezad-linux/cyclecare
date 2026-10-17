@@ -15,6 +15,24 @@ class InsightEngineTest {
     private val engine = InsightEngine()
 
     @Test
+    fun build_ignoresTheDeprecatedStoredCycleLengthColumn() {
+        // Same dates, deliberately contradictory stored lengths. If the
+        // engine still read the column, the average would be 35; the
+        // derived answer is 30.
+        val snapshot = engine.build(
+            cycles = listOf(
+                cycle("c1", "2026-01-01", cycleLength = 50),
+                cycle("c2", "2026-01-31", cycleLength = 51),
+                cycle("c3", "2026-03-02", cycleLength = 52),
+            ),
+            symptoms = emptyList(),
+        )
+
+        assertThat(snapshot.recentCycleLengths).containsExactly(30, 30).inOrder()
+        assertThat(snapshot.averageCycleLength).isEqualTo(30)
+    }
+
+    @Test
     fun build_usesOnlyRecentNonPredictedCyclesForTrendSeries() {
         val snapshot = engine.build(
             cycles = listOf(
@@ -31,7 +49,11 @@ class InsightEngineTest {
             symptoms = emptyList(),
         )
 
-        assertThat(snapshot.recentCycleLengths).containsExactly(27, 28, 29, 30, 31, 32).inOrder()
+        // Gaps between consecutive starts, not the stored cycleLength
+        // column: 2025-09-01, 10-01, 11-01, 12-01, 2026-01-01, 02-01,
+        // 03-01 gives 30, 31, 30, 31, 31, 28. Exactly six values proves
+        // both predicted rows were excluded.
+        assertThat(snapshot.recentCycleLengths).containsExactly(30, 31, 30, 31, 31, 28).inOrder()
         assertThat(snapshot.recentPeriodLengths).hasSize(6)
         assertThat(snapshot.averageCycleLength).isEqualTo(30)
         assertThat(snapshot.hasEnoughCycleData).isTrue()

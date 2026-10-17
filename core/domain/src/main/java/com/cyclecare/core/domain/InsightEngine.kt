@@ -1,6 +1,11 @@
 package com.cyclecare.core.domain
 
 import com.cyclecare.core.model.CycleRecord
+import com.cyclecare.core.domain.prediction.IRREGULAR_MIN_OUTLIERS
+import com.cyclecare.core.domain.prediction.MAD_TO_SIGMA_FACTOR
+import com.cyclecare.core.domain.prediction.extractIntervals
+import com.cyclecare.core.domain.prediction.isOutlier
+import com.cyclecare.core.domain.prediction.observedStartsOf
 import com.cyclecare.core.model.CycleSource
 import com.cyclecare.core.model.DischargeType
 import com.cyclecare.core.model.EnergyLevel
@@ -23,11 +28,36 @@ class InsightEngine {
             .sortedBy { it.startDate }
             .takeLast(HISTORY_LIMIT)
 
-        val recentCycleLengths = historicalCycles.map { it.cycleLength }
+        // Cycle lengths come from consecutive period STARTS via the same
+        // extractor the prediction engine uses. Reading the stored
+        // cycleLength column instead let this screen contradict the
+        // prediction screen on the same day.
+        // N cycles describe N-1 intervals, so the interval series needs
+        // one extra cycle to fill the same window. Sourcing it from the
+        // already-truncated list would silently shorten the trend series
+        // relative to every other figure on the screen.
+        val intervalSource = observedStartsOf(cycles).takeLast(HISTORY_LIMIT + 1)
+        val recentCycleLengths = extractIntervals(intervalSource)
+            .filter { it.usable }
+            .takeLast(HISTORY_LIMIT)
+            .map { it.lengthDays }
         val recentPeriodLengths = historicalCycles.mapNotNull(::periodLength)
         val averageCycleLength = recentCycleLengths.ifEmpty { listOf(DEFAULT_CYCLE_LENGTH) }.average().roundToInt()
         val averagePeriodLength = recentPeriodLengths.ifEmpty { listOf(DEFAULT_PERIOD_LENGTH) }.average().roundToInt()
-        val irregularCycles = recentCycleLengths.any { abs(it - averageCycleLength) >= 6 }
+
+        // Irregularity uses the same sigma-relative rule as the engine,
+        // so a genuinely variable user is not labelled irregular merely
+        // for varying.
+        val centre = recentCycleLengths.average().takeIf { recentCycleLengths.isNotEmpty() }
+        val spread = recentCycleLengths
+            .takeIf { it.isNotEmpty() }
+            ?.let { values ->
+                values.map { abs(it - centre!!) }.average() * MAD_TO_SIGMA_FACTOR
+            }
+            ?: 0.0
+        val irregularCycles = recentCycleLengths.count {
+            isOutlier(abs(it - centre!!).roundToInt(), spread)
+        } >= IRREGULAR_MIN_OUTLIERS
         val minCycleLength = recentCycleLengths.minOrNull() ?: averageCycleLength
         val maxCycleLength = recentCycleLengths.maxOrNull() ?: averageCycleLength
         val relevantSymptoms = relevantSymptomsForWindow(historicalCycles, symptoms)

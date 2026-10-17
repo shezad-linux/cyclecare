@@ -18,7 +18,8 @@ import com.cyclecare.core.data.RoomReminderRepository
 import com.cyclecare.core.data.RoomSymptomRepository
 import com.cyclecare.core.database.CycleCareDatabase
 import com.cyclecare.core.database.ALL_MIGRATIONS
-import com.cyclecare.core.domain.CyclePredictionEngine
+import com.cyclecare.core.domain.prediction.CyclePredictionEngineV2
+import com.cyclecare.core.domain.time.SystemTimeProvider
 import com.cyclecare.core.domain.InsightEngine
 import com.cyclecare.core.domain.ReminderDefaults
 import com.cyclecare.core.domain.ReminderSchedulePlanner
@@ -50,7 +51,17 @@ class CycleCareApplication : Application() {
         val profileRepository = RoomProfileRepository(database, appLogger)
         val cycleRepository = RoomCycleRepository(database, appLogger)
         val symptomRepository = RoomSymptomRepository(database, appLogger)
-        val predictionRepository = LocalPredictionRepository(profileRepository, cycleRepository, CyclePredictionEngine())
+        // One clock for the whole app, injected rather than defaulted.
+        // The v1 engine called LocalDate.now() internally, which made
+        // rollover behaviour untestable and impossible to reason about.
+        val timeProvider = SystemTimeProvider()
+
+        val predictionRepository = LocalPredictionRepository(
+            profileRepository = profileRepository,
+            cycleRepository = cycleRepository,
+            engine = CyclePredictionEngineV2(),
+            timeProvider = timeProvider,
+        )
         val insightRepository = LocalInsightRepository(cycleRepository, symptomRepository, InsightEngine())
         val reminderRepository = RoomReminderRepository(database, appLogger)
         val reminderChannelSettingsRepository = LocalReminderChannelSettingsRepository(applicationContext, appLogger)

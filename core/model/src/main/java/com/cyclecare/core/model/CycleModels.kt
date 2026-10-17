@@ -154,7 +154,49 @@ data class PredictionSnapshot(
     val fertileWindow: DateRange,
     val confidenceLabel: String,
     val daysUntilNextPeriod: Int,
-)
+
+    // ── Added by the v2 engine ─────────────────────────────────────
+    // The v1 snapshot could not express a range, a quality tier or a
+    // phase, which forced the UI to present a single date as if it were
+    // certain. These fields carry that capability through to the UI
+    // without waiting for the full screen rewrite.
+
+    /** Null when history is too thin to support any range at all. */
+    val nextPeriodWindow: DateRange? = null,
+    val quality: PredictionQuality = PredictionQuality.INSUFFICIENT_HISTORY,
+    val phase: PredictionPhase = PredictionPhase.UNKNOWN,
+    val warnings: Set<PredictionWarning> = emptySet(),
+    val overdueDays: Int = 0,
+    val algorithmVersion: String = "",
+) {
+    /**
+     * False when the engine declined to emit a range. Callers must show
+     * an honest empty state and must not derive reminders from the point
+     * estimate alone.
+     */
+    val supportsRange: Boolean
+        get() = nextPeriodWindow != null
+}
+
+/**
+ * Mirror of the domain quality tier, kept in the model module so the UI
+ * does not depend on the prediction package.
+ */
+enum class PredictionQuality { INSUFFICIENT_HISTORY, LOW, MODERATE, HIGH }
+
+/** Mirror of the domain phase, for the same reason. */
+enum class PredictionPhase { MENSTRUAL, FOLLICULAR, OVULATION, LUTEAL, UNKNOWN }
+
+/** Mirror of the domain warnings, for the same reason. */
+enum class PredictionWarning {
+    NO_HISTORY,
+    IMPOSSIBLE_INTERVAL,
+    OUTLIER_EXCLUDED,
+    IRREGULAR_HISTORY,
+    STALE_HISTORY,
+    TREND_DETECTED,
+    USER_ASSUMPTION_USED,
+}
 
 data class ReminderRule(
     val id: String,

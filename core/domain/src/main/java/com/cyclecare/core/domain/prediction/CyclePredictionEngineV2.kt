@@ -161,31 +161,6 @@ class CyclePredictionEngineV2 {
     // ── internals ───────────────────────────────────────────────────
 
     /**
-     * Cycle length comes from consecutive period STARTS.
-     *
-     * A period's own length is a different quantity and must never be
-     * mixed in.
-     */
-    private fun extractIntervals(observed: List<ObservedCycleStart>): List<IntervalEstimate> =
-        observed.zipWithNext { earlier, later ->
-            val length = ChronoUnit.DAYS.between(earlier.startDate, later.startDate).toInt()
-            val plausible = length in MIN_PLAUSIBLE_INTERVAL_DAYS..MAX_PLAUSIBLE_INTERVAL_DAYS
-            IntervalEstimate(
-                fromRecordId = earlier.id,
-                toRecordId = later.id,
-                startDate = earlier.startDate,
-                lengthDays = length,
-                usable = plausible,
-                exclusionReason = if (plausible) {
-                    null
-                } else {
-                    "There is a $length-day gap between ${earlier.startDate} and ${later.startDate}. " +
-                        "Was that a missed period, or a date to correct?"
-                },
-            )
-        }
-
-    /**
      * Recency-weighted trimmed mean.
      *
      * Trimming is skipped below five intervals, where dropping values
