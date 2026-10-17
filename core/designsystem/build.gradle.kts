@@ -43,6 +43,11 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    // Aligns coroutines-test with the version already used elsewhere in
+    // the project. Compose's test artifact requests 1.7.3, which is only
+    // partially cached and cannot be fetched while Maven Central is
+    // unreachable.
+    androidTestImplementation(libs.kotlinx.coroutines.test)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

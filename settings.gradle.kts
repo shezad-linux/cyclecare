@@ -27,6 +27,7 @@ include(
     ":core:data",
     ":core:database",
     ":core:designsystem",
+    ":core:security",
     ":core:testing",
     ":feature:onboarding",
     ":feature:home",
