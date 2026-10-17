@@ -140,6 +140,15 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Install emulator runtime dependencies
+        run: |
+          sudo apt-get update
+          # The runner image does not ship libpulse0, which qemu links
+          # against even with -noaudio. Without this the emulator binary
+          # cannot start at all:
+          #   error while loading shared libraries: libpulse.so.0
+          sudo apt-get install -y libpulse0 libnss3 libxcb1 libxkbcommon-x11-0
+
       - name: Enable KVM for the emulator
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
