@@ -6,12 +6,41 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-val keystorePropertiesFile = rootProject.file("keystore.properties")
+// Release signing material is resolved from environment variables first,
+// then from the gitignored keystore.properties file for local
+// convenience. Nothing here reads a password from a committed file, and
+// a build with no credentials configured simply produces an unsigned
+// release artifact, which is what CI needs.
+//
+// Environment variables:
+//   CYCLECARE_STORE_FILE, CYCLECARE_STORE_PASSWORD,
+//   CYCLECARE_KEY_ALIAS, CYCLECARE_KEY_PASSWORD
 val keystoreProperties = Properties().apply {
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
     if (keystorePropertiesFile.exists()) {
         keystorePropertiesFile.inputStream().use(::load)
     }
 }
+
+val releaseStoreFile: String? =
+    providers.environmentVariable("CYCLECARE_STORE_FILE").orNull
+        ?: keystoreProperties.getProperty("storeFile")
+val releaseStorePassword: String? =
+    providers.environmentVariable("CYCLECARE_STORE_PASSWORD").orNull
+        ?: keystoreProperties.getProperty("storePassword")
+val releaseKeyAlias: String? =
+    providers.environmentVariable("CYCLECARE_KEY_ALIAS").orNull
+        ?: keystoreProperties.getProperty("keyAlias")
+val releaseKeyPassword: String? =
+    providers.environmentVariable("CYCLECARE_KEY_PASSWORD").orNull
+        ?: keystoreProperties.getProperty("keyPassword")
+
+val releaseSigningConfigured = listOf(
+    releaseStoreFile,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+).all { !it.isNullOrBlank() }
 
 android {
     namespace = "com.cyclecare.app"
@@ -44,12 +73,12 @@ android {
     }
 
     signingConfigs {
-        if (keystorePropertiesFile.exists()) {
+        if (releaseSigningConfigured) {
             create("release") {
-                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
-                storePassword = keystoreProperties.getProperty("storePassword")
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
             }
         }
     }
@@ -61,7 +90,7 @@ android {
 
         getByName("release") {
             manifestPlaceholders["adMobApplicationId"] = "ca-app-pub-2324135355814969~9539632647"
-            if (keystorePropertiesFile.exists()) {
+            if (releaseSigningConfigured) {
                 signingConfig = signingConfigs.getByName("release")
             }
 
