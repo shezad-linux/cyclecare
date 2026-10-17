@@ -1,14 +1,16 @@
 package com.cyclecare.app
 
-import android.content.Context
 import android.util.Log
 import com.cyclecare.core.domain.AppLogger
 import com.cyclecare.core.domain.CrashReporter
 import com.cyclecare.core.domain.NoOpCrashReporter
-import com.google.firebase.FirebaseApp
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 
 private const val breadcrumbKey = "breadcrumb"
+
+// Attribute keys matching any of these are replaced before being logged.
+// Note this scrubs by KEY name only. It cannot know that a caller put a
+// symptom value into an innocuously-named key, so callers remain
+// responsible for never passing health content as an attribute value.
 private val sensitiveAttributeTokens = listOf(
     "note",
     "notes",
@@ -18,48 +20,6 @@ private val sensitiveAttributeTokens = listOf(
     "medication",
     "symptom",
 )
-
-class FirebaseBackedCrashReporter private constructor(
-    private val crashlytics: FirebaseCrashlytics,
-) : CrashReporter {
-    override fun setCustomKey(key: String, value: String) {
-        crashlytics.setCustomKey(key, value)
-    }
-
-    override fun logBreadcrumb(name: String, attributes: Map<String, String>) {
-        crashlytics.log(formatDiagnosticLine(name, sanitizeAttributes(attributes)))
-    }
-
-    override fun recordNonFatal(
-        name: String,
-        message: String,
-        throwable: Throwable?,
-        attributes: Map<String, String>,
-    ) {
-        val sanitizedAttributes = sanitizeAttributes(attributes)
-        crashlytics.setCustomKey("event", name)
-        crashlytics.setCustomKey("message", message)
-        sanitizedAttributes.forEach { (key, value) -> crashlytics.setCustomKey(key, value) }
-        crashlytics.log(formatDiagnosticLine(name, sanitizedAttributes))
-        crashlytics.recordException(
-            DiagnosticException(name = name, message = message, cause = throwable),
-        )
-    }
-
-    companion object {
-        fun createOrNull(context: Context): CrashReporter? {
-            val app = runCatching {
-                FirebaseApp.getApps(context).firstOrNull() ?: FirebaseApp.initializeApp(context)
-            }.getOrNull() ?: return null
-            return runCatching {
-                FirebaseCrashlytics.getInstance().apply {
-                    setCrashlyticsCollectionEnabled(true)
-                    setCustomKey("firebase_app", app.name)
-                }
-            }.getOrNull()?.let(::FirebaseBackedCrashReporter)
-        }
-    }
-}
 
 class AndroidAppLogger(
     private val crashReporter: CrashReporter,
@@ -112,8 +72,21 @@ class AndroidAppLogger(
     }
 }
 
-fun createCrashReporter(context: Context): CrashReporter =
-    FirebaseBackedCrashReporter.createOrNull(context) ?: NoOpCrashReporter
+/**
+ * No crash data leaves the device.
+ *
+ * Firebase Crashlytics was removed because the Gradle plugins are applied
+ * conditionally on the presence of app/google-services.json, which is not
+ * in version control — so the dependency shipped Firebase components in
+ * the merged manifest while never initializing them.
+ *
+ * The CrashReporter interface is retained as the seam for a future
+ * opt-in decision. Any replacement must be reviewed against
+ * CycleCare-Redesign-Docs/04-security-and-privacy.md first: a
+ * reproductive-health app should ship the minimum, and diagnostics must
+ * never carry period dates, symptoms, notes, medication or free text.
+ */
+fun createCrashReporter(): CrashReporter = NoOpCrashReporter
 
 private fun sanitizeAttributes(attributes: Map<String, String>): Map<String, String> =
     attributes.mapValues { (key, value) ->
@@ -130,8 +103,3 @@ private fun formatDiagnosticLine(event: String, attributes: Map<String, String>)
     return "$event [$serializedAttributes]"
 }
 
-private class DiagnosticException(
-    name: String,
-    message: String,
-    cause: Throwable?,
-) : RuntimeException("$name: $message", cause)

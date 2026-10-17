@@ -37,7 +37,7 @@ class CycleCareApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        val crashReporter = createCrashReporter(this)
+        val crashReporter = createCrashReporter()
         val appLogger = AndroidAppLogger(crashReporter)
         enableStrictMode(appLogger)
 

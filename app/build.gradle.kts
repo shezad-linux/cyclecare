@@ -6,11 +6,6 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-if (file("google-services.json").exists()) {
-    apply(plugin = "com.google.gms.google-services")
-    apply(plugin = "com.google.firebase.crashlytics")
-}
-
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties().apply {
     if (keystorePropertiesFile.exists()) {
@@ -125,8 +120,6 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.biometric)
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.crashlytics)
 
     // AdMob
     implementation("com.google.android.gms:play-services-ads:25.2.0")
