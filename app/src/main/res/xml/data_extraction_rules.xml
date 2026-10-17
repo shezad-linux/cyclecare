@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  CycleCare backup rules (Android 12+ / API 31+).
+
+  Design intent
+  ===
+  CycleCare is local-first and does not use Google's cloud backup
+  service. Health data is not uploaded to a cloud service, which is what
+  lets the app state that cycle data stays on the user's device.
+
+  Device-to-device transfer IS enabled, because losing a user's cycle
+  history when they replace their phone is a catastrophic product
+  failure, and there is no server to fall back on.
+
+  See CycleCare-Redesign-Docs/02-database-and-sync.md §9.9.
+-->
+<data-extraction-rules>
+
+    <!--
+      Cloud backup: excluded in full.
+
+      The app makes no use of Google's cloud backup, so nothing should
+      be written to Drive. This is what supports the privacy claim in
+      the store listing and privacy policy.
+    -->
+    <cloud-backup>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+        <exclude domain="device_root" path="." />
+        <exclude domain="device_file" path="." />
+        <exclude domain="device_database" path="." />
+        <exclude domain="device_sharedpref" path="." />
+    </cloud-backup>
+
+    <!--
+      Device-to-device transfer: the health database travels.
+
+      A section that declares <include> rules excludes everything else
+      implicitly, so only the two paths that must travel are listed.
+
+      Included:
+        database/     cyclecare.db — cycle records, symptom logs,
+                      reminder rules and reminder events
+        file/datastore/  user preferences, including the app-lock PIN
+                      verifier, so the app stays protected after transfer
+
+      Implicitly excluded:
+        file/exports/  the user already controls these files; copying
+                      them into a backup duplicates data outside the
+                      destination they chose
+        sharedpref/    includes cyclecare_notification_permissions.xml,
+                      which records OS notification permission grants.
+                      Those are specific to the old device — restoring
+                      them would leave the app believing it can post
+                      notifications the new OS has not granted.
+    -->
+    <device-transfer>
+        <include domain="database" path="." />
+        <include domain="file" path="datastore/" />
+    </device-transfer>
+
+</data-extraction-rules>
