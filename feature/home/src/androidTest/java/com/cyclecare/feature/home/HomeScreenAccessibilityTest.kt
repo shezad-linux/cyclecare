@@ -14,6 +14,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.unit.dp
 import com.cyclecare.core.designsystem.CycleCareTheme
@@ -49,17 +50,38 @@ class HomeScreenAccessibilityTest {
 
         assertTrue("expected interactive targets to be found", clickables.isNotEmpty())
 
-        val tooSmall = clickables.filter { node ->
-            val bounds = node.boundsInRoot
-            bounds.height < minTouchPx || bounds.width < minTouchPx
-        }.map { node ->
-            val b = node.boundsInRoot
-            val text = node.config.getOrElse(SemanticsProperties.Text) { emptyList() }
-                .joinToString("|") { it.text }
+        // A node touching the viewport edge reports CLIPPED bounds, so a
+        // perfectly sized control near the edge measures as if it were
+        // 29dp tall. Measuring it once without scrolling produced a
+        // phantom violation that sent us looking for a layout bug that
+        // did not exist. Scroll each candidate into view and re-measure
+        // before calling it a violation.
+        val tooSmall = clickables.mapNotNull { node ->
+            val before = node.boundsInRoot
+            if (before.height >= minTouchPx && before.width >= minTouchPx) {
+                return@mapNotNull null
+            }
+
             val tag = node.config.getOrElse(SemanticsProperties.TestTag) { "" }
-            val wDp = with(density) { b.width.toDp() }
-            val hDp = with(density) { b.height.toDp() }
-            "tag=$tag ${wDp.value} x ${hDp.value}dp text=$text"
+            var measured = before
+            if (tag.isNotEmpty()) {
+                runCatching {
+                    composeRule.onNodeWithTag(tag, useUnmergedTree = true).performScrollTo()
+                }
+                composeRule.waitForIdle()
+                measured = runCatching {
+                    composeRule.onNodeWithTag(tag, useUnmergedTree = true)
+                        .fetchSemanticsNode().boundsInRoot
+                }.getOrDefault(before)
+            }
+
+            if (measured.height < minTouchPx || measured.width < minTouchPx) {
+                val wDp = with(density) { measured.width.toDp() }.value
+                val hDp = with(density) { measured.height.toDp() }.value
+                "tag=$tag $wDp dp x $hDp dp"
+            } else {
+                null
+            }
         }
 
         assertTrue(
