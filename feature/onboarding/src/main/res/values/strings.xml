@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="age_band">Age band</string>
+    <string name="back">Back</string>
+    <string name="baseline">Baseline</string>
+    <string name="baseline_setup">Baseline setup</string>
+    <string name="baseline_setup_subtitle">These details create the first prediction and keep the rest of the app useful from day one.</string>
+    <string name="cancel">Cancel</string>
+    <string name="choose_your_primary_goal">Choose your primary goal</string>
+    <string name="confirm">Confirm</string>
+    <string name="continue_button">Continue</string>
+    <string name="cycle_length">cycle length</string>
+    <string name="decrease_x">Decrease %1$s</string>
+    <string name="editable_later">Editable later</string>
+    <string name="hide_sensitive_details_in_notifications">Hide sensitive details in notifications</string>
+    <string name="increase_x">Increase %1$s</string>
+    <string name="last_period_start">Last period start</string>
+    <string name="local_profile">Local profile</string>
+    <string name="notifications_wont_show_words_like_period_or_fertile">Notifications won\'t show words like \'period\' or \'fertile\'.</string>
+    <string name="period_length">period length</string>
+    <string name="preferences">Preferences</string>
+    <string name="preferences_subtitle">Choose the support you want active when your dashboard opens.</string>
+    <string name="private_cycle_tracking">Private cycle tracking</string>
+    <string name="private_tracking_subtitle">Set your baseline once and keep everything on-device by default.</string>
+    <string name="saving">Saving...</string>
+    <string name="smart_reminders">Smart reminders</string>
+    <string name="smart_reminders_description">Get period prep, daily check-ins, and conception-aware fertile-window or ovulation reminders. Late-period reminders can be enabled later in Settings.</string>
+    <string name="start_tracking_my_cycle">Start tracking my cycle</string>
+    <string name="step_x_of_2">Step %1$d of 2</string>
+    <string name="tap_to_choose_a_date">Tap to choose a date</string>
+    <string name="this_helps_predict_your_next_cycle_accurately">This helps predict your next cycle accurately.</string>
+    <string name="typical_cycle_length">Typical cycle length</string>
+    <string name="typical_period_length">Typical period length</string>
+    <string name="used_to_tailor_cycle_predictions_and_insights">Used to tailor cycle predictions and insights.</string>
+    <string name="wellness_goal">Wellness goal</string>
+    <string name="your_data_stays_private_on_your_device">Your data stays private on your device.</string>
+</resources>

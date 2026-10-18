@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.setProgress
@@ -325,16 +326,16 @@ internal fun OnboardingScreen(
             OnboardingProgressHeader(currentStep = currentStep, progress = progress)
 
             GradientHeaderCard(
-                title = "Private cycle tracking",
-                subtitle = "Set your baseline once and keep everything on-device by default.",
+                title = stringResource(R.string.private_cycle_tracking),
+                subtitle = stringResource(R.string.private_tracking_subtitle),
                 contentPadding = PaddingValues(horizontal = CycleCareSpace.space20, vertical = CycleCareSpace.space18),
                 supportingContent = {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                         verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                     ) {
-                        OnboardingPill(text = "Local profile")
-                        OnboardingPill(text = "Editable later")
+                        OnboardingPill(text = stringResource(R.string.local_profile))
+                        OnboardingPill(text = stringResource(R.string.editable_later))
                     }
                 },
             )
@@ -377,12 +378,12 @@ internal fun OnboardingScreen(
                         } ?: onDismissDatePicker()
                     },
                 ) {
-                    Text("Confirm")
+                    Text(stringResource(R.string.confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismissDatePicker) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             },
         ) {
@@ -403,13 +404,13 @@ private fun OnboardingBaselineStep(
     onOpenDatePicker: () -> Unit,
 ) {
     OnboardingPanel(
-        title = "Baseline setup",
-        subtitle = "These details create the first prediction and keep the rest of the app useful from day one.",
+        title = stringResource(R.string.baseline_setup),
+        subtitle = stringResource(R.string.baseline_setup_subtitle),
     ) {
         OnboardingInputBlock(
             icon = Icons.Rounded.PersonOutline,
-            title = "Age band",
-            description = "Used to tailor cycle predictions and insights.",
+            title = stringResource(R.string.age_band),
+            description = stringResource(R.string.used_to_tailor_cycle_predictions_and_insights),
         ) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
@@ -431,7 +432,7 @@ private fun OnboardingBaselineStep(
 
         OnboardingInputBlock(
             icon = Icons.Rounded.Sync,
-            title = "Typical cycle length",
+            title = stringResource(R.string.typical_cycle_length),
         ) {
             StepperField(
                 valueLabel = uiState.cycleLengthLabel,
@@ -439,7 +440,7 @@ private fun OnboardingBaselineStep(
                 onIncrement = { onCycleLengthIncrement(1) },
                 decrementEnabled = uiState.cycleLength > 20,
                 incrementEnabled = uiState.cycleLength < 45,
-                contentDescriptionBase = "cycle length",
+                contentDescriptionBase = stringResource(R.string.cycle_length),
                 valueTestTag = OnboardingTags.CYCLE_LENGTH_VALUE,
                 modifier = Modifier
                     .testTag(OnboardingTags.CYCLE_LENGTH_SLIDER)
@@ -465,7 +466,7 @@ private fun OnboardingBaselineStep(
 
         OnboardingInputBlock(
             icon = Icons.Rounded.FavoriteBorder,
-            title = "Typical period length",
+            title = stringResource(R.string.typical_period_length),
         ) {
             StepperField(
                 valueLabel = uiState.periodLengthLabel,
@@ -473,6 +474,7 @@ private fun OnboardingBaselineStep(
                 onIncrement = { onPeriodLengthChanged(1) },
                 decrementEnabled = uiState.periodLength > 2,
                 incrementEnabled = uiState.periodLength < 10,
+                contentDescriptionBase = stringResource(R.string.period_length),
             )
             uiState.periodLengthError?.let { error ->
                 InlineError(text = error)
@@ -483,8 +485,8 @@ private fun OnboardingBaselineStep(
 
         OnboardingInputBlock(
             icon = Icons.Rounded.CalendarMonth,
-            title = "Last period start",
-            description = "This helps predict your next cycle accurately.",
+            title = stringResource(R.string.last_period_start),
+            description = stringResource(R.string.this_helps_predict_your_next_cycle_accurately),
         ) {
             DateSelectionField(
                 label = uiState.lastPeriodStartLabel,
@@ -505,14 +507,14 @@ private fun OnboardingPreferencesStep(
     onPrivacyChanged: (Boolean) -> Unit,
 ) {
     OnboardingPanel(
-        title = "Preferences",
-        subtitle = "Choose the support you want active when your dashboard opens.",
+        title = stringResource(R.string.preferences),
+        subtitle = stringResource(R.string.preferences_subtitle),
         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
     ) {
         OnboardingInputBlock(
             icon = Icons.Rounded.FavoriteBorder,
-            title = "Wellness goal",
-            description = "Choose your primary goal",
+            title = stringResource(R.string.wellness_goal),
+            description = stringResource(R.string.choose_your_primary_goal),
         ) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
@@ -535,15 +537,15 @@ private fun OnboardingPreferencesStep(
 
         ToggleSettingRow(
             icon = Icons.Rounded.NotificationsNone,
-            title = "Smart reminders",
-            description = "Get period prep, daily check-ins, and conception-aware fertile-window or ovulation reminders. Late-period reminders can be enabled later in Settings.",
+            title = stringResource(R.string.smart_reminders),
+            description = stringResource(R.string.smart_reminders_description),
             checked = uiState.remindersEnabled,
             onCheckedChange = onRemindersChanged,
         )
         ToggleSettingRow(
             icon = Icons.Rounded.Lock,
-            title = "Hide sensitive details in notifications",
-            description = "Notifications won't show words like 'period' or 'fertile'.",
+            title = stringResource(R.string.hide_sensitive_details_in_notifications),
+            description = stringResource(R.string.notifications_wont_show_words_like_period_or_fertile),
             checked = uiState.privacyModeEnabled,
             onCheckedChange = onPrivacyChanged,
         )
@@ -562,12 +564,12 @@ private fun OnboardingProgressHeader(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "Step $currentStep of 2",
+                stringResource(R.string.step_x_of_2, currentStep),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
             Text(
-                if (currentStep == 1) "Baseline" else "Preferences",
+                stringResource(if (currentStep == 1) R.string.baseline else R.string.preferences),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -684,7 +686,7 @@ private fun DateSelectionField(
             ) {
                 Text(label, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Tap to choose a date",
+                    stringResource(R.string.tap_to_choose_a_date),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -739,7 +741,7 @@ private fun OnboardingBottomBar(
                         .testTag(OnboardingTags.START_TRACKING_BUTTON),
                     enabled = enabled,
                 ) {
-                    Text("Continue")
+                    Text(stringResource(R.string.continue_button))
                 }
             } else {
                 FinalStepActions(
@@ -775,11 +777,15 @@ private fun FinalStepActions(
                             .testTag(OnboardingTags.START_TRACKING_BUTTON),
                         enabled = enabled,
                     ) {
-                        Text(if (saving) "Saving..." else "Start tracking my cycle")
+                        Text(
+                            stringResource(
+                                if (saving) R.string.saving else R.string.start_tracking_my_cycle,
+                            ),
+                        )
                     }
                 }
                 OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
-                    Text("Back")
+                    Text(stringResource(R.string.back))
                 }
             }
         } else {
@@ -791,7 +797,7 @@ private fun FinalStepActions(
                     onClick = onBack,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("Back")
+                    Text(stringResource(R.string.back))
                 }
                 Column(
                     modifier = Modifier
@@ -805,7 +811,11 @@ private fun FinalStepActions(
                             .testTag(OnboardingTags.START_TRACKING_BUTTON),
                         enabled = enabled,
                     ) {
-                        Text(if (saving) "Saving..." else "Start tracking my cycle")
+                        Text(
+                            stringResource(
+                                if (saving) R.string.saving else R.string.start_tracking_my_cycle,
+                            ),
+                        )
                     }
                 }
             }
@@ -827,7 +837,7 @@ private fun FooterPrivacyNote() {
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            "Your data stays private on your device.",
+            stringResource(R.string.your_data_stays_private_on_your_device),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -870,7 +880,7 @@ private fun StepperField(
     onIncrement: () -> Unit,
     decrementEnabled: Boolean,
     incrementEnabled: Boolean,
-    contentDescriptionBase: String = "period length",
+    contentDescriptionBase: String,
     valueTestTag: String? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -888,7 +898,10 @@ private fun StepperField(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             FilledTonalIconButton(onClick = onDecrement, enabled = decrementEnabled) {
-                Icon(Icons.Rounded.Remove, contentDescription = "Decrease $contentDescriptionBase")
+                Icon(
+                    Icons.Rounded.Remove,
+                    contentDescription = stringResource(R.string.decrease_x, contentDescriptionBase),
+                )
             }
             Text(
                 valueLabel,
@@ -896,7 +909,10 @@ private fun StepperField(
                 modifier = if (valueTestTag != null) Modifier.testTag(valueTestTag) else Modifier
             )
             FilledTonalIconButton(onClick = onIncrement, enabled = incrementEnabled) {
-                Icon(Icons.Rounded.Add, contentDescription = "Increase $contentDescriptionBase")
+                Icon(
+                    Icons.Rounded.Add,
+                    contentDescription = stringResource(R.string.increase_x, contentDescriptionBase),
+                )
             }
         }
     }
