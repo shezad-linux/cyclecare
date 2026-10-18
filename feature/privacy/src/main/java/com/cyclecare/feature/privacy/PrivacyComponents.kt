@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -75,7 +76,7 @@ fun PrivacyPinEntryCard(
     onSecondaryAction: (() -> Unit)? = null,
     tertiaryActionLabel: String? = null,
     onTertiaryAction: (() -> Unit)? = null,
-    eyebrow: String = "PIN access",
+    eyebrow: String = stringResource(R.string.pin_access),
 ) {
     DashboardSectionCard(
         modifier = modifier.testTag(PrivacyUiTags.PIN_CARD),
@@ -138,16 +139,22 @@ fun PrivacyPinIndicatorRow(
     pinLength: Int,
     modifier: Modifier = Modifier,
 ) {
+    // The semantics {} blocks are not composable scopes, so both
+    // descriptions are resolved above them.
+    val entryDescription = stringResource(R.string.pin_entry_of_4_digits_entered, pinLength)
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
-                contentDescription = "PIN entry, $pinLength of 4 digits entered"
+                contentDescription = entryDescription
             },
         horizontalArrangement = Arrangement.Center,
     ) {
         repeat(4) { index ->
             val filled = index < pinLength
+            val enteredDescription = stringResource(R.string.digit_entered, index + 1)
+            val emptyDescription = stringResource(R.string.digit_empty, index + 1)
             Box(
                 modifier = Modifier
                     .padding(horizontal = CycleCareSpace.space8)
@@ -157,8 +164,7 @@ fun PrivacyPinIndicatorRow(
                     // its own state so the PIN length is readable without
                     // sight.
                     .semantics {
-                        contentDescription = "Digit ${index + 1}, " +
-                            if (filled) "entered" else "empty"
+                        contentDescription = if (filled) enteredDescription else emptyDescription
                     }
                     .size(16.dp)
                     .clip(CircleShape)
@@ -228,7 +234,7 @@ fun PrivacyPinKeypad(
                 onDigitPressed(0)
             }
             PrivacyKeypadButton(
-                label = "Delete",
+                label = stringResource(R.string.delete),
                 modifier = Modifier
                     .weight(1f)
                     .testTag(PrivacyUiTags.DELETE_KEY),
