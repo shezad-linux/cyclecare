@@ -2,6 +2,7 @@
 
 package com.cyclecare.app
 
+import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -126,9 +127,9 @@ private fun ReminderCenterScreen(
 ) {
     val totalEvents = uiState.groups.sumOf { it.items.size }
     LazyColumn(
-        modifier = Modifier.padding(16.dp),
-        contentPadding = PaddingValues(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.padding(CycleCareSpace.space16),
+        contentPadding = PaddingValues(bottom = CycleCareSpace.space24),
+        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
     ) {
         item {
             GradientHeaderCard(
@@ -149,8 +150,8 @@ private fun ReminderCenterScreen(
         }
         item {
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 MetricCard(
@@ -191,7 +192,7 @@ private fun ReminderCenterScreen(
                         eyebrow = "Delivered reminders",
                     ) {
                         Column(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                         ) {
                             group.items.forEachIndexed { index, item ->
                                 ReminderEventCard(
@@ -224,12 +225,12 @@ private fun ReminderEventCard(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(end = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+                .padding(end = CycleCareSpace.space16),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4),
         ) {
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
             ) {
                 Text(event.title, style = MaterialTheme.typography.titleMedium)
                 if (event.readAtEpochMillis == null) {
@@ -261,7 +262,7 @@ private fun ReminderEventCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
             FilledTonalButton(onClick = onOpen) {
                 Text("Open")
             }

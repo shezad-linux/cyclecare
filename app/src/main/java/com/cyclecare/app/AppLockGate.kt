@@ -1,4 +1,5 @@
 package com.cyclecare.app
+import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -148,16 +149,16 @@ internal fun AppLockGate(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(bottom = 24.dp),
+                .padding(CycleCareSpace.space16),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
+            contentPadding = PaddingValues(bottom = CycleCareSpace.space24),
         ) {
             item {
                 GradientHeaderCard(
                     title = "CycleCare locked",
                     subtitle = "Reopen local cycle data with your PIN or biometrics. Secure device auth is also available for PIN recovery.",
                     supportingContent = {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
                             DashboardPill(text = if (canUseBiometric) "Biometric ready" else "PIN required")
                             DashboardPill(
                                 text = capability.summaryLabel(),

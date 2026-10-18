@@ -5,6 +5,7 @@
 
 package com.cyclecare.feature.home
 
+import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -936,10 +937,10 @@ internal fun HomeScreen(
 
     LazyColumn(
         modifier = Modifier
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = CycleCareSpace.space16)
             .testTag(HomeTags.DASHBOARD),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
+        contentPadding = PaddingValues(top = CycleCareSpace.space16, bottom = CycleCareSpace.space28),
     ) {
         item {
             HomeDashboardHeader(
@@ -952,14 +953,14 @@ internal fun HomeScreen(
                 title = heroTitle,
                 subtitle = heroSubtitle,
                 modifier = Modifier.testTag(HomeTags.HERO_CARD),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp),
+                contentPadding = PaddingValues(horizontal = CycleCareSpace.space20, vertical = CycleCareSpace.space18),
                 gradientColors = heroGradientColors,
                 stackTrailingOnCompact = true,
                 supportingContent = {
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                     ) {
                         MetricPill(
                             text = "Day ${uiState.cycleDay ?: "--"} of ${uiState.cycleLength}",
@@ -1074,7 +1075,7 @@ internal fun HomeScreen(
                 title = "Quick actions",
                 modifier = Modifier.testTag(HomeTags.TODAY_ACTIONS),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                     uiState.quickActions.forEach { action ->
                         QuickActionButton(
                             modifier = Modifier.testTag(HomeTags.actionTag(action.type)),
@@ -1129,10 +1130,10 @@ private fun HomeDashboardHeader(
         val useStackedHeader = maxWidth < 360.dp || LocalDensity.current.fontScale > 1.15f
 
         if (useStackedHeader) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space6)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -1158,12 +1159,12 @@ private fun HomeDashboardHeader(
         } else {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4),
                 ) {
                     Text(
                         text = "Dashboard",
@@ -1222,7 +1223,7 @@ private fun HomeMetricGrid(
         if (useStackedMetrics) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             ) {
                 MetricCard(
                     label = "Avg cycle",
@@ -1252,11 +1253,11 @@ private fun HomeMetricGrid(
         } else {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
                     MetricCard(
                         label = "Avg cycle",
@@ -1273,7 +1274,7 @@ private fun HomeMetricGrid(
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
                     MetricCard(
                         label = "Variability",
@@ -1305,13 +1306,13 @@ private fun FertilityTeaserCard(
         subtitle = fertileWindowText,
         modifier = Modifier.testTag(HomeTags.FERTILE_CARD),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4)) {
                     Text(
                         "Ovulation estimate",
                         style = MaterialTheme.typography.labelMedium,
@@ -1351,10 +1352,10 @@ private fun ReminderTeaserCard(
         subtitle = teaser.detail,
         modifier = Modifier.testTag(HomeTags.REMINDER_CARD),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
             ) {
                 if (unreadCount > 0) {
                     DashboardPill(
@@ -1395,7 +1396,7 @@ private fun InsightTeaserCard(
         subtitle = teaser.detail,
         modifier = Modifier.testTag(HomeTags.INSIGHTS_CARD),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
             if (teaser.trendPoints.isNotEmpty()) {
                 HomeMiniTrendStrip(points = teaser.trendPoints)
             }
@@ -1419,13 +1420,13 @@ private fun HomeMiniTrendStrip(
 ) {
     val maxValue = points.maxOfOrNull { it.value }?.coerceAtLeast(1) ?: 1
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
+        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
     ) {
         points.takeLast(6).forEach { point ->
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space6),
                 modifier = Modifier.width(42.dp),
             ) {
                 Box(
@@ -1438,7 +1439,7 @@ private fun HomeMiniTrendStrip(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(4.dp)
+                            .padding(CycleCareSpace.space4)
                             .clip(RoundedCornerShape(10.dp))
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.78f)),
                     )
@@ -1463,9 +1464,9 @@ private fun HomeDetailShell(
     content: @Composable () -> Unit,
 ) {
     LazyColumn(
-        modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(bottom = 24.dp),
+        modifier = modifier.padding(CycleCareSpace.space16),
+        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
+        contentPadding = PaddingValues(bottom = CycleCareSpace.space24),
     ) {
         item {
             TextButton(onClick = onBack) {
@@ -1509,14 +1510,14 @@ internal fun HomeCycleStatusScreen(
             )
         },
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16)) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
                     MetricCard(
                         label = "Avg cycle",
@@ -1532,7 +1533,7 @@ internal fun HomeCycleStatusScreen(
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
                     MetricCard(
                         label = "Variability",
@@ -1553,7 +1554,7 @@ internal fun HomeCycleStatusScreen(
                 subtitle = uiState.latestCycleSummary,
                 eyebrow = uiState.cycleModeLabel,
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                     LinearProgressIndicator(
                         progress = { progress },
                         modifier = Modifier
@@ -1576,7 +1577,7 @@ internal fun HomeCycleStatusScreen(
                 eyebrow = "Interpretation",
                 accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10)) {
                     DashboardKeyValueRow(
                         label = "Fertile window",
                         value = uiState.fertileWindowText,
@@ -1626,12 +1627,12 @@ private fun CycleStatusHeroCard(
                         heroGradientColors,
                     ),
                 )
-                .padding(20.dp)
+                .padding(CycleCareSpace.space20)
 
             if (useStackedLayout) {
                 Column(
                     modifier = containerModifier,
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
                 ) {
                     CycleStatusHeroText(
                         uiState = uiState,
@@ -1648,12 +1649,12 @@ private fun CycleStatusHeroCard(
             } else {
                 Row(
                     modifier = containerModifier,
-                    horizontalArrangement = Arrangement.spacedBy(18.dp),
+                    horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space18),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space14),
                     ) {
                         CycleStatusHeroText(
                             uiState = uiState,
@@ -1676,7 +1677,7 @@ private fun CycleStatusHeroText(
     uiState: HomeUiState,
     progress: Float,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space14)) {
         Text(
             "Cycle detail",
             style = MaterialTheme.typography.labelLarge,
@@ -1693,8 +1694,8 @@ private fun CycleStatusHeroText(
             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
         )
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
         ) {
             MetricPill(
                 text = uiState.cycleModeLabel,
@@ -1707,7 +1708,7 @@ private fun CycleStatusHeroText(
                 )
             }
         }
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
             Text(
                 "Cycle progress",
                 style = MaterialTheme.typography.labelLarge,
@@ -1746,10 +1747,10 @@ internal fun HomeFertilityDetailScreen(
         modifier = Modifier.testTag(HomeTags.FERTILITY_DETAIL_SCREEN),
         onBack = onBack,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             ) {
                 MetricCard(
                     label = "Fertile window",
@@ -1769,7 +1770,7 @@ internal fun HomeFertilityDetailScreen(
                 subtitle = uiState.cycleSourceSummary,
                 eyebrow = "From your cycle history",
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10)) {
                     Text(
                         "Fertility timing is estimated from your saved baseline and recent logged cycle history. It should be read as guidance, not a medical measurement.",
                         style = MaterialTheme.typography.bodyMedium,
@@ -1804,7 +1805,7 @@ private fun QuickActionButton(
     FilledTonalButton(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 18.dp),
+        contentPadding = PaddingValues(horizontal = CycleCareSpace.space16, vertical = CycleCareSpace.space18),
     ) {
         Icon(
             imageVector = action.icon(),
@@ -1813,7 +1814,7 @@ private fun QuickActionButton(
         Spacer(modifier = Modifier.width(12.dp))
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space2),
         ) {
             Text(action.label, style = MaterialTheme.typography.titleMedium)
             Text(action.description, style = MaterialTheme.typography.bodySmall)
@@ -1838,8 +1839,8 @@ private fun EditCycleSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(horizontal = CycleCareSpace.space24, vertical = CycleCareSpace.space8),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
         ) {
             Text(
                 text = if (editor.editingId == null) "Edit cycle" else "Edit current cycle",
@@ -1858,8 +1859,8 @@ private fun EditCycleSheet(
                     ),
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(CycleCareSpace.space16),
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                     ) {
                         Text("Period started today", style = MaterialTheme.typography.titleMedium)
                         Text(

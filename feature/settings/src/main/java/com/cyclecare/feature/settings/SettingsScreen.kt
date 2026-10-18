@@ -2,6 +2,7 @@
 
 package com.cyclecare.feature.settings
 
+import com.cyclecare.core.designsystem.token.CycleCareSpace
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -368,17 +369,17 @@ private fun SettingsScreen(
 ) {
     LazyColumn(
         modifier = Modifier
-            .padding(16.dp)
+            .padding(CycleCareSpace.space16)
             .testTag(SettingsTags.LIST),
-        contentPadding = PaddingValues(bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(bottom = CycleCareSpace.space16),
+        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
     ) {
         item {
             GradientHeaderCard(
                 title = "Settings",
                 subtitle = "Local-first controls for reminders, privacy, and export.",
                 supportingContent = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
                         SettingsBadge(text = "Stored locally")
                         SettingsBadge(
                             text = if (notificationsCanPost) "Notifications on" else "Notifications blocked",
@@ -436,7 +437,7 @@ private fun SettingsScreen(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
             ) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
                     Text("Reminders", style = MaterialTheme.typography.titleLarge)
                     Text(
@@ -460,7 +461,7 @@ private fun SettingsScreen(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
             ) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
                     Text("Alert channels", style = MaterialTheme.typography.titleLarge)
                     Text(
@@ -499,7 +500,7 @@ private fun SettingsScreen(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
             ) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
                     Text("Notification privacy", style = MaterialTheme.typography.titleLarge)
                     Text(
@@ -522,7 +523,7 @@ private fun SettingsScreen(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
             ) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
                     Text("Reminder rules", style = MaterialTheme.typography.titleLarge)
                     Text(
@@ -602,7 +603,7 @@ private fun SettingsMetricGrid(
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val stackMetrics = maxWidth < 430.dp || LocalDensity.current.fontScale > 1.2f
         if (stackMetrics) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 SettingsMetricCard(
                     label = "Reminders",
                     value = if (remindersEnabled) "On" else "Off",
@@ -620,8 +621,8 @@ private fun SettingsMetricGrid(
                 )
             }
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                     SettingsMetricCard(
                         label = "Reminders",
                         value = if (remindersEnabled) "On" else "Off",
@@ -672,7 +673,7 @@ private fun SectionCard(
         accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.46f),
         eyebrow = "Notification access",
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
             action()
         }
     }
@@ -692,7 +693,7 @@ private fun ActionCard(
         accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f),
         eyebrow = "Action",
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
             FilledTonalButton(onClick = onAction, modifier = actionModifier.fillMaxWidth()) {
                 Text(actionLabel)
             }
@@ -713,8 +714,8 @@ private fun ReminderRuleCard(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(end = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+                .padding(end = CycleCareSpace.space16),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4),
         ) {
             Text(item.title, style = MaterialTheme.typography.titleMedium)
             Text(
@@ -747,7 +748,7 @@ private fun ReminderChannelCard(
     onSelectSoundPreset: (ReminderSoundPreset) -> Unit,
     onPreviewSound: () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
         SettingSwitchRow(
             title = item.title,
             detail = item.detail,
@@ -767,7 +768,7 @@ private fun ReminderChannelCard(
             onCheckedChange = onToggleVibrationEnabled,
         )
         Text("Sound preset", style = MaterialTheme.typography.titleSmall)
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
             ReminderSoundPreset.entries.forEach { preset ->
                 val selected = preset == item.settings.soundPreset
                 if (selected) {
@@ -814,8 +815,8 @@ private fun SettingSwitchRow(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(end = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+                .padding(end = CycleCareSpace.space16),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4),
         ) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             Text(

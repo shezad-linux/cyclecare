@@ -159,6 +159,14 @@ object CycleCareSpace {
     /** Vertical gap between sections. */
     val sectionGap: Dp = space24
 
+    // Half-steps used by the existing screens. Added so those call sites
+    // can be expressed in tokens rather than raw literals.
+    val space6: Dp = 6.dp
+    val space10: Dp = 10.dp
+    val space14: Dp = 14.dp
+    val space18: Dp = 18.dp
+    val space28: Dp = 28.dp
+
     /** Minimum touch target, per Android accessibility guidance. */
     val minTouchTarget: Dp = 48.dp
 

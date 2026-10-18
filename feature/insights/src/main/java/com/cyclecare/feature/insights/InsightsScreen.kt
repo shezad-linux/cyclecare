@@ -2,6 +2,7 @@
 
 package com.cyclecare.feature.insights
 
+import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -303,9 +304,9 @@ internal fun InsightsOverviewScreen(
 ) {
     LazyColumn(
         modifier = Modifier
-            .padding(16.dp)
+            .padding(CycleCareSpace.space16)
             .testTag(InsightsTags.OverviewScreen),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
     ) {
         item {
             GradientHeaderCard(
@@ -313,8 +314,8 @@ internal fun InsightsOverviewScreen(
                 subtitle = uiState.variabilityDetail,
                 supportingContent = {
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                     ) {
                         InsightBadge(text = uiState.variabilityLabel, emphasized = true)
                         if (uiState.cyclesLoggedCount > 0) {
@@ -330,11 +331,11 @@ internal fun InsightsOverviewScreen(
         }
         item {
             ElevatedInsightCard {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                     Text("Cycle variability", style = MaterialTheme.typography.titleLarge)
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                     ) {
                         InsightBadge(
                             text = uiState.variabilityText,
@@ -355,7 +356,7 @@ internal fun InsightsOverviewScreen(
         if (uiState.hasEnoughCycleData) {
             item {
                 ElevatedInsightCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space14)) {
                         Text("Recent cycle trends", style = MaterialTheme.typography.titleLarge)
                         MiniBarChart(
                             points = uiState.cycleTrendBars,
@@ -381,7 +382,7 @@ internal fun InsightsOverviewScreen(
         } else if (uiState.cyclesLoggedCount > 0) {
             item {
                 ElevatedInsightCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                         Text("Trend charts are still building", style = MaterialTheme.typography.titleLarge)
                         InsightProgressBadge(
                             current = uiState.cyclesLoggedCount,
@@ -405,7 +406,7 @@ internal fun InsightsOverviewScreen(
         if (uiState.hasEnoughSymptomData) {
             item {
                 ElevatedInsightCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space14)) {
                         Text("Symptom patterns", style = MaterialTheme.typography.titleLarge)
                         uiState.phaseHighlights.take(2).forEach { item ->
                             PhaseHighlightCard(item = item)
@@ -437,7 +438,7 @@ internal fun InsightsOverviewScreen(
         } else {
             item {
                 ElevatedInsightCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                         Text("Symptom clustering needs more check-ins", style = MaterialTheme.typography.titleLarge)
                         InsightProgressBadge(
                             current = uiState.daysLoggedThisCycle,
@@ -463,7 +464,7 @@ internal fun InsightsOverviewScreen(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
             ) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
                 ) {
                     Text(uiState.narrativeTitle, style = MaterialTheme.typography.titleLarge)
                     Text(
@@ -489,9 +490,9 @@ internal fun CycleTrendsScreen(
 ) {
     LazyColumn(
         modifier = Modifier
-            .padding(16.dp)
+            .padding(CycleCareSpace.space16)
             .testTag(InsightsTags.CycleTrendsScreen),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
     ) {
         item {
             TextButton(
@@ -507,8 +508,8 @@ internal fun CycleTrendsScreen(
                 subtitle = uiState.cycleWindowLabel,
                 supportingContent = {
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                     ) {
                         InsightBadge(text = uiState.variabilityLabel, emphasized = true)
                         InsightBadge(text = "Based on logged cycles")
@@ -518,7 +519,7 @@ internal fun CycleTrendsScreen(
         }
         item {
             ElevatedInsightCard {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space14)) {
                     Text("Last six cycle lengths", style = MaterialTheme.typography.titleLarge)
                     if (uiState.hasEnoughCycleData) {
                         MiniBarChart(
@@ -538,7 +539,7 @@ internal fun CycleTrendsScreen(
         }
         item {
             ElevatedInsightCard {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space14)) {
                     Text("Period length strip", style = MaterialTheme.typography.titleLarge)
                     if (uiState.hasEnoughCycleData) {
                         PeriodLengthStrip(items = uiState.periodTrendItems)
@@ -554,8 +555,8 @@ internal fun CycleTrendsScreen(
         }
         item {
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             ) {
                 MetricCard(
                     label = "Average",
@@ -573,7 +574,7 @@ internal fun CycleTrendsScreen(
         }
         item {
             ElevatedInsightCard {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10)) {
                     Text("Read this trend", style = MaterialTheme.typography.titleLarge)
                     Text(
                         uiState.cycleTrendSummary,
@@ -598,9 +599,9 @@ internal fun SymptomPatternsScreen(
 ) {
     LazyColumn(
         modifier = Modifier
-            .padding(16.dp)
+            .padding(CycleCareSpace.space16)
             .testTag(InsightsTags.SymptomPatternsScreen),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
     ) {
         item {
             TextButton(
@@ -616,8 +617,8 @@ internal fun SymptomPatternsScreen(
                 subtitle = "Grouped from recent symptom logs inside your current insight window.",
                 supportingContent = {
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                     ) {
                         InsightBadge(
                             text = if (uiState.hasEnoughSymptomData) "Pattern depth unlocked" else "More logging needed",
@@ -630,7 +631,7 @@ internal fun SymptomPatternsScreen(
         }
         item {
             ElevatedInsightCard {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                     Text("Pattern summary", style = MaterialTheme.typography.titleLarge)
                     Text(
                         uiState.symptomSummary,
@@ -653,7 +654,7 @@ internal fun SymptomPatternsScreen(
             if (uiState.phaseHighlights.isNotEmpty()) {
                 item {
                     ElevatedInsightCard {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                             Text("Phase callouts", style = MaterialTheme.typography.titleLarge)
                             uiState.phaseHighlights.forEach { item ->
                                 PhaseHighlightCard(item = item)
@@ -665,7 +666,7 @@ internal fun SymptomPatternsScreen(
             items(uiState.symptomSections.size) { index ->
                 val section = uiState.symptomSections[index]
                 ElevatedInsightCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                         Text(section.title, style = MaterialTheme.typography.titleLarge)
                         Text(
                             section.highlight,
@@ -690,7 +691,7 @@ private fun InsightsMetricGrid(uiState: InsightsUiState) {
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val stackMetrics = maxWidth < 420.dp || LocalDensity.current.fontScale > 1.2f
         if (stackMetrics) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 InsightMetricCard(
                     label = "Avg cycle",
                     value = uiState.averageCycleText,
@@ -703,7 +704,7 @@ private fun InsightsMetricGrid(uiState: InsightsUiState) {
                 )
             }
         } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 InsightMetricCard(
                     label = "Avg cycle",
                     value = uiState.averageCycleText,
@@ -744,7 +745,7 @@ private fun ElevatedInsightCard(
         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             content = content,
         )
     }
@@ -760,7 +761,7 @@ private fun MiniBarChart(
     val maxValue = points.maxOfOrNull { it.value } ?: 1
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
         verticalAlignment = Alignment.Bottom,
     ) {
         points.forEach { point ->
@@ -772,7 +773,7 @@ private fun MiniBarChart(
                     .semantics {
                         contentDescription = "${point.label} ${point.valueLabel}"
                     },
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
@@ -805,8 +806,8 @@ private fun MiniBarChart(
 @Composable
 private fun PeriodLengthStrip(items: List<InsightStripItemUi>) {
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
+        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
     ) {
         items.forEach { item ->
             Surface(
@@ -815,7 +816,7 @@ private fun PeriodLengthStrip(items: List<InsightStripItemUi>) {
             ) {
                 Text(
                     text = "${item.label} ${item.valueLabel}",
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = CycleCareSpace.space12, vertical = CycleCareSpace.space8),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
@@ -831,8 +832,8 @@ private fun PhaseHighlightCard(item: InsightPhaseHighlightUi) {
         shape = MaterialTheme.shapes.large,
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(CycleCareSpace.space14),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
         ) {
             InsightBadge(text = item.badgeLabel, emphasized = true)
             Text(item.title, style = MaterialTheme.typography.titleMedium)
@@ -850,7 +851,7 @@ private fun PatternHighlightLine(
     title: String,
     detail: String,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4)) {
         Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(detail, style = MaterialTheme.typography.bodyLarge)
     }
@@ -858,7 +859,7 @@ private fun PatternHighlightLine(
 
 @Composable
 private fun BreakdownRow(item: InsightBreakdownItemUi) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -883,7 +884,7 @@ private fun InsightProgressBadge(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
     ) {
         LinearProgressIndicator(
             progress = { (current.toFloat() / total.toFloat()).coerceIn(0f, 1f) },
@@ -916,7 +917,7 @@ private fun InsightBadge(
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = CycleCareSpace.space12, vertical = CycleCareSpace.space8),
             style = MaterialTheme.typography.labelLarge,
             color = if (emphasized) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.SemiBold,
@@ -934,8 +935,8 @@ private fun InsightEmptyState(
         shape = MaterialTheme.shapes.large,
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(CycleCareSpace.space14),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
         ) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             Text(

@@ -2,6 +2,7 @@
 
 package com.cyclecare.feature.logging
 
+import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.animation.animateContentSize
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.Arrangement
@@ -634,8 +635,8 @@ internal fun LoggingScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .testTag(LoggingTags.LIST),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = CycleCareSpace.space16, vertical = CycleCareSpace.space14),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
         ) {
             item {
                 LoggingHeroCard(
@@ -654,8 +655,8 @@ internal fun LoggingScreen(
                     accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.44f),
                 ) {
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
                     ) {
                         NotTrackedChip(
                             selected = uiState.mood == null,
@@ -679,8 +680,8 @@ internal fun LoggingScreen(
                     accent = MaterialTheme.colorScheme.surface,
                 ) {
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
                     ) {
                         NotTrackedChip(
                             selected = uiState.painLevel == null,
@@ -703,8 +704,8 @@ internal fun LoggingScreen(
                     accent = MaterialTheme.colorScheme.surface,
                 ) {
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
                     ) {
                         NotTrackedChip(
                             selected = uiState.energyLevel == null,
@@ -727,8 +728,8 @@ internal fun LoggingScreen(
                     accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.76f),
                 ) {
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
                     ) {
                         NotTrackedChip(
                             selected = uiState.dischargeType == null,
@@ -776,7 +777,7 @@ private fun LoggingHeroCard(
         },
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
         ) {
             LoggingHeroText(uiState = uiState)
             if (uiState.cyclePhaseLabel.isNotBlank()) {
@@ -810,7 +811,7 @@ private fun LoggingHeroCard(
                     )
                     TextButton(
                         onClick = onApplyYesterdayPattern,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        contentPadding = PaddingValues(horizontal = CycleCareSpace.space12, vertical = CycleCareSpace.space6)
                     ) {
                         Text(
                             text = "Same as yesterday ✓",
@@ -858,7 +859,7 @@ private fun LoggingHeroText(
     val isActivePeriod = uiState.heroMode == PeriodHeroMode.Active
     val accentColor = if (isActivePeriod) PeriodActiveAccentColor() else MaterialTheme.colorScheme.primary
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -867,8 +868,8 @@ private fun LoggingHeroText(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                    .padding(end = CycleCareSpace.space12),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4),
             ) {
                 Text(
                     text = loggingHeroEyebrow(uiState),
@@ -897,9 +898,9 @@ private fun LoggingHeroText(
                     shape = RoundedCornerShape(14.dp),
                 ) {
                     Column(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        modifier = Modifier.padding(horizontal = CycleCareSpace.space14, vertical = CycleCareSpace.space10),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space2),
                     ) {
                         Text(
                             text = "${uiState.completedSections}/${uiState.totalSections}",
@@ -916,7 +917,7 @@ private fun LoggingHeroText(
                 }
             }
         }
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space6)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -940,8 +941,8 @@ private fun LoggingHeroText(
             )
         }
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
         ) {
             uiState.cycleProgressLabel?.let { label ->
                 MetricPill(text = label)
@@ -983,7 +984,7 @@ private fun SelectionSectionCard(
         helperText = helperText,
         accent = accent,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
             content()
         }
     }
@@ -1002,7 +1003,7 @@ private fun DetailsCard(
         accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.74f),
         modifier = Modifier.animateContentSize(),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1122,7 +1123,7 @@ private fun SelectionChip(
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+            modifier = Modifier.padding(horizontal = CycleCareSpace.space14, vertical = 9.dp),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold
         )

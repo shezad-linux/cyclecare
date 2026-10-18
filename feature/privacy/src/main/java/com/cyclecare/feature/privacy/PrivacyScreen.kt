@@ -1,5 +1,6 @@
 package com.cyclecare.feature.privacy
 
+import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -316,10 +317,10 @@ private fun PrivacyScreen(
 
     LazyColumn(
         modifier = Modifier
-            .padding(16.dp)
+            .padding(CycleCareSpace.space16)
             .testTag(PrivacyUiTags.SCREEN),
-        contentPadding = PaddingValues(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(bottom = CycleCareSpace.space24),
+        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
     ) {
         item {
             GradientHeaderCard(
@@ -330,7 +331,7 @@ private fun PrivacyScreen(
                     entryContent.subtitle
                 },
                 supportingContent = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
                         DashboardPill(text = if (uiState.appLockEnabled) "App lock on" else "App lock off")
                         DashboardPill(
                             text = uiState.secureAuthCapability.summaryLabel(),
@@ -394,7 +395,7 @@ private fun PrivacyScreen(
                         },
                         eyebrow = "PIN access",
                     ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                             DashboardKeyValueRow(
                                 label = "Unlock method",
                                 value = if (uiState.biometricEnabled) "PIN and biometric" else "PIN only",
@@ -563,8 +564,8 @@ private fun SettingSwitchRow(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(end = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+                .padding(end = CycleCareSpace.space16),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4),
         ) {
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text(

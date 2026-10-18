@@ -337,7 +337,7 @@ private fun NotificationPermissionRequiredGate(
             modifier = Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(24.dp),
+                .padding(CycleCareSpace.space24),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -350,18 +350,18 @@ private fun NotificationPermissionRequiredGate(
                 text = "Notifications are required for reminders",
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(top = 16.dp),
+                modifier = Modifier.padding(top = CycleCareSpace.space16),
             )
             Text(
                 text = "Daily check-ins and cycle reminders need notification access before you can continue.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp),
+                modifier = Modifier.padding(top = CycleCareSpace.space8),
             )
             Button(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 24.dp)
+                    .padding(top = CycleCareSpace.space24)
                     .testTag(NotificationPermissionTags.REQUIRED_ACTION),
                 onClick = onResolveNotificationAccess,
             ) {

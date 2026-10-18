@@ -1,5 +1,6 @@
 package com.cyclecare.feature.privacy
 
+import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -83,7 +84,7 @@ fun PrivacyPinEntryCard(
         eyebrow = eyebrow,
         accent = MaterialTheme.colorScheme.surface,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space14)) {
             PrivacyPinIndicatorRow(pinLength = pinLength)
             PrivacyPinKeypad(
                 onDigitPressed = onDigitPressed,
@@ -149,7 +150,7 @@ fun PrivacyPinIndicatorRow(
             val filled = index < pinLength
             Box(
                 modifier = Modifier
-                    .padding(horizontal = 8.dp)
+                    .padding(horizontal = CycleCareSpace.space8)
                     .testTag("${PrivacyUiTags.PIN_DOT_PREFIX}$index")
                     // Filled and empty dots differ only by colour, which
                     // is not conveyed to a screen reader. Each dot states
@@ -190,7 +191,7 @@ fun PrivacyPinKeypad(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
     ) {
         listOf(
             listOf(1, 2, 3),
@@ -199,7 +200,7 @@ fun PrivacyPinKeypad(
         ).forEach { digits ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             ) {
                 digits.forEach { digit ->
                     PrivacyKeypadButton(
@@ -215,7 +216,7 @@ fun PrivacyPinKeypad(
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
         ) {
             Box(modifier = Modifier.weight(1f))
             PrivacyKeypadButton(

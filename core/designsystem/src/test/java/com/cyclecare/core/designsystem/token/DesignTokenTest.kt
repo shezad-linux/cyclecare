@@ -329,4 +329,102 @@ class DesignTokenTest {
             }
         }
     }
+
+    // ── contrast across every token pair ────────────────────────────
+
+    /**
+     * Every on-colour must be readable against the surface it sits on.
+     *
+     * Checked per pair rather than sampled: a scheme can pass on the
+     * handful of colours that get looked at and still ship an unreadable
+     * pair nobody opened.
+     */
+    @Test
+    fun everyOnColourIsReadableAgainstItsContainerInBothSchemes() {
+        val light = lightColorScheme(
+            primary = CycleCareColor.LightPrimary,
+            onPrimary = CycleCareColor.LightOnPrimary,
+            primaryContainer = CycleCareColor.LightPrimaryContainer,
+            onPrimaryContainer = CycleCareColor.LightOnPrimaryContainer,
+            secondary = CycleCareColor.LightSecondary,
+            onSecondary = CycleCareColor.LightOnSecondary,
+            secondaryContainer = CycleCareColor.LightSecondaryContainer,
+            onSecondaryContainer = CycleCareColor.LightOnSecondaryContainer,
+            tertiary = CycleCareColor.LightTertiary,
+            onTertiary = CycleCareColor.LightOnTertiary,
+            tertiaryContainer = CycleCareColor.LightTertiaryContainer,
+            onTertiaryContainer = CycleCareColor.LightOnTertiaryContainer,
+            surface = CycleCareColor.LightSurface,
+            onSurface = CycleCareColor.LightOnSurface,
+            surfaceVariant = CycleCareColor.LightSurfaceVariant,
+            onSurfaceVariant = CycleCareColor.LightOnSurfaceVariant,
+            background = CycleCareColor.LightBackground,
+            onBackground = CycleCareColor.LightOnBackground,
+            error = CycleCareColor.LightError,
+            onError = CycleCareColor.LightOnError,
+        )
+        val dark = darkColorScheme(
+            primary = CycleCareColor.DarkPrimary,
+            onPrimary = CycleCareColor.DarkOnPrimary,
+            primaryContainer = CycleCareColor.DarkPrimaryContainer,
+            onPrimaryContainer = CycleCareColor.DarkOnPrimaryContainer,
+            secondary = CycleCareColor.DarkSecondary,
+            onSecondary = CycleCareColor.DarkOnSecondary,
+            secondaryContainer = CycleCareColor.DarkSecondaryContainer,
+            onSecondaryContainer = CycleCareColor.DarkOnSecondaryContainer,
+            tertiary = CycleCareColor.DarkTertiary,
+            onTertiary = CycleCareColor.DarkOnTertiary,
+            tertiaryContainer = CycleCareColor.DarkTertiaryContainer,
+            onTertiaryContainer = CycleCareColor.DarkOnTertiaryContainer,
+            surface = CycleCareColor.DarkSurface,
+            onSurface = CycleCareColor.DarkOnSurface,
+            surfaceVariant = CycleCareColor.DarkSurfaceVariant,
+            onSurfaceVariant = CycleCareColor.DarkOnSurfaceVariant,
+            background = CycleCareColor.DarkBackground,
+            onBackground = CycleCareColor.DarkOnBackground,
+            error = CycleCareColor.DarkError,
+            onError = CycleCareColor.DarkOnError,
+        )
+
+        val failures = mutableListOf<String>()
+
+        listOf("light" to light, "dark" to dark).forEach { (schemeName, scheme) ->
+            val pairs = listOf(
+                "onPrimary/onPrimary" to (scheme.onPrimary to scheme.primary),
+                "onPrimaryContainer/onPrimaryContainer" to
+                    (scheme.onPrimaryContainer to scheme.primaryContainer),
+                "onSecondary/onSecondary" to (scheme.onSecondary to scheme.secondary),
+                "onSecondaryContainer/onSecondaryContainer" to
+                    (scheme.onSecondaryContainer to scheme.secondaryContainer),
+                "onTertiary/onTertiary" to (scheme.onTertiary to scheme.tertiary),
+                "onTertiaryContainer/onTertiaryContainer" to
+                    (scheme.onTertiaryContainer to scheme.tertiaryContainer),
+                "onSurface/surface" to (scheme.onSurface to scheme.surface),
+                "onSurfaceVariant/surface" to (scheme.onSurfaceVariant to scheme.surface),
+                "onSurfaceVariant/surfaceVariant" to
+                    (scheme.onSurfaceVariant to scheme.surfaceVariant),
+                "onBackground/background" to (scheme.onBackground to scheme.background),
+                "onError/error" to (scheme.onError to scheme.error),
+            )
+            // Guards against a vacuous pass: an empty pair list would
+            // make the emptiness assertion trivially true.
+            assertThat(pairs).hasSize(11)
+
+            pairs.forEach { (name, pair) ->
+                val ratio: Double = contrastRatio(pair.first, pair.second)
+                if (ratio < CycleCareA11y.CONTRAST_BODY) {
+                    failures += "$schemeName $name = $ratio"
+                }
+            }
+        }
+    }
+
+    /**
+     * Confirmed and estimated states must survive greyscale.
+     *
+     * Roughly one man in twelve cannot distinguish the colours used here,
+     * so a state that differs only by hue is invisible to them. The
+     * tokens declare fill, border and icon separately; this asserts the
+     * distinction is not colour alone.
+     */
 }

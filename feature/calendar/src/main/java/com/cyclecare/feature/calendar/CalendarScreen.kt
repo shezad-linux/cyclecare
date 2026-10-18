@@ -5,6 +5,7 @@
 
 package com.cyclecare.feature.calendar
 
+import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -790,19 +791,19 @@ internal fun CalendarScreen(
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
-            .padding(16.dp)
+            .padding(CycleCareSpace.space16)
             // Tagged so tests can reach the selected-day panel, which
             // sits below the grid and is off-screen at rest.
             .testTag(CalendarTags.SCROLL),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
     ) {
         GradientHeaderCard(
             title = "Calendar",
             subtitle = "Review logged periods, fertile windows, and upcoming estimates.",
             supportingContent = {
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
+                    verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                 ) {
                     uiState.legendItems.forEach { item ->
                         LegendChip(item = item)
@@ -815,7 +816,7 @@ internal fun CalendarScreen(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -861,7 +862,7 @@ internal fun CalendarScreen(
                     // silently did nothing.
                     val gridRowCount = ((days.size + 6) / 7).coerceIn(1, 6)
 
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(daySpacing),
@@ -905,7 +906,7 @@ internal fun CalendarScreen(
             containerColor = selectedDayPanelColor(uiState.selectedDaySummary.type),
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             ) {
                 Text(
                     "Selected day",
@@ -915,8 +916,8 @@ internal fun CalendarScreen(
                 )
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
+                    verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                 ) {
                     Text(uiState.selectedDaySummary.dateLabel, style = MaterialTheme.typography.titleLarge)
                     StatusPill(summary = uiState.selectedDaySummary)
@@ -955,7 +956,7 @@ internal fun CalendarScreen(
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
             Text("Recent cycle history", style = MaterialTheme.typography.titleLarge)
             Text(
                 "Edit previous entries without leaving the calendar.",
@@ -987,8 +988,8 @@ internal fun CalendarScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .padding(horizontal = CycleCareSpace.space24, vertical = CycleCareSpace.space8),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
             ) {
                 Text(
                     if (uiState.editor.editingId == null) "Log period" else "Edit period",
@@ -1146,7 +1147,7 @@ private fun CalendarDayCell(
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = 4.dp)
+                        .padding(bottom = CycleCareSpace.space4)
                         .size(5.dp)
                         .background(MaterialTheme.colorScheme.secondary, CircleShape),
                 )
@@ -1164,8 +1165,8 @@ private fun LegendChip(item: CalendarLegendItem) {
         border = BorderStroke(0.75.dp, accent.copy(alpha = 0.5f)),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.padding(horizontal = CycleCareSpace.space10, vertical = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space6),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
@@ -1191,8 +1192,8 @@ private fun StatusPill(summary: SelectedDaySummary) {
         border = BorderStroke(1.dp, accent.copy(alpha = 0.7f)),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(horizontal = CycleCareSpace.space12, vertical = CycleCareSpace.space8),
+            horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -1228,7 +1229,7 @@ private fun HistoryCard(
         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
         ) {
             Text(item.dateRangeLabel, style = MaterialTheme.typography.titleMedium)
             Text(

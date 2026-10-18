@@ -1,5 +1,6 @@
 package com.cyclecare.app
 
+import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -53,15 +54,15 @@ fun ReminderBannerHost(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = CycleCareSpace.space16, vertical = CycleCareSpace.space12),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp,
                 shadowElevation = 6.dp,
                 shape = MaterialTheme.shapes.extraLarge,
             ) {
                 Column(
-                    modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.padding(CycleCareSpace.space18),
+                    verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
                 ) {
                     Text(
                         reminder.title,
@@ -73,7 +74,7 @@ fun ReminderBannerHost(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                         FilledTonalButton(onClick = { onOpen(reminder) }) {
                             Text("Open")
                         }

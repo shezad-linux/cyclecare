@@ -1,5 +1,7 @@
 package com.cyclecare.app
 
+import com.cyclecare.core.designsystem.token.CycleCareRadius
+import com.cyclecare.core.designsystem.token.CycleCareSpace
 import android.content.Context
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -24,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -231,6 +234,9 @@ private fun createNativeAdView(context: Context): NativeAdView {
 
     fun Int.dp(): Int = (this * density).toInt()
 
+    /** Converts a design token to a native pixel value. */
+    fun Dp.dp(): Int = (value * density).toInt()
+
     val adView = NativeAdView(context).apply {
         layoutParams = ViewGroup.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -238,14 +244,16 @@ private fun createNativeAdView(context: Context): NativeAdView {
         )
         background = GradientDrawable().apply {
             setColor(surfaceColor)
-            cornerRadius = 28.dp().toFloat()
+            // Ads must use the same radius tokens as the host app, or
+            // they read as third-party insertions rather than part of it.
+            cornerRadius = CycleCareRadius.xl.dp().toFloat()
         }
         clipToPadding = false
     }
 
     val container = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
-        setPadding(18.dp(), 18.dp(), 18.dp(), 18.dp())
+        setPadding(CycleCareSpace.space16.dp(), CycleCareSpace.space16.dp(), CycleCareSpace.space16.dp(), CycleCareSpace.space16.dp())
         layoutParams = ViewGroup.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -268,9 +276,9 @@ private fun createNativeAdView(context: Context): NativeAdView {
         textSize = 12f
         background = GradientDrawable().apply {
             setColor(surfaceVariantColor)
-            cornerRadius = 14.dp().toFloat()
+            cornerRadius = CycleCareRadius.md.dp().toFloat()
         }
-        setPadding(10.dp(), 4.dp(), 10.dp(), 4.dp())
+        setPadding(CycleCareSpace.space8.dp(), CycleCareSpace.space4.dp(), CycleCareSpace.space8.dp(), CycleCareSpace.space4.dp())
     }
 
     val icon = ImageView(context).apply {

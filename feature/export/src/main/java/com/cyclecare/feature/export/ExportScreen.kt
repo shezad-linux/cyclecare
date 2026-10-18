@@ -2,6 +2,7 @@
 
 package com.cyclecare.feature.export
 
+import com.cyclecare.core.designsystem.token.CycleCareSpace
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -112,16 +113,16 @@ private fun ExportScreen(
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(CycleCareSpace.space16),
+        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
     ) {
         GradientHeaderCard(
             title = "Export report",
             subtitle = uiState.statusMessage,
         )
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             modifier = Modifier.fillMaxWidth(),
         ) {
             MetricCard(
@@ -148,7 +149,7 @@ private fun ExportScreen(
             subtitle = "Create either a markdown or PDF export without sending health data to a remote service.",
             eyebrow = "Formats",
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 Button(
                     onClick = onCreateMarkdownReport,
                     modifier = Modifier.fillMaxWidth(),
@@ -172,7 +173,7 @@ private fun ExportScreen(
                 eyebrow = artifact.format.name,
                 accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                     OutlinedButton(onClick = { onOpenArtifact(artifact) }, modifier = Modifier.fillMaxWidth()) {
                         Text("Open latest export")
                     }

@@ -5,6 +5,7 @@
 
 package com.cyclecare.feature.onboarding
 
+import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -318,19 +319,19 @@ internal fun OnboardingScreen(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(horizontal = CycleCareSpace.space16, vertical = CycleCareSpace.space20),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
         ) {
             OnboardingProgressHeader(currentStep = currentStep, progress = progress)
 
             GradientHeaderCard(
                 title = "Private cycle tracking",
                 subtitle = "Set your baseline once and keep everything on-device by default.",
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp),
+                contentPadding = PaddingValues(horizontal = CycleCareSpace.space20, vertical = CycleCareSpace.space18),
                 supportingContent = {
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                     ) {
                         OnboardingPill(text = "Local profile")
                         OnboardingPill(text = "Editable later")
@@ -411,8 +412,8 @@ private fun OnboardingBaselineStep(
             description = "Used to tailor cycle predictions and insights.",
         ) {
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
             ) {
                 AgeBand.entries.forEach { ageBand ->
                     FilterChip(
@@ -514,8 +515,8 @@ private fun OnboardingPreferencesStep(
             description = "Choose your primary goal",
         ) {
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
             ) {
                 TrackingGoal.entries.forEach { goal ->
                     FilterChip(
@@ -554,7 +555,7 @@ private fun OnboardingProgressHeader(
     currentStep: Int,
     progress: Float,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -588,7 +589,7 @@ private fun OnboardingPill(text: String) {
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+            modifier = Modifier.padding(horizontal = CycleCareSpace.space12, vertical = 7.dp),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onPrimary,
         )
@@ -608,10 +609,10 @@ private fun OnboardingPanel(
         shape = RoundedCornerShape(22.dp),
     ) {
         Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(CycleCareSpace.space18),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4)) {
                 Text(title, style = MaterialTheme.typography.titleLarge)
                 Text(
                     subtitle,
@@ -631,7 +632,7 @@ private fun OnboardingInputBlock(
     description: String? = null,
     content: @Composable () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10)) {
         SectionHeading(icon = icon, title = title)
         description?.let { text ->
             Text(
@@ -673,13 +674,13 @@ private fun DateSelectionField(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(CycleCareSpace.space16),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4),
             ) {
                 Text(label, style = MaterialTheme.typography.titleMedium)
                 Text(
@@ -705,7 +706,7 @@ private fun GoalSummary(text: String) {
     ) {
         Text(
             text,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = CycleCareSpace.space14, vertical = CycleCareSpace.space12),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary,
         )
@@ -727,8 +728,8 @@ private fun OnboardingBottomBar(
         shadowElevation = 3.dp,
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(horizontal = CycleCareSpace.space16, vertical = CycleCareSpace.space12),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
         ) {
             if (currentStep == 1) {
                 Button(
@@ -763,7 +764,7 @@ private fun FinalStepActions(
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val stackActions = maxWidth < 360.dp || LocalDensity.current.fontScale > 1.2f
         if (stackActions) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10)) {
                 Column(
                     modifier = Modifier.testTag("onboarding_final_step"),
                 ) {
@@ -784,7 +785,7 @@ private fun FinalStepActions(
         } else {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             ) {
                 OutlinedButton(
                     onClick = onBack,
@@ -816,7 +817,7 @@ private fun FinalStepActions(
 private fun FooterPrivacyNote() {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -849,7 +850,7 @@ private fun SectionHeading(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -882,7 +883,7 @@ private fun StepperField(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = CycleCareSpace.space14, vertical = CycleCareSpace.space12),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -916,8 +917,8 @@ private fun ToggleSettingRow(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
     ) {
         Row(
-            modifier = Modifier.padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(CycleCareSpace.space14),
+            horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             verticalAlignment = Alignment.Top,
         ) {
             Icon(
@@ -940,7 +941,7 @@ private fun ToggleSettingRow(
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
-                modifier = Modifier.padding(top = 2.dp),
+                modifier = Modifier.padding(top = CycleCareSpace.space2),
             )
         }
     }
