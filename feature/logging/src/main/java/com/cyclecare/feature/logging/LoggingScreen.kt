@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -650,8 +651,8 @@ internal fun LoggingScreen(
             }
             item {
                 SelectionSectionCard(
-                    title = "Mood",
-                    helperText = "Pick the closest overall feeling.",
+                    title = stringResource(R.string.mood),
+                    helperText = stringResource(R.string.pick_the_closest_overall_feeling),
                     accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.44f),
                 ) {
                     FlowRow(
@@ -675,8 +676,8 @@ internal fun LoggingScreen(
             }
             item {
                 SelectionSectionCard(
-                    title = "Pain",
-                    helperText = uiState.painLevel?.helperText() ?: "Not tracked",
+                    title = stringResource(R.string.pain),
+                    helperText = uiState.painLevel?.helperText() ?: stringResource(R.string.not_tracked),
                     accent = MaterialTheme.colorScheme.surface,
                 ) {
                     FlowRow(
@@ -699,8 +700,8 @@ internal fun LoggingScreen(
             }
             item {
                 SelectionSectionCard(
-                    title = "Energy",
-                    helperText = "How steady does your energy feel right now?",
+                    title = stringResource(R.string.energy),
+                    helperText = stringResource(R.string.how_steady_does_your_energy_feel_right_now),
                     accent = MaterialTheme.colorScheme.surface,
                 ) {
                     FlowRow(
@@ -723,8 +724,8 @@ internal fun LoggingScreen(
             }
             item {
                 SelectionSectionCard(
-                    title = "Body cues",
-                    helperText = "Optional cervical fluid observations. Helps estimate fertility timing.",
+                    title = stringResource(R.string.body_cues),
+                    helperText = stringResource(R.string.optional_cervical_fluid_observations_helps_estimate_fertilit),
                     accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.76f),
                 ) {
                     FlowRow(
@@ -805,7 +806,7 @@ private fun LoggingHeroCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Repeat yesterday's pattern?",
+                        text = stringResource(R.string.repeat_yesterday_s_pattern),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -814,7 +815,7 @@ private fun LoggingHeroCard(
                         contentPadding = PaddingValues(horizontal = CycleCareSpace.space12, vertical = CycleCareSpace.space6)
                     ) {
                         Text(
-                            text = "Same as yesterday ✓",
+                            text = stringResource(R.string.same_as_yesterday),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
                             color = if (isActivePeriod) PeriodActiveAccentColor() else MaterialTheme.colorScheme.primary
@@ -878,7 +879,7 @@ private fun LoggingHeroText(
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    text = "Log today",
+                    text = stringResource(R.string.log_today),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -888,7 +889,7 @@ private fun LoggingHeroText(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 MetricPill(
-                    text = "${uiState.streakLabel} • 8s check-in",
+                    text = stringResource(R.string.streak_with_8s_check_in, uiState.streakLabel),
                     tone = MetricPillTone.Neutral,
                 )
             }
@@ -909,7 +910,7 @@ private fun LoggingHeroText(
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            text = "done",
+                            text = stringResource(R.string.done),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -923,7 +924,7 @@ private fun LoggingHeroText(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = "Entry progress",
+                    text = stringResource(R.string.entry_progress),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -954,7 +955,7 @@ private fun LoggingHeroText(
                 )
             }
             MetricPill(
-                text = "Score: ${uiState.cycleScore}",
+                text = stringResource(R.string.score_value, uiState.cycleScore),
                 tone = MetricPillTone.Highlight,
             )
             uiState.entryStatusLabel?.let { label ->
@@ -998,8 +999,8 @@ private fun DetailsCard(
     onToggleExpanded: () -> Unit,
 ) {
     FormSectionCard(
-        title = "Add details",
-        helperText = "Medication and notes are optional for a quick check-in.",
+        title = stringResource(R.string.add_details),
+        helperText = stringResource(R.string.medication_and_notes_are_optional_for_a_quick_check_in),
         accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.74f),
         modifier = Modifier.animateContentSize(),
     ) {
@@ -1010,11 +1011,21 @@ private fun DetailsCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 MetricPill(
-                    text = if (uiState.isDetailsExpanded) "Expanded" else "Optional",
+                    text = if (uiState.isDetailsExpanded) {
+                        stringResource(R.string.expanded)
+                    } else {
+                        stringResource(R.string.optional)
+                    },
                     tone = if (uiState.isDetailsExpanded) MetricPillTone.Highlight else MetricPillTone.Neutral,
                 )
                 TextButton(onClick = onToggleExpanded) {
-                    Text(if (uiState.isDetailsExpanded) "Hide details" else "Expand")
+                    Text(
+                        if (uiState.isDetailsExpanded) {
+                            stringResource(R.string.hide_details)
+                        } else {
+                            stringResource(R.string.expand)
+                        },
+                    )
                 }
             }
             if (uiState.isDetailsExpanded) {
@@ -1022,7 +1033,7 @@ private fun DetailsCard(
                     value = uiState.medication,
                     onValueChange = onMedicationChanged,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Medication") },
+                    label = { Text(stringResource(R.string.medication)) },
                 )
                 OutlinedTextField(
                     value = uiState.notes,
@@ -1035,7 +1046,7 @@ private fun DetailsCard(
                         }
                         .testTag(LoggingTags.NotesField),
                     minLines = 3,
-                    label = { Text("Notes") },
+                    label = { Text(stringResource(R.string.notes)) },
                     isError = uiState.notesError != null,
                     supportingText = {
                         Text(
@@ -1051,7 +1062,7 @@ private fun DetailsCard(
                     onClick = onToggleExpanded,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Add medication or notes")
+                    Text(stringResource(R.string.add_medication_or_notes))
                 }
             }
         }
@@ -1070,7 +1081,7 @@ private fun NotTrackedChip(
     modifier: Modifier = Modifier,
 ) {
     SelectionChip(
-        text = "Not tracked",
+        text = stringResource(R.string.not_tracked),
         selected = selected,
         onClick = onClick,
         modifier = modifier.testTag(LoggingTags.notTrackedChip()),

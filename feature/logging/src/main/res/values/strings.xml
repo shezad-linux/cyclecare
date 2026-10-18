@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="add_details">Add details</string>
+    <string name="add_medication_or_notes">Add medication or notes</string>
+    <string name="body_cues">Body cues</string>
+    <string name="done">done</string>
+    <string name="energy">Energy</string>
+    <string name="entry_progress">Entry progress</string>
+    <string name="expand">Expand</string>
+    <string name="expanded">Expanded</string>
+    <string name="hide_details">Hide details</string>
+    <string name="how_steady_does_your_energy_feel_right_now">How steady does your energy feel right now?</string>
+    <string name="log_today">Log today</string>
+    <string name="medication">Medication</string>
+    <string name="medication_and_notes_are_optional_for_a_quick_check_in">Medication and notes are optional for a quick check-in.</string>
+    <string name="mood">Mood</string>
+    <string name="not_tracked">Not tracked</string>
+    <string name="notes">Notes</string>
+    <string name="optional">Optional</string>
+    <string name="optional_cervical_fluid_observations_helps_estimate_fertilit">Optional cervical fluid observations. Helps estimate fertility timing.</string>
+    <string name="pain">Pain</string>
+    <string name="pick_the_closest_overall_feeling">Pick the closest overall feeling.</string>
+    <string name="repeat_yesterday_s_pattern">Repeat yesterday\'s pattern?</string>
+    <string name="same_as_yesterday">Same as yesterday ✓</string>
+    <string name="score_value">Score: %1$d</string>
+    <string name="streak_with_8s_check_in">%1$s • 8s check-in</string>
+</resources>
