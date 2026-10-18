@@ -29,6 +29,7 @@ fun CyclePrediction.toSnapshot(): PredictionSnapshot = PredictionSnapshot(
     confidenceLabel = confidenceLabel(),
     daysUntilNextPeriod = daysUntilNextPeriod,
     nextPeriodWindow = nextPeriodWindow?.let { DateRange(it.start, it.endInclusive) },
+    nextPeriodHalfWidthDays = nextPeriodWindow?.halfWidthDays,
     quality = when (quality) {
         EstimateQuality.INSUFFICIENT_HISTORY -> PredictionQuality.INSUFFICIENT_HISTORY
         EstimateQuality.LOW -> PredictionQuality.LOW

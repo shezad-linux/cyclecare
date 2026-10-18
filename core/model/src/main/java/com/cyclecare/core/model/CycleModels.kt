@@ -163,6 +163,12 @@ data class PredictionSnapshot(
 
     /** Null when history is too thin to support any range at all. */
     val nextPeriodWindow: DateRange? = null,
+    /**
+     * Explicit half-width in days. Carried rather than derived from the
+     * window span, so the UI never has to infer it and cannot drift if
+     * the window representation changes.
+     */
+    val nextPeriodHalfWidthDays: Int? = null,
     val quality: PredictionQuality = PredictionQuality.INSUFFICIENT_HISTORY,
     val phase: PredictionPhase = PredictionPhase.UNKNOWN,
     val warnings: Set<PredictionWarning> = emptySet(),

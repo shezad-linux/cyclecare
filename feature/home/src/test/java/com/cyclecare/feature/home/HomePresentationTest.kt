@@ -52,6 +52,10 @@ class HomePresentationTest {
             hasCurrentCycle = false,
             daysUntilNextPeriod = 3,
             nextPeriodDateText = "Mar 19",
+            // Declared explicitly because supportsRange defaults to
+            // false: a caller that omits it gets the honest "no range"
+            // copy rather than a bare date presented as expected.
+            supportsRange = true,
         )
 
         assertThat(homeHeroTitle(state)).isEqualTo("Next period in 3 days")
@@ -148,5 +152,64 @@ class HomePresentationTest {
 
         assertThat(validated.cycleLengthError).isEqualTo("Cycle length is required.")
         assertThat(validated.isSaveEnabled).isFalse()
+    }
+
+    @Test
+    fun nextPeriodRange_rendersBothEndsAndTheHalfWidth() {
+        val text = formatNextPeriodRange(
+            range = DateRange(
+                start = LocalDate.of(2026, 4, 7),
+                endInclusive = LocalDate.of(2026, 4, 11),
+            ),
+            supportsRange = true,
+            halfWidthDays = 2,
+        )
+
+        assertThat(text).isNotNull()
+        assertThat(text).contains("Apr 7")
+        assertThat(text).contains("Apr 11")
+        assertThat(text).contains("2 days")
+    }
+
+    @Test
+    fun nextPeriodRange_isNullWhenTheEngineSupportsNoRange() {
+        // Distinguishing "no range" from "empty range" is the whole
+        // point: a caller that conflates them prints a bare date and the
+        // overstatement returns.
+        val text = formatNextPeriodRange(range = null, supportsRange = false, halfWidthDays = null)
+
+        assertThat(text).isNotNull()
+        assertThat(text).contains("Not enough history")
+    }
+
+    @Test
+    fun heroSubtitle_doesNotPresentAPointEstimateAsExpectedWithoutARange() {
+        val state = HomeUiState(
+            nextPeriodDateText = "Apr 9",
+            supportsRange = false,
+            hasCurrentCycle = false,
+        )
+
+        assertThat(homeHeroSubtitle(state)).doesNotContain("Expected Apr 9 ")
+        assertThat(homeHeroSubtitle(state)).contains("not enough history")
+    }
+
+    @Test
+    fun heroSubtitle_surfacesOverdueDays() {
+        val state = HomeUiState(
+            nextPeriodDateText = "Apr 9",
+            supportsRange = true,
+            overdueDays = 3,
+            hasCurrentCycle = false,
+        )
+
+        assertThat(homeHeroSubtitle(state)).contains("3 days past")
+    }
+
+    @Test
+    fun overdueFormatting_isSingularAtOneDay() {
+        assertThat(formatOverdue(1)).isEqualTo("1 day past the expected date")
+        assertThat(formatOverdue(0)).isEmpty()
+        assertThat(formatOverdue(5)).contains("5 days past")
     }
 }

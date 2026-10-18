@@ -123,6 +123,14 @@ data class HomeUiState(
     val fertileWindowText: String = "Fertile window unavailable",
     val ovulationEstimateText: String = "Unavailable",
     val confidenceLabel: String = "",
+    /**
+     * Human-readable spread, or null when the engine declined to emit a
+     * range. Null must never be rendered as if it were zero.
+     */
+    val nextPeriodRangeText: String? = null,
+    /** False when history is too thin for any range to be meaningful. */
+    val supportsRange: Boolean = false,
+    val overdueDays: Int = 0,
     val hasCurrentCycle: Boolean = false,
     val cycleModeLabel: String = "Based on your history",
     val cyclePhaseLabel: String = "",
@@ -210,6 +218,7 @@ private object HomeStateKeys {
 internal object HomeTags {
     const val DASHBOARD = "home_dashboard"
     const val HERO_CARD = "home_hero_card"
+    const val NEXT_PERIOD_RANGE = "home_next_period_range"
     const val EDIT_CYCLE_BUTTON = "home_edit_cycle"
     const val PROGRESS_BAR = "home_progress_bar"
     const val FERTILE_CARD = "home_fertile_card"
@@ -257,8 +266,14 @@ internal fun formatNextPeriodTitle(daysUntilNextPeriod: Int?): String = when {
 internal fun homeHeroTitle(uiState: HomeUiState): String =
     if (uiState.hasCurrentCycle) "Period started" else formatNextPeriodTitle(uiState.daysUntilNextPeriod)
 
-internal fun homeHeroSubtitle(uiState: HomeUiState): String =
-    if (uiState.hasCurrentCycle) "Log how today feels" else "Expected ${uiState.nextPeriodDateText}"
+internal fun homeHeroSubtitle(uiState: HomeUiState): String = when {
+    uiState.hasCurrentCycle -> "Log how today feels"
+    uiState.overdueDays > 0 -> "Expected ${uiState.nextPeriodDateText} \u00b7 ${formatOverdue(uiState.overdueDays)}"
+    uiState.supportsRange -> "Expected ${uiState.nextPeriodDateText}"
+    // No range is supportable, so the point estimate is not presented as
+    // the expected date at all.
+    else -> "${uiState.nextPeriodDateText} \u00b7 not enough history for a range"
+}
 
 internal fun formatCycleProgressLabel(
     cycleDay: Int?,
@@ -267,6 +282,39 @@ internal fun formatCycleProgressLabel(
 ): String {
     val dayLabel = if (cycleDay == null) "Day -- / $cycleLength" else "Day $cycleDay / $cycleLength"
     return if (confidenceLabel.isBlank()) dayLabel else "$dayLabel • $confidenceLabel"
+}
+
+/**
+ * Renders the engine's window, or an explicit statement that there isn't
+ * one.
+ *
+ * The v1 UI had a single date and no way to express doubt, so it printed
+ * that date as though it were exact. An absent window is reported as
+ * absent rather than silently collapsed to a point estimate.
+ */
+internal fun formatNextPeriodRange(
+    range: DateRange?,
+    supportsRange: Boolean,
+    halfWidthDays: Int?,
+): String? = when {
+    range != null -> {
+        val start = range.start.format(dashboardDateFormatter)
+        val end = range.endInclusive.format(dashboardDateFormatter)
+        if (halfWidthDays != null && halfWidthDays > 0) {
+            "$start \u2013 $end (\u00b1$halfWidthDays days)"
+        } else {
+            "$start \u2013 $end"
+        }
+    }
+
+    supportsRange -> null
+    else -> "Not enough history yet to give a range"
+}
+
+internal fun formatOverdue(days: Int): String = when {
+    days <= 0 -> ""
+    days == 1 -> "1 day past the expected date"
+    else -> "$days days past the expected date"
 }
 
 internal fun formatFertileWindow(range: DateRange?): String =
@@ -553,6 +601,13 @@ class HomeViewModel(
             fertileWindowText = formatFertileWindow(base.prediction?.fertileWindow),
             ovulationEstimateText = formatDashboardDate(base.prediction?.ovulationDate),
             confidenceLabel = base.prediction?.confidenceLabel.orEmpty(),
+            nextPeriodRangeText = formatNextPeriodRange(
+                range = base.prediction?.nextPeriodWindow,
+                supportsRange = base.prediction?.supportsRange ?: false,
+                halfWidthDays = base.prediction?.nextPeriodHalfWidthDays,
+            ),
+            supportsRange = base.prediction?.supportsRange ?: false,
+            overdueDays = base.prediction?.overdueDays ?: 0,
             hasCurrentCycle = currentCycle != null,
             cycleModeLabel = buildCycleModeLabel(currentCycle, base.prediction),
             cyclePhaseLabel = buildHomeCyclePhaseLabel(currentCycle, base.prediction, cycleLength),
@@ -862,7 +917,12 @@ internal fun HomeScreen(
     val heroTitle = remember(uiState.hasCurrentCycle, uiState.daysUntilNextPeriod) {
         homeHeroTitle(uiState)
     }
-    val heroSubtitle = remember(uiState.hasCurrentCycle, uiState.nextPeriodDateText) {
+    val heroSubtitle = remember(
+        uiState.hasCurrentCycle,
+        uiState.nextPeriodDateText,
+        uiState.supportsRange,
+        uiState.overdueDays,
+    ) {
         homeHeroSubtitle(uiState)
     }
     val heroGradientColors = if (uiState.hasCurrentCycle) PeriodActiveGradientColors() else null
@@ -913,6 +973,19 @@ internal fun HomeScreen(
                             MetricPill(
                                 text = uiState.cyclePhaseLabel,
                                 tone = MetricPillTone.Inverse,
+                            )
+                        }
+                        // The spread belongs beside the estimate. Without
+                        // it the hero reads as an exact date, which is the
+                        // specific overstatement this engine was built to
+                        // remove.
+                        if (!uiState.hasCurrentCycle &&
+                            uiState.nextPeriodRangeText != null
+                        ) {
+                            MetricPill(
+                                text = uiState.nextPeriodRangeText,
+                                tone = MetricPillTone.Inverse,
+                                modifier = Modifier.testTag(HomeTags.NEXT_PERIOD_RANGE),
                             )
                         }
                     }
