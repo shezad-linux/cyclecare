@@ -427,4 +427,71 @@ class DesignTokenTest {
      * tokens declare fill, border and icon separately; this asserts the
      * distinction is not colour alone.
      */
+
+    // ── state legibility without colour ─────────────────────────────
+
+    @Test
+    fun everyCycleStateCarriesBorderAndIconIndependentOfColour() {
+        val states = CycleStateKind.entries
+
+        assertThat(states).hasSize(4)
+        states.forEach { state ->
+            assertThat(state.distinguishesFromColourAlone).isTrue()
+            assertThat(state.accessibilityLabel).isNotEmpty()
+        }
+
+        val confirmed = states.first { !it.isEstimated }
+        states.filter { it.isEstimated }.forEach { estimated ->
+            assertThat(estimated.border).isNotEqualTo(confirmed.border)
+            assertThat(estimated.icon).isNotEqualTo(confirmed.icon)
+            assertThat(estimated.accessibilityLabel)
+                .isNotEqualTo(confirmed.accessibilityLabel)
+        }
+    }
+
+    @Test
+    fun confirmedPeriodIsTheOnlyStateMarkedSolid() {
+        val solid = CycleStateKind.entries.filter { it.border == CycleStateBorder.SOLID }
+
+        assertThat(solid).hasSize(1)
+        assertThat(solid.single()).isEqualTo(CycleStateKind.CONFIRMED_PERIOD)
+    }
+
+    /**
+     * Simulates greyscale by collapsing each colour to its relative
+     * luminance, then asserts the confirmed state still separates from
+     * every estimate on tone alone.
+     *
+     * This is what criterion 5 actually asks for. Comparing raw colours
+     * would pass trivially; the failure being guarded against is two
+     * states landing on the same grey, which makes the distinction
+     * invisible to a viewer who cannot separate the hues.
+     */
+    @Test
+    fun confirmedStateStaysDistinctFromEstimatesWhenReducedToGreyscale() {
+        val colours = mapOf(
+            CycleStateKind.CONFIRMED_PERIOD to CycleCareColor.LightPeriodActiveStart,
+            CycleStateKind.PREDICTED_PERIOD to CycleCareColor.LightOnSurfaceVariant,
+            CycleStateKind.ESTIMATED_FERTILE to CycleCareColor.LightTertiary,
+            CycleStateKind.ESTIMATED_OVULATION to CycleCareColor.LightSecondary,
+        )
+
+        val greys = colours.mapValues { (_, colour) -> greyOf(colour) }
+        val confirmedGrey = greys.getValue(CycleStateKind.CONFIRMED_PERIOD)
+
+        // Reported per state so a collision names the culprit.
+        val collisions = greys
+            .filterKeys { it.isEstimated }
+            .filterValues { it == confirmedGrey }
+            .keys
+            .map { it.name }
+
+        assertThat(collisions).isEmpty()
+        // Every state should also be individually distinct.
+        assertThat(greys.values.toSet()).hasSize(greys.size)
+    }
+
+    /** Collapses a colour to the grey it would become with colour removed. */
+    private fun greyOf(colour: Color): Int =
+        kotlin.math.round(colour.luminance() * 255f).toInt()
 }

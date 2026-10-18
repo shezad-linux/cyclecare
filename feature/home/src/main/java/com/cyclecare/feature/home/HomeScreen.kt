@@ -20,6 +20,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -1020,6 +1023,9 @@ internal fun HomeScreen(
                         onClick = onOpenCycleStatus,
                         modifier = Modifier
                             .fillMaxWidth()
+                            // Material's default button height is 40dp,
+                            // below the 48dp minimum touch target.
+                            .heightIn(min = CycleCareSpace.minTouchTarget)
                             .testTag(HomeTags.CYCLE_STATUS_CTA),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.onPrimary,
@@ -1032,7 +1038,9 @@ internal fun HomeScreen(
                 trailing = {
                     OutlinedButton(
                         onClick = onOpenEditCycle,
-                        modifier = Modifier.testTag(HomeTags.EDIT_CYCLE_BUTTON),
+                        modifier = Modifier
+                            .defaultMinSize(minHeight = CycleCareSpace.minTouchTarget)
+                            .testTag(HomeTags.EDIT_CYCLE_BUTTON),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = MaterialTheme.colorScheme.onPrimary,
                         ),
@@ -1203,7 +1211,9 @@ private fun HomeReminderButton(
 ) {
     FilledTonalIconButton(
         onClick = onOpenReminderCenter,
-        modifier = Modifier.testTag(HomeTags.REMINDER_CENTER_BUTTON),
+        modifier = Modifier
+            .sizeIn(minWidth = CycleCareSpace.minTouchTarget, minHeight = CycleCareSpace.minTouchTarget)
+            .testTag(HomeTags.REMINDER_CENTER_BUTTON),
     ) {
         BadgedBox(
             badge = {
