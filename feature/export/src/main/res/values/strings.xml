@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="create_either_a_markdown_or_pdf_export_without_sending">Create either a markdown or PDF export without sending health data to a remote service.</string>
+    <string name="create_markdown_report">Create markdown report</string>
+    <string name="create_pdf_report">Create PDF report</string>
+    <string name="export_report">Export report</string>
+    <string name="formats">Formats</string>
+    <string name="generate_a_local_report">Generate a local report</string>
+    <string name="latest_export">Latest export</string>
+    <string name="markdown_plus_pdf">Markdown + PDF</string>
+    <string name="on_device">On-device</string>
+    <string name="open_latest_export">Open latest export</string>
+    <string name="ready">Ready</string>
+    <string name="share_latest_export">Share latest export</string>
+    <string name="status">Status</string>
+    <string name="storage">Storage</string>
+    <string name="working">Working</string>
+</resources>
