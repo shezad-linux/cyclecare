@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
@@ -117,7 +118,7 @@ private fun ExportScreen(
         verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
     ) {
         GradientHeaderCard(
-            title = "Export report",
+            title = stringResource(R.string.export_report),
             subtitle = uiState.statusMessage,
         )
         FlowRow(
@@ -126,28 +127,32 @@ private fun ExportScreen(
             modifier = Modifier.fillMaxWidth(),
         ) {
             MetricCard(
-                label = "Formats",
-                value = "Markdown + PDF",
+                label = stringResource(R.string.formats),
+                value = stringResource(R.string.markdown_plus_pdf),
                 modifier = Modifier.widthIn(min = 150.dp),
                 accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.86f),
             )
             MetricCard(
-                label = "Storage",
-                value = "On-device",
+                label = stringResource(R.string.storage),
+                value = stringResource(R.string.on_device),
                 modifier = Modifier.widthIn(min = 150.dp),
                 accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.86f),
             )
             MetricCard(
-                label = "Status",
-                value = if (uiState.isWorking) "Working" else "Ready",
+                label = stringResource(R.string.status),
+                value = if (uiState.isWorking) {
+                    stringResource(R.string.working)
+                } else {
+                    stringResource(R.string.ready)
+                },
                 modifier = Modifier.widthIn(min = 150.dp),
                 accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
             )
         }
         DashboardSectionCard(
-            title = "Generate a local report",
-            subtitle = "Create either a markdown or PDF export without sending health data to a remote service.",
-            eyebrow = "Formats",
+            title = stringResource(R.string.generate_a_local_report),
+            subtitle = stringResource(R.string.create_either_a_markdown_or_pdf_export_without_sending),
+            eyebrow = stringResource(R.string.formats),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 Button(
@@ -155,30 +160,30 @@ private fun ExportScreen(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !uiState.isWorking,
                 ) {
-                    Text("Create markdown report")
+                    Text(stringResource(R.string.create_markdown_report))
                 }
                 FilledTonalButton(
                     onClick = onCreatePdfReport,
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !uiState.isWorking,
                 ) {
-                    Text("Create PDF report")
+                    Text(stringResource(R.string.create_pdf_report))
                 }
             }
         }
         uiState.lastArtifact?.let { artifact ->
             DashboardSectionCard(
-                title = "Latest export",
+                title = stringResource(R.string.latest_export),
                 subtitle = artifact.displayName,
                 eyebrow = artifact.format.name,
                 accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                     OutlinedButton(onClick = { onOpenArtifact(artifact) }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Open latest export")
+                        Text(stringResource(R.string.open_latest_export))
                     }
                     OutlinedButton(onClick = { onShareArtifact(artifact) }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Share latest export")
+                        Text(stringResource(R.string.share_latest_export))
                     }
                 }
             }
