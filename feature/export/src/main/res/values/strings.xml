@@ -15,4 +15,13 @@
     <string name="status">Status</string>
     <string name="storage">Storage</string>
     <string name="working">Working</string>
+    <string name="export_idle_hint">Generate a local markdown or PDF report and keep it on-device.</string>
+    <string name="generating_markdown_report">Generating markdown report...</string>
+    <string name="generating_pdf_report">Generating PDF report...</string>
+    <string name="saved_markdown_report">Saved markdown report to %1$s.</string>
+    <string name="saved_pdf_report">Saved PDF report to %1$s.</string>
+    <string name="export_failed_locally">Export failed locally. Please try again.</string>
+    <string name="format_markdown">Markdown</string>
+    <string name="format_pdf">PDF</string>
+    <string name="share_report_chooser_title">Share CycleCare report</string>
 </resources>

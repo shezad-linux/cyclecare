@@ -1,5 +1,6 @@
 package com.cyclecare.feature.privacy
 
+import com.cyclecare.core.designsystem.text.UiText
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -69,7 +70,8 @@ class PrivacyViewModelTest {
         viewModel.submitPrimaryAction()
         advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.message).isEqualTo("PIN must be exactly 4 digits.")
+        assertThat(viewModel.uiState.value.message)
+            .isEqualTo(UiText.Resource(R.string.pin_must_be_exactly_4_digits))
         assertThat(viewModel.uiState.value.entryMode).isEqualTo(PrivacyEntryMode.Setup)
         assertThat(repository.pin).isNull()
     }
@@ -90,7 +92,8 @@ class PrivacyViewModelTest {
         assertThat(repository.pin).isEqualTo("1234")
         assertThat(repository.consent.value.appLockEnabled).isTrue()
         assertThat(viewModel.uiState.value.entryMode).isEqualTo(PrivacyEntryMode.Dashboard)
-        assertThat(viewModel.uiState.value.message).isEqualTo("PIN saved. App lock is on.")
+        assertThat(viewModel.uiState.value.message)
+            .isEqualTo(UiText.Resource(R.string.pin_saved_app_lock_is_on))
     }
 
     @Test
@@ -107,7 +110,8 @@ class PrivacyViewModelTest {
 
         assertThat(repository.pin).isNull()
         assertThat(viewModel.uiState.value.entryMode).isEqualTo(PrivacyEntryMode.Setup)
-        assertThat(viewModel.uiState.value.message).isEqualTo("PINs didn't match. Start again.")
+        assertThat(viewModel.uiState.value.message)
+            .isEqualTo(UiText.Resource(R.string.pins_didnt_match_start_again))
     }
 
     @Test
@@ -118,7 +122,8 @@ class PrivacyViewModelTest {
         advanceUntilIdle()
 
         assertThat(repository.consent.value.appLockEnabled).isFalse()
-        assertThat(viewModel.uiState.value.message).isEqualTo("Create and confirm a PIN first.")
+        assertThat(viewModel.uiState.value.message)
+            .isEqualTo(UiText.Resource(R.string.create_and_confirm_pin_first))
     }
 
     @Test
@@ -133,7 +138,8 @@ class PrivacyViewModelTest {
         advanceUntilIdle()
 
         assertThat(viewModel.uiState.value.entryMode).isEqualTo(PrivacyEntryMode.VerifyCurrentPin)
-        assertThat(viewModel.uiState.value.message).isEqualTo("Current PIN didn't match. Try again.")
+        assertThat(viewModel.uiState.value.message)
+            .isEqualTo(UiText.Resource(R.string.current_pin_didnt_match_try_again))
     }
 
     @Test
@@ -158,7 +164,8 @@ class PrivacyViewModelTest {
         advanceUntilIdle()
 
         assertThat(repository.pin).isEqualTo("5678")
-        assertThat(viewModel.uiState.value.message).isEqualTo("PIN updated locally.")
+        assertThat(viewModel.uiState.value.message)
+            .isEqualTo(UiText.Resource(R.string.pin_updated_locally))
     }
 
     @Test
@@ -172,7 +179,7 @@ class PrivacyViewModelTest {
 
         assertThat(repository.consent.value.biometricEnabled).isFalse()
         assertThat(viewModel.uiState.value.message)
-            .isEqualTo("Turn on app lock and keep a PIN before enabling biometric unlock.")
+            .isEqualTo(UiText.Resource(R.string.turn_on_app_lock_and_keep_a_pin_before_enabling_biometric_unlock))
     }
 
     @Test
@@ -187,7 +194,8 @@ class PrivacyViewModelTest {
         advanceUntilIdle()
 
         assertThat(repository.consent.value.biometricEnabled).isTrue()
-        assertThat(viewModel.uiState.value.message).isEqualTo("Biometric unlock is ready.")
+        assertThat(viewModel.uiState.value.message)
+            .isEqualTo(UiText.Resource(R.string.biometric_unlock_is_ready))
     }
 
     @Test
@@ -203,7 +211,7 @@ class PrivacyViewModelTest {
 
         assertThat(repository.consent.value.biometricEnabled).isFalse()
         assertThat(viewModel.uiState.value.message)
-            .isEqualTo("Biometric unlock is no longer available on this device.")
+            .isEqualTo(UiText.Resource(R.string.biometric_unlock_is_no_longer_available_on_this_device))
     }
 
     @Test
@@ -219,7 +227,8 @@ class PrivacyViewModelTest {
         assertThat(repository.consent.value.appLockEnabled).isFalse()
         assertThat(repository.resetAppLockCalls).isEqualTo(1)
         assertThat(viewModel.uiState.value.entryMode).isEqualTo(PrivacyEntryMode.Setup)
-        assertThat(viewModel.uiState.value.message).isEqualTo("Access recovered. Create a new PIN.")
+        assertThat(viewModel.uiState.value.message)
+            .isEqualTo(UiText.Resource(R.string.access_recovered_create_a_new_pin))
     }
 
     private fun TestScope.subscribe() {

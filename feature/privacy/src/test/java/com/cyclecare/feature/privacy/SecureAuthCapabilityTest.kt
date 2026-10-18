@@ -1,5 +1,6 @@
 package com.cyclecare.feature.privacy
 
+import com.cyclecare.core.designsystem.text.UiText
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
@@ -38,10 +39,13 @@ class SecureAuthCapabilityTest {
 
     @Test
     fun summaryLabel_neverPromisesAnUnavailableMethod() {
-        assertThat(SecureAuthCapability.None.summaryLabel()).isEqualTo("No secure recovery")
-        assertThat(SecureAuthCapability.Biometric.summaryLabel()).contains("Biometric")
-        assertThat(SecureAuthCapability.DeviceCredential.summaryLabel()).contains("Screen-lock")
-        assertThat(SecureAuthCapability.Both.summaryLabel()).contains("Biometric")
-        assertThat(SecureAuthCapability.Both.summaryLabel()).contains("screen-lock")
+        assertThat(SecureAuthCapability.None.summaryLabel())
+            .isEqualTo(UiText.Resource(R.string.no_secure_recovery))
+        assertThat(SecureAuthCapability.Biometric.summaryLabel())
+            .isEqualTo(UiText.Resource(R.string.biometric_recovery))
+        assertThat(SecureAuthCapability.DeviceCredential.summaryLabel())
+            .isEqualTo(UiText.Resource(R.string.screen_lock_recovery))
+        assertThat(SecureAuthCapability.Both.summaryLabel())
+            .isEqualTo(UiText.Resource(R.string.biometric_and_screen_lock_recovery))
     }
 }

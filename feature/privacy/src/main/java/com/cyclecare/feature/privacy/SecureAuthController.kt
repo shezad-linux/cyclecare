@@ -23,6 +23,8 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.cyclecare.core.designsystem.text.UiText
+import com.cyclecare.core.designsystem.text.uiText
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,11 +42,11 @@ enum class SecureAuthCapability {
     val supportsDeviceCredential: Boolean
         get() = this == DeviceCredential || this == Both
 
-    fun summaryLabel(): String = when (this) {
-        None -> "No secure recovery"
-        Biometric -> "Biometric recovery"
-        DeviceCredential -> "Screen-lock recovery"
-        Both -> "Biometric and screen-lock recovery"
+    fun summaryLabel(): UiText = when (this) {
+        None -> uiText(R.string.no_secure_recovery)
+        Biometric -> uiText(R.string.biometric_recovery)
+        DeviceCredential -> uiText(R.string.screen_lock_recovery)
+        Both -> uiText(R.string.biometric_and_screen_lock_recovery)
     }
 }
 
@@ -148,7 +150,7 @@ fun rememberPlatformSecureAuthController(): SecureAuthController {
                     currentCapability.supportsBiometric -> {
                         val fragmentActivity = activity
                         if (fragmentActivity == null) {
-                            onFailure("Secure authentication is unavailable in this screen.")
+                            onFailure(context.getString(R.string.secure_authentication_unavailable_in_this_screen))
                             return
                         }
                         val executor = ContextCompat.getMainExecutor(context)
@@ -186,7 +188,7 @@ fun rememberPlatformSecureAuthController(): SecureAuthController {
                                 }
 
                                 override fun onAuthenticationFailed() {
-                                    onFailure("Biometric not recognized. Try again or use your screen lock.")
+                                    onFailure(context.getString(R.string.biometric_not_recognized_try_again_or_use_your_screen_lock))
                                 }
                             },
                         )
@@ -203,9 +205,9 @@ fun rememberPlatformSecureAuthController(): SecureAuthController {
                                 }
                                 setNegativeButtonText(
                                     if (currentCapability.supportsDeviceCredential) {
-                                        "Use screen lock"
+                                        context.getString(R.string.use_screen_lock)
                                     } else {
-                                        "Cancel"
+                                        context.getString(R.string.cancel)
                                     },
                                 )
                             }
@@ -227,7 +229,7 @@ fun rememberPlatformSecureAuthController(): SecureAuthController {
                         )
                     }
 
-                    else -> onFailure("Secure recovery isn't available on this device.")
+                    else -> onFailure(context.getString(R.string.secure_recovery_unavailable_on_this_device))
                 }
             }
         }
@@ -257,14 +259,14 @@ private fun launchDeviceCredentialConfirmation(
 ) {
     val keyguardManager = context.getSystemService(KeyguardManager::class.java)
     if (keyguardManager?.isDeviceSecure != true) {
-        onFailure("Set up a screen lock first to use secure recovery.")
+        onFailure(context.getString(R.string.set_up_a_screen_lock_for_secure_recovery))
         return
     }
 
     @Suppress("DEPRECATION")
     val intent = keyguardManager.createConfirmDeviceCredentialIntent(title, subtitle)
     if (intent == null) {
-        onFailure("Screen-lock confirmation is unavailable on this device.")
+        onFailure(context.getString(R.string.screen_lock_confirmation_unavailable_on_this_device))
         return
     }
 

@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -46,6 +47,10 @@ import com.cyclecare.core.designsystem.CycleCareTheme
 import com.cyclecare.core.designsystem.GradientHeaderCard
 import com.cyclecare.core.designsystem.MetricCard
 import com.cyclecare.core.designsystem.ScreenDebugPreviews
+import com.cyclecare.core.designsystem.text.UiText
+import com.cyclecare.core.designsystem.text.pluralUiText
+import com.cyclecare.core.designsystem.text.resolve
+import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.domain.InsightRepository
 import com.cyclecare.core.model.DischargeType
 import com.cyclecare.core.model.EnergyLevel
@@ -68,21 +73,18 @@ internal object InsightsTags {
     const val BackToOverview = "insights_back_to_overview"
 }
 
-private const val TrendChartsBuildingSummary =
-    "Once you have two logged cycles, this section will show the shape of your recent cycle lengths and period lengths."
-private const val SymptomPatternsLockedSummary =
-    "Keep logging symptoms to unlock grouped symptom clusters and phase-based insights."
-private const val BuildStrongerPatternsSummary =
-    "Keep logging mood, pain, energy, and body cues to unlock grouped symptom clusters and phase-based insights."
+private val TrendChartsBuildingSummary = uiText(R.string.trend_charts_building_summary)
+private val SymptomPatternsLockedSummary = uiText(R.string.symptom_patterns_locked_summary)
+private val BuildStrongerPatternsSummary = uiText(R.string.build_stronger_patterns_summary)
 
 data class InsightsUiState(
-    val averageCycleText: String = "28 days",
-    val averagePeriodText: String = "5 days",
-    val variabilityLabel: String = "Steady lately",
-    val variabilityText: String = "28 day rhythm",
-    val variabilityDetail: String = "Your cycle is consistent",
-    val variabilityInterpretation: String = "Recent cycles stay close to your average",
-    val cycleWindowLabel: String = "Based on your recent cycles",
+    val averageCycleText: UiText = pluralUiText(R.plurals.n_days, 28, 28),
+    val averagePeriodText: UiText = pluralUiText(R.plurals.n_days, 5, 5),
+    val variabilityLabel: UiText = uiText(R.string.variability_steady_lately),
+    val variabilityText: UiText = pluralUiText(R.plurals.n_day_rhythm, 28, 28),
+    val variabilityDetail: UiText = uiText(R.string.variability_consistent),
+    val variabilityInterpretation: UiText = uiText(R.string.variability_close_to_average),
+    val cycleWindowLabel: UiText = uiText(R.string.cycle_window_recent_cycles),
     val hasEnoughCycleData: Boolean = false,
     val hasEnoughSymptomData: Boolean = false,
     val cyclesLoggedCount: Int = 0,
@@ -91,75 +93,75 @@ data class InsightsUiState(
     val daysNeededForSymptomInsights: Int = 5,
     val cycleTrendBars: List<InsightBarPointUi> = emptyList(),
     val periodTrendItems: List<InsightStripItemUi> = emptyList(),
-    val cycleTrendSummary: String = TrendChartsBuildingSummary,
-    val symptomSummary: String = SymptomPatternsLockedSummary,
+    val cycleTrendSummary: UiText = TrendChartsBuildingSummary,
+    val symptomSummary: UiText = SymptomPatternsLockedSummary,
     val symptomSections: List<InsightBreakdownSectionUi> = emptyList(),
     val phaseHighlights: List<InsightPhaseHighlightUi> = emptyList(),
-    val narrativeTitle: String = "Build stronger patterns",
-    val narrativeSummary: String = "",
-    val cycleProgressLabel: String = "1 of 2 cycles logged",
-    val symptomProgressLabel: String = "Keep logging to unlock patterns",
+    val narrativeTitle: UiText = uiText(R.string.narrative_build_stronger_patterns),
+    val narrativeSummary: UiText = UiText.Raw(""),
+    val cycleProgressLabel: UiText = pluralUiText(R.plurals.n_of_m_cycles_logged, 1, 1, 2),
+    val symptomProgressLabel: UiText = uiText(R.string.keep_logging_to_unlock_patterns),
 )
 
 data class InsightBarPointUi(
-    val label: String,
+    val label: UiText,
     val value: Int,
-    val valueLabel: String,
+    val valueLabel: UiText,
 )
 
 data class InsightStripItemUi(
-    val label: String,
-    val valueLabel: String,
+    val label: UiText,
+    val valueLabel: UiText,
 )
 
 data class InsightBreakdownSectionUi(
-    val title: String,
-    val highlight: String,
+    val title: UiText,
+    val topLabel: UiText?,
     val items: List<InsightBreakdownItemUi>,
 )
 
 data class InsightBreakdownItemUi(
-    val label: String,
+    val label: UiText,
     val count: Int,
     val fraction: Float,
-    val valueLabel: String,
+    val valueLabel: UiText,
 )
 
 data class InsightPhaseHighlightUi(
-    val badgeLabel: String,
-    val title: String,
-    val detail: String,
+    val badgeLabel: UiText,
+    val title: UiText,
+    val detail: UiText,
 )
 
 internal fun buildInsightsUiState(insights: InsightSnapshot): InsightsUiState {
     val cycleTrendBars = insights.recentCycleLengths.mapIndexed { index, value ->
         InsightBarPointUi(
-            label = "C${index + 1}",
+            label = uiText(R.string.cycle_point_label, index + 1),
             value = value,
-            valueLabel = "$value days",
+            valueLabel = pluralUiText(R.plurals.n_days, value, value),
         )
     }
     val periodTrendItems = insights.recentPeriodLengths.mapIndexed { index, value ->
         InsightStripItemUi(
-            label = "P${index + 1}",
-            valueLabel = "${value}d",
+            label = uiText(R.string.period_point_label, index + 1),
+            valueLabel = uiText(R.string.day_compact, value),
         )
     }
     val symptomSections = listOf(
         breakdownSection(
-            title = "Mood",
+            title = uiText(R.string.section_mood),
             counts = insights.moodCounts.mapKeys { (mood, _) -> mood.label() },
         ),
         breakdownSection(
-            title = "Energy",
+            title = uiText(R.string.section_energy),
             counts = insights.energyCounts.mapKeys { (energy, _) -> energy.label() },
         ),
         breakdownSection(
-            title = "Pain",
+            title = uiText(R.string.section_pain),
             counts = insights.painCounts.mapKeys { (pain, _) -> pain.label() },
         ),
         breakdownSection(
-            title = "Body cues",
+            title = uiText(R.string.section_body_cues),
             counts = insights.dischargeCounts.mapKeys { (discharge, _) -> discharge.label() },
         ),
     ).filter { section -> section.items.isNotEmpty() }
@@ -170,25 +172,34 @@ internal fun buildInsightsUiState(insights: InsightSnapshot): InsightsUiState {
     val daysNeeded = 5
 
     return InsightsUiState(
-        averageCycleText = "${insights.averageCycleLength} days",
-        averagePeriodText = "${insights.averagePeriodLength} days",
-        variabilityLabel = if (insights.irregularCycles) "More variation" else "Steady lately",
-        variabilityText = if (insights.minCycleLength == insights.maxCycleLength) {
-            "${insights.averageCycleLength} day rhythm"
+        averageCycleText = pluralUiText(R.plurals.n_days, insights.averageCycleLength, insights.averageCycleLength),
+        averagePeriodText = pluralUiText(R.plurals.n_days, insights.averagePeriodLength, insights.averagePeriodLength),
+        variabilityLabel = if (insights.irregularCycles) {
+            uiText(R.string.variability_more_variation)
         } else {
-            "${insights.minCycleLength}-${insights.maxCycleLength} day range"
+            uiText(R.string.variability_steady_lately)
+        },
+        variabilityText = if (insights.minCycleLength == insights.maxCycleLength) {
+            pluralUiText(R.plurals.n_day_rhythm, insights.averageCycleLength, insights.averageCycleLength)
+        } else {
+            pluralUiText(
+                R.plurals.min_max_day_range,
+                insights.maxCycleLength,
+                insights.minCycleLength,
+                insights.maxCycleLength,
+            )
         },
         variabilityDetail = when {
-            !insights.hasEnoughCycleData -> "Your cycle is consistent"
-            insights.irregularCycles -> "Recent cycles show more variation than usual"
-            else -> "Your cycle is consistent"
+            !insights.hasEnoughCycleData -> uiText(R.string.variability_consistent)
+            insights.irregularCycles -> uiText(R.string.variability_more_variation_than_usual)
+            else -> uiText(R.string.variability_consistent)
         },
         variabilityInterpretation = when {
-            !insights.hasEnoughCycleData -> "Recent cycles stay close to your average"
-            insights.irregularCycles -> "Cycle lengths vary more than your baseline"
-            else -> "Recent cycles stay close to your average"
+            !insights.hasEnoughCycleData -> uiText(R.string.variability_close_to_average)
+            insights.irregularCycles -> uiText(R.string.variability_above_baseline)
+            else -> uiText(R.string.variability_close_to_average)
         },
-        cycleWindowLabel = insights.cycleWindowLabel,
+        cycleWindowLabel = UiText.Raw(insights.cycleWindowLabel),
         hasEnoughCycleData = insights.hasEnoughCycleData,
         hasEnoughSymptomData = insights.hasEnoughSymptomData,
         cyclesLoggedCount = cyclesLogged,
@@ -199,43 +210,51 @@ internal fun buildInsightsUiState(insights: InsightSnapshot): InsightsUiState {
         periodTrendItems = periodTrendItems,
         cycleTrendSummary = when {
             !insights.hasEnoughCycleData -> TrendChartsBuildingSummary
-            else -> "Your last cycle was ${insights.averageCycleLength} days, within typical range"
+            else -> pluralUiText(
+                R.plurals.your_last_cycle_was_n_days_within_typical_range,
+                insights.averageCycleLength,
+                insights.averageCycleLength,
+            )
         },
         symptomSummary = when {
             !insights.hasEnoughSymptomData -> SymptomPatternsLockedSummary
-            else -> "Your symptoms show patterns related to your cycle phases"
+            else -> uiText(R.string.symptoms_show_patterns_related_to_cycle_phases)
         },
         symptomSections = symptomSections,
         phaseHighlights = insights.phaseHighlights.map { highlight ->
             InsightPhaseHighlightUi(
                 badgeLabel = when (highlight.phase) {
-                    InsightPhase.Period -> "Period"
-                    InsightPhase.FertileWindow -> "Fertile window"
+                    InsightPhase.Period -> uiText(R.string.phase_period)
+                    InsightPhase.FertileWindow -> uiText(R.string.phase_fertile_window)
                 },
-                title = highlight.title,
-                detail = highlight.description,
+                title = UiText.Raw(highlight.title),
+                detail = UiText.Raw(highlight.description),
             )
         },
         narrativeTitle = if (insights.hasEnoughCycleData || insights.hasEnoughSymptomData) {
-            "What we know"
+            uiText(R.string.narrative_what_we_know)
         } else {
-            "Build stronger patterns"
+            uiText(R.string.narrative_build_stronger_patterns)
         },
         narrativeSummary = when {
             !insights.hasEnoughCycleData && !insights.hasEnoughSymptomData -> BuildStrongerPatternsSummary
             insights.narrativeSummary.isBlank() && cyclesLogged > 0 -> {
-                "Your last cycle was ${insights.averageCycleLength} days. Keep logging to refine your insights."
+                pluralUiText(
+                    R.plurals.your_last_cycle_was_n_days_keep_logging_to_refine_your_insights,
+                    insights.averageCycleLength,
+                    insights.averageCycleLength,
+                )
             }
             insights.narrativeSummary.isBlank() -> {
-                "Start logging to build your insights over time."
+                uiText(R.string.start_logging_to_build_insights)
             }
-            else -> insights.narrativeSummary
+            else -> UiText.Raw(insights.narrativeSummary)
         },
-        cycleProgressLabel = "$cyclesLogged of $cyclesNeeded cycles logged",
+        cycleProgressLabel = pluralUiText(R.plurals.n_of_m_cycles_logged, cyclesLogged, cyclesLogged, cyclesNeeded),
         symptomProgressLabel = if (daysLoggedThisCycle > 0) {
-            "$daysLoggedThisCycle of $daysNeeded days logged"
+            pluralUiText(R.plurals.n_of_m_days_logged, daysLoggedThisCycle, daysLoggedThisCycle, daysNeeded)
         } else {
-            "Log a few days to see patterns"
+            uiText(R.string.log_a_few_days_to_see_patterns)
         },
     )
 }
@@ -312,20 +331,21 @@ internal fun InsightsOverviewScreen(
         item {
             GradientHeaderCard(
                 title = stringResource(R.string.insights),
-                subtitle = uiState.variabilityDetail,
+                subtitle = uiState.variabilityDetail.resolve(),
                 supportingContent = {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                         verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                     ) {
-                        InsightBadge(text = uiState.variabilityLabel, emphasized = true)
+                        InsightBadge(text = uiState.variabilityLabel.resolve(), emphasized = true)
                         if (uiState.cyclesLoggedCount > 0) {
-                            val cycleSuffix = if (uiState.cyclesLoggedCount == 1) {
-                                stringResource(R.string.cycle)
-                            } else {
-                                stringResource(R.string.cycles)
-                            }
-                            InsightBadge(text = "${uiState.cyclesLoggedCount} $cycleSuffix logged")
+                            InsightBadge(
+                                text = pluralStringResource(
+                                    R.plurals.n_cycles_logged,
+                                    uiState.cyclesLoggedCount,
+                                    uiState.cyclesLoggedCount,
+                                ),
+                            )
                         }
                     }
                 },
@@ -343,15 +363,15 @@ internal fun InsightsOverviewScreen(
                         verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                     ) {
                         InsightBadge(
-                            text = uiState.variabilityText,
+                            text = uiState.variabilityText.resolve(),
                             emphasized = uiState.hasEnoughCycleData,
                         )
-                        if (uiState.cycleWindowLabel.isNotBlank()) {
-                            InsightBadge(text = uiState.cycleWindowLabel)
+                        if (uiState.cycleWindowLabel.resolve().isNotBlank()) {
+                            InsightBadge(text = uiState.cycleWindowLabel.resolve())
                         }
                     }
                     Text(
-                        uiState.variabilityInterpretation,
+                        uiState.variabilityInterpretation.resolve(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -369,7 +389,7 @@ internal fun InsightsOverviewScreen(
                         )
                         PeriodLengthStrip(items = uiState.periodTrendItems)
                         Text(
-                            uiState.variabilityInterpretation,
+                            uiState.variabilityInterpretation.resolve(),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -395,12 +415,12 @@ internal fun InsightsOverviewScreen(
                             label = stringResource(R.string.cycles_logged),
                         )
                         Text(
-                            uiState.cycleProgressLabel,
+                            uiState.cycleProgressLabel.resolve(),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            uiState.cycleTrendSummary,
+                            uiState.cycleTrendSummary.resolve(),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -420,12 +440,12 @@ internal fun InsightsOverviewScreen(
                             uiState.symptomSections.take(2).forEach { section ->
                                 PatternHighlightLine(
                                     title = section.title,
-                                    detail = section.highlight,
+                                    detail = sectionHighlight(section),
                                 )
                             }
                         }
                         Text(
-                            uiState.symptomSummary,
+                            uiState.symptomSummary.resolve(),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -451,12 +471,12 @@ internal fun InsightsOverviewScreen(
                             label = stringResource(R.string.days_logged_this_cycle),
                         )
                         Text(
-                            uiState.symptomProgressLabel,
+                            uiState.symptomProgressLabel.resolve(),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            uiState.symptomSummary,
+                            uiState.symptomSummary.resolve(),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -471,9 +491,9 @@ internal fun InsightsOverviewScreen(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
                 ) {
-                    Text(uiState.narrativeTitle, style = MaterialTheme.typography.titleLarge)
+                    Text(uiState.narrativeTitle.resolve(), style = MaterialTheme.typography.titleLarge)
                     Text(
-                        uiState.narrativeSummary,
+                        uiState.narrativeSummary.resolve(),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -510,13 +530,13 @@ internal fun CycleTrendsScreen(
         item {
             GradientHeaderCard(
                 title = stringResource(R.string.cycle_trends),
-                subtitle = uiState.cycleWindowLabel,
+                subtitle = uiState.cycleWindowLabel.resolve(),
                 supportingContent = {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                         verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                     ) {
-                        InsightBadge(text = uiState.variabilityLabel, emphasized = true)
+                        InsightBadge(text = uiState.variabilityLabel.resolve(), emphasized = true)
                         InsightBadge(text = stringResource(R.string.based_on_logged_cycles))
                     }
                 },
@@ -565,13 +585,13 @@ internal fun CycleTrendsScreen(
             ) {
                 MetricCard(
                     label = stringResource(R.string.average),
-                    value = uiState.averageCycleText,
+                    value = uiState.averageCycleText.resolve(),
                     modifier = Modifier.widthIn(min = 150.dp),
                     accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.88f),
                 )
                 MetricCard(
                     label = stringResource(R.string.range),
-                    value = uiState.variabilityText,
+                    value = uiState.variabilityText.resolve(),
                     modifier = Modifier.widthIn(min = 150.dp),
                     accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f),
                 )
@@ -582,7 +602,7 @@ internal fun CycleTrendsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10)) {
                     Text(stringResource(R.string.read_this_trend), style = MaterialTheme.typography.titleLarge)
                     Text(
-                        uiState.cycleTrendSummary,
+                        uiState.cycleTrendSummary.resolve(),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -643,7 +663,7 @@ internal fun SymptomPatternsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                     Text(stringResource(R.string.pattern_summary), style = MaterialTheme.typography.titleLarge)
                     Text(
-                        uiState.symptomSummary,
+                        uiState.symptomSummary.resolve(),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -676,9 +696,9 @@ internal fun SymptomPatternsScreen(
                 val section = uiState.symptomSections[index]
                 ElevatedInsightCard {
                     Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
-                        Text(section.title, style = MaterialTheme.typography.titleLarge)
+                        Text(section.title.resolve(), style = MaterialTheme.typography.titleLarge)
                         Text(
-                            section.highlight,
+                            sectionHighlight(section),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -703,12 +723,12 @@ private fun InsightsMetricGrid(uiState: InsightsUiState) {
             Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 InsightMetricCard(
                     label = stringResource(R.string.avg_cycle),
-                    value = uiState.averageCycleText,
+                    value = uiState.averageCycleText.resolve(),
                     accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f),
                 )
                 InsightMetricCard(
                     label = stringResource(R.string.avg_period),
-                    value = uiState.averagePeriodText,
+                    value = uiState.averagePeriodText.resolve(),
                     accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.84f),
                 )
             }
@@ -716,13 +736,13 @@ private fun InsightsMetricGrid(uiState: InsightsUiState) {
             Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 InsightMetricCard(
                     label = stringResource(R.string.avg_cycle),
-                    value = uiState.averageCycleText,
+                    value = uiState.averageCycleText.resolve(),
                     modifier = Modifier.weight(1f),
                     accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f),
                 )
                 InsightMetricCard(
                     label = stringResource(R.string.avg_period),
-                    value = uiState.averagePeriodText,
+                    value = uiState.averagePeriodText.resolve(),
                     modifier = Modifier.weight(1f),
                     accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.84f),
                 )
@@ -774,19 +794,21 @@ private fun MiniBarChart(
         verticalAlignment = Alignment.Bottom,
     ) {
         points.forEach { point ->
+            val label = point.label.resolve()
+            val valueLabel = point.valueLabel.resolve()
             val fraction = point.value.toFloat() / maxValue.toFloat()
             val barHeight = minBarHeight + ((maxBarHeight - minBarHeight) * fraction)
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .semantics {
-                        contentDescription = "${point.label} ${point.valueLabel}"
+                        contentDescription = "$label $valueLabel"
                     },
                 verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    point.valueLabel,
+                    valueLabel,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -795,7 +817,7 @@ private fun MiniBarChart(
                         .fillMaxWidth()
                         .height(barHeight)
                         .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
-                        .semantics { contentDescription = "${point.label} ${point.valueLabel}" },
+                        .semantics { contentDescription = "$label $valueLabel" },
                 ) {
                     Surface(
                         color = accent.copy(alpha = 0.88f),
@@ -803,7 +825,7 @@ private fun MiniBarChart(
                     ) {}
                 }
                 Text(
-                    point.label,
+                    label,
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -824,7 +846,7 @@ private fun PeriodLengthStrip(items: List<InsightStripItemUi>) {
                 shape = MaterialTheme.shapes.extraLarge,
             ) {
                 Text(
-                    text = "${item.label} ${item.valueLabel}",
+                    text = "${item.label.resolve()} ${item.valueLabel.resolve()}",
                     modifier = Modifier.padding(horizontal = CycleCareSpace.space12, vertical = CycleCareSpace.space8),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -844,10 +866,10 @@ private fun PhaseHighlightCard(item: InsightPhaseHighlightUi) {
             modifier = Modifier.padding(CycleCareSpace.space14),
             verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
         ) {
-            InsightBadge(text = item.badgeLabel, emphasized = true)
-            Text(item.title, style = MaterialTheme.typography.titleMedium)
+            InsightBadge(text = item.badgeLabel.resolve(), emphasized = true)
+            Text(item.title.resolve(), style = MaterialTheme.typography.titleMedium)
             Text(
-                item.detail,
+                item.detail.resolve(),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -857,11 +879,11 @@ private fun PhaseHighlightCard(item: InsightPhaseHighlightUi) {
 
 @Composable
 private fun PatternHighlightLine(
-    title: String,
+    title: UiText,
     detail: String,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4)) {
-        Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(title.resolve(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(detail, style = MaterialTheme.typography.bodyLarge)
     }
 }
@@ -874,8 +896,8 @@ private fun BreakdownRow(item: InsightBreakdownItemUi) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(item.label, style = MaterialTheme.typography.bodyLarge)
-            Text(item.valueLabel, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(item.label.resolve(), style = MaterialTheme.typography.bodyLarge)
+            Text(item.valueLabel.resolve(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         LinearProgressIndicator(
             progress = { item.fraction },
@@ -958,8 +980,8 @@ private fun InsightEmptyState(
 }
 
 private fun breakdownSection(
-    title: String,
-    counts: Map<String, Int>,
+    title: UiText,
+    counts: Map<UiText, Int>,
 ): InsightBreakdownSectionUi {
     val total = counts.values.sum().coerceAtLeast(1)
     val items = counts.entries
@@ -970,46 +992,48 @@ private fun breakdownSection(
                 label = entry.key,
                 count = entry.value,
                 fraction = entry.value.toFloat() / total.toFloat(),
-                valueLabel = "${entry.value} days",
+                valueLabel = pluralUiText(R.plurals.n_days, entry.value, entry.value),
             )
         }
-    val highlight = items.firstOrNull()?.let { item ->
-        "${item.label} shows up most often"
-    } ?: "Keep logging to reveal patterns."
     return InsightBreakdownSectionUi(
         title = title,
-        highlight = highlight,
+        topLabel = items.firstOrNull()?.label,
         items = items,
     )
 }
 
-private fun Mood.label(): String = when (this) {
-    Mood.Stable -> "Stable"
-    Mood.Happy -> "Happy"
-    Mood.Low -> "Low"
-    Mood.Irritable -> "Irritable"
-    Mood.Anxious -> "Anxious"
+@Composable
+private fun sectionHighlight(section: InsightBreakdownSectionUi): String =
+    section.topLabel?.let { stringResource(R.string.shows_up_most_often, it.resolve()) }
+        ?: stringResource(R.string.keep_logging_to_reveal_patterns)
+
+private fun Mood.label(): UiText = when (this) {
+    Mood.Stable -> uiText(R.string.mood_stable)
+    Mood.Happy -> uiText(R.string.mood_happy)
+    Mood.Low -> uiText(R.string.mood_low)
+    Mood.Irritable -> uiText(R.string.mood_irritable)
+    Mood.Anxious -> uiText(R.string.mood_anxious)
 }
 
-private fun EnergyLevel.label(): String = when (this) {
-    EnergyLevel.Low -> "Low"
-    EnergyLevel.Steady -> "Steady"
-    EnergyLevel.High -> "High"
+private fun EnergyLevel.label(): UiText = when (this) {
+    EnergyLevel.Low -> uiText(R.string.energy_low)
+    EnergyLevel.Steady -> uiText(R.string.energy_steady)
+    EnergyLevel.High -> uiText(R.string.energy_high)
 }
 
-private fun PainLevel.label(): String = when (this) {
-    PainLevel.None -> "None"
-    PainLevel.Light -> "Light"
-    PainLevel.Moderate -> "Moderate"
-    PainLevel.Strong -> "Strong"
+private fun PainLevel.label(): UiText = when (this) {
+    PainLevel.None -> uiText(R.string.pain_none)
+    PainLevel.Light -> uiText(R.string.pain_light)
+    PainLevel.Moderate -> uiText(R.string.pain_moderate)
+    PainLevel.Strong -> uiText(R.string.pain_strong)
 }
 
-private fun DischargeType.label(): String = when (this) {
-    DischargeType.None -> "None"
-    DischargeType.Dry -> "Dry"
-    DischargeType.Creamy -> "Creamy"
-    DischargeType.Sticky -> "Sticky"
-    DischargeType.EggWhite -> "Egg white"
+private fun DischargeType.label(): UiText = when (this) {
+    DischargeType.None -> uiText(R.string.discharge_none)
+    DischargeType.Dry -> uiText(R.string.discharge_dry)
+    DischargeType.Creamy -> uiText(R.string.discharge_creamy)
+    DischargeType.Sticky -> uiText(R.string.discharge_sticky)
+    DischargeType.EggWhite -> uiText(R.string.discharge_egg_white)
 }
 
 @ScreenDebugPreviews
@@ -1059,13 +1083,13 @@ private fun SymptomPatternsPreview() {
 }
 
 internal fun previewInsightsUiState(): InsightsUiState = InsightsUiState(
-    averageCycleText = "29 days",
-    averagePeriodText = "5 days",
-    variabilityLabel = "Steady lately",
-    variabilityText = "27-31 day range",
-    variabilityDetail = "Your cycle is consistent",
-    variabilityInterpretation = "Recent cycles stay close to your average",
-    cycleWindowLabel = "Based on 6 logged cycles",
+    averageCycleText = UiText.Raw("29 days"),
+    averagePeriodText = UiText.Raw("5 days"),
+    variabilityLabel = UiText.Raw("Steady lately"),
+    variabilityText = UiText.Raw("27-31 day range"),
+    variabilityDetail = UiText.Raw("Your cycle is consistent"),
+    variabilityInterpretation = UiText.Raw("Recent cycles stay close to your average"),
+    cycleWindowLabel = UiText.Raw("Based on 6 logged cycles"),
     hasEnoughCycleData = true,
     hasEnoughSymptomData = true,
     cyclesLoggedCount = 6,
@@ -1073,45 +1097,45 @@ internal fun previewInsightsUiState(): InsightsUiState = InsightsUiState(
     daysLoggedThisCycle = 7,
     daysNeededForSymptomInsights = 5,
     cycleTrendBars = listOf(28, 30, 27, 29, 31, 29).mapIndexed { index, value ->
-        InsightBarPointUi("C${index + 1}", value, "$value days")
+        InsightBarPointUi(UiText.Raw("C${index + 1}"), value, UiText.Raw("$value days"))
     },
     periodTrendItems = listOf(5, 5, 4, 5, 6, 5).mapIndexed { index, value ->
-        InsightStripItemUi("P${index + 1}", "${value}d")
+        InsightStripItemUi(UiText.Raw("P${index + 1}"), UiText.Raw("${value}d"))
     },
-    cycleTrendSummary = "Your last cycle was 29 days, within typical range",
-    symptomSummary = "Your symptoms show patterns related to your cycle phases",
+    cycleTrendSummary = UiText.Raw("Your last cycle was 29 days, within typical range"),
+    symptomSummary = UiText.Raw("Your symptoms show patterns related to your cycle phases"),
     symptomSections = listOf(
-        breakdownSection("Mood", mapOf("Stable" to 6, "Low" to 3, "Happy" to 2, "Irritable" to 1, "Anxious" to 1)),
-        breakdownSection("Energy", mapOf("Steady" to 5, "Low" to 4, "High" to 2)),
-        breakdownSection("Pain", mapOf("None" to 4, "Light" to 3, "Moderate" to 4, "Strong" to 1)),
-        breakdownSection("Body cues", mapOf("Dry" to 2, "Creamy" to 3, "Egg white" to 4)),
+        breakdownSection(UiText.Raw("Mood"), mapOf(UiText.Raw("Stable") to 6, UiText.Raw("Low") to 3, UiText.Raw("Happy") to 2, UiText.Raw("Irritable") to 1, UiText.Raw("Anxious") to 1)),
+        breakdownSection(UiText.Raw("Energy"), mapOf(UiText.Raw("Steady") to 5, UiText.Raw("Low") to 4, UiText.Raw("High") to 2)),
+        breakdownSection(UiText.Raw("Pain"), mapOf(UiText.Raw("None") to 4, UiText.Raw("Light") to 3, UiText.Raw("Moderate") to 4, UiText.Raw("Strong") to 1)),
+        breakdownSection(UiText.Raw("Body cues"), mapOf(UiText.Raw("Dry") to 2, UiText.Raw("Creamy") to 3, UiText.Raw("Egg white") to 4)),
     ),
     phaseHighlights = listOf(
         InsightPhaseHighlightUi(
-            badgeLabel = "Period",
-            title = "Period phase pattern",
-            detail = "Moderate pain and low energy show up most often during your period.",
+            badgeLabel = UiText.Raw("Period"),
+            title = UiText.Raw("Period phase pattern"),
+            detail = UiText.Raw("Moderate pain and low energy show up most often during your period."),
         ),
         InsightPhaseHighlightUi(
-            badgeLabel = "Fertile window",
-            title = "Fertile window pattern",
-            detail = "Egg white discharge and steady energy appear most often.",
+            badgeLabel = UiText.Raw("Fertile window"),
+            title = UiText.Raw("Fertile window pattern"),
+            detail = UiText.Raw("Egg white discharge and steady energy appear most often."),
         ),
     ),
-    narrativeTitle = "What we know",
-    narrativeSummary = "Your cycle looks regular. Recent history shows 27 to 31 day cycles. Stable mood shows up most often.",
-    cycleProgressLabel = "6 of 2 cycles logged",
-    symptomProgressLabel = "7 of 5 days logged this cycle",
+    narrativeTitle = UiText.Raw("What we know"),
+    narrativeSummary = UiText.Raw("Your cycle looks regular. Recent history shows 27 to 31 day cycles. Stable mood shows up most often."),
+    cycleProgressLabel = UiText.Raw("6 of 2 cycles logged"),
+    symptomProgressLabel = UiText.Raw("7 of 5 days logged this cycle"),
 )
 
 internal fun previewLowDataInsightsUiState(): InsightsUiState = InsightsUiState(
-    averageCycleText = "28 days",
-    averagePeriodText = "5 days",
-    variabilityLabel = "Getting started",
-    variabilityText = "Early baseline",
-    variabilityDetail = "Your cycle is consistent",
-    variabilityInterpretation = "Recent cycles stay close to your average",
-    cycleWindowLabel = "Based on your setup",
+    averageCycleText = UiText.Raw("28 days"),
+    averagePeriodText = UiText.Raw("5 days"),
+    variabilityLabel = UiText.Raw("Getting started"),
+    variabilityText = UiText.Raw("Early baseline"),
+    variabilityDetail = UiText.Raw("Your cycle is consistent"),
+    variabilityInterpretation = UiText.Raw("Recent cycles stay close to your average"),
+    cycleWindowLabel = UiText.Raw("Based on your setup"),
     hasEnoughCycleData = false,
     hasEnoughSymptomData = false,
     cyclesLoggedCount = 1,
@@ -1120,8 +1144,8 @@ internal fun previewLowDataInsightsUiState(): InsightsUiState = InsightsUiState(
     daysNeededForSymptomInsights = 5,
     cycleTrendSummary = TrendChartsBuildingSummary,
     symptomSummary = SymptomPatternsLockedSummary,
-    narrativeTitle = "Build stronger patterns",
+    narrativeTitle = UiText.Raw("Build stronger patterns"),
     narrativeSummary = BuildStrongerPatternsSummary,
-    cycleProgressLabel = "1 of 2 cycles logged",
-    symptomProgressLabel = "Log a few more days to see patterns",
+    cycleProgressLabel = UiText.Raw("1 of 2 cycles logged"),
+    symptomProgressLabel = UiText.Raw("Log a few more days to see patterns"),
 )

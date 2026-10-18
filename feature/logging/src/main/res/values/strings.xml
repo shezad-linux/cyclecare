@@ -16,6 +16,10 @@
     <string name="mood">Mood</string>
     <string name="not_tracked">Not tracked</string>
     <string name="notes">Notes</string>
+    <plurals name="notes_max_characters">
+        <item quantity="one">Notes can be up to %1$d character.</item>
+        <item quantity="other">Notes can be up to %1$d characters.</item>
+    </plurals>
     <string name="optional">Optional</string>
     <string name="optional_cervical_fluid_observations_helps_estimate_fertilit">Optional cervical fluid observations. Helps estimate fertility timing.</string>
     <string name="pain">Pain</string>
@@ -24,4 +28,84 @@
     <string name="same_as_yesterday">Same as yesterday ✓</string>
     <string name="score_value">Score: %1$d</string>
     <string name="streak_with_8s_check_in">%1$s • 8s check-in</string>
+
+    <string name="count_ratio">%1$d / %2$d</string>
+    <string name="cycle_phase_approaching_period">Approaching period</string>
+    <string name="cycle_phase_early_cycle">Early cycle</string>
+    <string name="cycle_phase_fertile_window">Fertile window</string>
+    <string name="cycle_phase_late_cycle">Late cycle</string>
+    <string name="cycle_phase_mid_cycle">Mid cycle</string>
+    <string name="cycle_phase_period_days">Period days</string>
+    <string name="cycle_progress_day">Day %1$d / %2$d</string>
+    <string name="discharge_creamy">Creamy</string>
+    <string name="discharge_dry">Dry</string>
+    <string name="discharge_egg_white">Egg white</string>
+    <string name="discharge_none">None</string>
+    <string name="discharge_sticky">Sticky</string>
+    <string name="editing_todays_saved_check_in">Editing today\'s saved check-in</string>
+    <string name="energy_high">High</string>
+    <string name="energy_low">Low</string>
+    <string name="energy_steady">Steady</string>
+    <string name="hero_eyebrow_daily_check_in">Daily check-in</string>
+    <string name="hero_eyebrow_period_check_in">Period check-in</string>
+    <string name="hero_insight_active_period">Take a moment to log today\'s symptoms.</string>
+    <string name="hero_insight_approaching_period">Period expected soon. Note any symptoms you notice.</string>
+    <string name="hero_insight_default">Logging symptoms helps improve your predictions over time.</string>
+    <string name="hero_insight_existing_entry">Your entry for today is saved. Update anytime.</string>
+    <string name="hero_insight_fertile_window">You\'re in your fertile window. Logging symptoms helps track patterns.</string>
+    <string name="hero_insight_late_cycle">Period expected soon. Logging symptoms helps track regularity.</string>
+    <string name="hero_insight_mid_cycle">Mid cycle phase. Fertile window approaching in a few days.</string>
+    <string name="mood_anxious">Anxious</string>
+    <string name="mood_happy">Happy</string>
+    <string name="mood_irritable">Irritable</string>
+    <string name="mood_low">Low</string>
+    <string name="mood_stable">Stable</string>
+    <string name="no_streak_yet">No streak yet</string>
+    <string name="pain_helper_light">Mild discomfort</string>
+    <string name="pain_helper_moderate">Noticeable pain</string>
+    <string name="pain_helper_none">No pain today</string>
+    <string name="pain_helper_strong">Hard to ignore</string>
+    <string name="pain_light">Light</string>
+    <string name="pain_moderate">Moderate</string>
+    <string name="pain_none">None</string>
+    <string name="pain_strong">Strong</string>
+    <string name="privacy_note_saved_locally">Saved locally on this device by default.</string>
+    <string name="save_cta_edit">Edit today\'s entry</string>
+    <string name="save_cta_save">Save today\'s entry</string>
+    <string name="save_cta_update">Update today\'s entry</string>
+    <string name="saved_checkin_complete">Saved! Check-in complete. Keep up the great habit.</string>
+    <string name="saved_to_local_timeline">Saved to your local timeline.</string>
+
+    <plurals name="energy_high_days">
+        <item quantity="one">High energy level sustained for %1$d day!</item>
+        <item quantity="other">High energy level sustained for %1$d days!</item>
+    </plurals>
+    <plurals name="energy_low_days">
+        <item quantity="one">Energy has been low for %1$d day. Get some restful sleep.</item>
+        <item quantity="other">Energy has been low for %1$d days. Get some restful sleep.</item>
+    </plurals>
+    <plurals name="energy_steady_days">
+        <item quantity="one">Energy steady for %1$d day in a row!</item>
+        <item quantity="other">Energy steady for %1$d days in a row!</item>
+    </plurals>
+    <plurals name="fertile_window_starts_in_days">
+        <item quantity="one">Fertile window starts in %1$d day.</item>
+        <item quantity="other">Fertile window starts in %1$d days.</item>
+    </plurals>
+    <plurals name="mood_happy_days">
+        <item quantity="one">Great to see! You\'ve been happy for %1$d day in a row.</item>
+        <item quantity="other">Great to see! You\'ve been happy for %1$d days in a row.</item>
+    </plurals>
+    <plurals name="mood_stable_days">
+        <item quantity="one">Feeling balanced: stable mood logged for %1$d day.</item>
+        <item quantity="other">Feeling balanced: stable mood logged for %1$d days.</item>
+    </plurals>
+    <plurals name="pain_free_days">
+        <item quantity="one">Pain-free for %1$d day. Your cycle is going smoothly!</item>
+        <item quantity="other">Pain-free for %1$d days. Your cycle is going smoothly!</item>
+    </plurals>
+    <plurals name="streak_days">
+        <item quantity="one">%1$d day streak!</item>
+        <item quantity="other">%1$d day streak!</item>
+    </plurals>
 </resources>

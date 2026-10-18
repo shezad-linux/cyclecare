@@ -25,4 +25,70 @@
     <string name="this_removes_the_selected_period_entry_and_recalculates_loca">This removes the selected period entry and recalculates local predictions.</string>
     <string name="update_entry">Update entry</string>
     <string name="use_simple_date_entry_for_now_then_adjust_cycle_length_and_n">Use simple date entry for now, then adjust cycle length and notes before saving locally.</string>
+    <!-- Cycle range labels. The two arguments are already localized dates. -->
+    <string name="cycle_range">%1$s - %2$s</string>
+    <string name="cycle_range_ongoing">%1$s - ongoing</string>
+    <plurals name="history_cycle_length">
+        <item quantity="one">%1$d day cycle</item>
+        <item quantity="other">%1$d day cycle</item>
+    </plurals>
+    <!-- Cycle editor validation. %1$s in the format errors is YYYY-MM-DD and must stay verbatim. -->
+    <string name="editor_start_date_required">Start date is required.</string>
+    <string name="editor_start_date_format">Use %1$s for the start date.</string>
+    <string name="editor_start_date_future">Start date cannot be in the future.</string>
+    <string name="editor_end_date_required">End date is required.</string>
+    <string name="editor_end_date_format">Use %1$s for the end date.</string>
+    <string name="editor_end_date_future">End date cannot be in the future.</string>
+    <string name="editor_cycle_length_required">Cycle length is required.</string>
+    <string name="editor_cycle_length_whole_number">Cycle length must be a whole number.</string>
+    <string name="editor_cycle_length_range">Cycle length must stay between %1$d and %2$d days.</string>
+    <!-- Legend chips. Ovulation reuses the existing ovulation string. -->
+    <string name="legend_period">Period</string>
+    <string name="legend_fertile_window">Fertile window</string>
+    <string name="legend_today_selected">Today / selected</string>
+    <!-- Selected day summary statuses. -->
+    <string name="summary_status_period_day">Period day</string>
+    <string name="summary_status_ovulation_estimate">Ovulation estimate</string>
+    <string name="summary_status_fertile_window">Fertile window</string>
+    <string name="summary_status_future_date">Future date</string>
+    <string name="summary_status_today">Today</string>
+    <string name="summary_status_no_event">No cycle event</string>
+    <!-- Selected day summary details. %1$d is the period length, %2$d the cycle length, %3$s the user notes. -->
+    <string name="summary_period_detail">%1$d-day period • %2$dd cycle</string>
+    <string name="summary_period_detail_first_day">%1$d-day period • %2$dd cycle • First day of period</string>
+    <string name="summary_period_detail_last_day">%1$d-day period • %2$dd cycle • Last day of period</string>
+    <string name="summary_period_detail_notes">%1$d-day period • %2$dd cycle. %3$s</string>
+    <string name="summary_period_detail_first_day_notes">%1$d-day period • %2$dd cycle • First day of period. %3$s</string>
+    <string name="summary_period_detail_last_day_notes">%1$d-day period • %2$dd cycle • Last day of period. %3$s</string>
+    <string name="summary_ovulation_detail_future">Peak fertility • This is a future estimate based on your local history.</string>
+    <string name="summary_ovulation_detail_today">Peak fertility • Tracking symptoms today may help with future insights.</string>
+    <string name="summary_ovulation_detail_past">Peak fertility • Consider logging how you feel on this date.</string>
+    <string name="summary_fertile_detail_future">Day %1$d of fertile window • This is a future estimate based on your local history.</string>
+    <string name="summary_fertile_detail_today">Day %1$d of fertile window • Track symptoms for better insights.</string>
+    <string name="summary_fertile_detail_past">Day %1$d of fertile window • Log mood and energy for future reference.</string>
+    <string name="summary_future_detail">This date is in the future.</string>
+    <string name="summary_future_detail_expected">This date is in the future. Your period is expected around %1$s.</string>
+    <string name="summary_future_detail_expected_soon">This date is in the future. Your period is expected soon.</string>
+    <string name="summary_insight_late_cycle">Late cycle • Consider checking in</string>
+    <string name="summary_insight_period_today">Period expected today</string>
+    <plurals name="summary_insight_period_in_days">
+        <item quantity="one">Period expected tomorrow</item>
+        <item quantity="other">Period expected in %1$d days</item>
+    </plurals>
+    <string name="summary_insight_cycle_day">Cycle day %1$d</string>
+    <string name="summary_insight_track_today">Track how you\'re feeling today</string>
+    <string name="summary_neutral_detail_empty">No logged entry or prediction for this date yet. Track your symptoms or period when ready.</string>
+    <!-- Selected day summary actions. Update entry reuses the existing update_entry string. -->
+    <string name="summary_action_log_period">Log period on this date</string>
+    <string name="history_empty_message">Your logged cycles will appear here once you save them. History makes predictions and reminder timing more reliable.</string>
+    <string name="cycle_history_updated_locally">Cycle history updated locally.</string>
+    <string name="cycle_entry_removed_locally">Cycle entry removed locally.</string>
+    <!-- TalkBack day state description tokens, joined with ", " in display order. -->
+    <string name="day_state_selected">selected</string>
+    <string name="day_state_today">today</string>
+    <string name="day_state_period">period</string>
+    <string name="day_state_fertile">fertile</string>
+    <string name="day_state_ovulation">ovulation</string>
+    <string name="day_state_current_month">current month</string>
+    <string name="day_state_outside_month">outside month</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.cyclecare.feature.calendar
 
+import com.cyclecare.core.designsystem.text.UiText
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
 import com.cyclecare.core.model.DateRange
@@ -9,12 +10,23 @@ import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
 import java.time.DayOfWeek
 import java.time.YearMonth
+import java.time.temporal.WeekFields
+import java.util.Locale
 import org.junit.Test
 
 class CalendarPresentationTest {
     @Test
-    fun monthLabel_usesNaturalFormatting() {
-        assertThat(formatMonthLabel(YearMonth.of(2026, 3))).isEqualTo("March 2026")
+    fun monthLabel_usesNaturalFormattingUnderExplicitLocale() {
+        assertThat(formatMonthLabel(YearMonth.of(2026, 3), Locale.US)).isEqualTo("March 2026")
+        assertThat(formatMonthLabel(YearMonth.of(2026, 3), Locale.GERMANY)).isEqualTo("März 2026")
+    }
+
+    @Test
+    fun calendarDateLabel_usesLocalizedFormatUnderExplicitLocale() {
+        assertThat(formatCalendarDate(LocalDate.of(2026, 3, 23), Locale.US))
+            .isEqualTo("Monday, March 23, 2026")
+        assertThat(formatCalendarDate(LocalDate.of(2026, 3, 23), Locale.GERMANY))
+            .isEqualTo("Montag, 23. März 2026")
     }
 
     @Test
@@ -38,8 +50,8 @@ class CalendarPresentationTest {
             prediction = prediction,
         )
 
-        assertThat(summary.statusLabel).isEqualTo("Ovulation estimate")
-        assertThat(summary.primaryActionLabel).isEqualTo("Log period on this date")
+        assertThat(summary.statusLabel).isEqualTo(UiText.Resource(R.string.summary_status_ovulation_estimate))
+        assertThat(summary.primaryActionLabel).isEqualTo(UiText.Resource(R.string.summary_action_log_period))
     }
 
     @Test
@@ -64,13 +76,13 @@ class CalendarPresentationTest {
             today = LocalDate.of(2026, 3, 16),
         )
 
-        assertThat(summary.statusLabel).isEqualTo("Ovulation estimate")
+        assertThat(summary.statusLabel).isEqualTo(UiText.Resource(R.string.summary_status_ovulation_estimate))
         assertThat(summary.primaryActionLabel).isNull()
-        assertThat(summary.detail).contains("future estimate")
+        assertThat(summary.detail).isEqualTo(UiText.Resource(R.string.summary_ovulation_detail_future))
     }
 
     @Test
-    fun historyItems_areSortedNewestFirstAndNaturalRange() {
+    fun historyItems_areSortedNewestFirstAndLocalizedRange() {
         val items = buildHistoryItems(
             listOf(
                 CycleRecord(
@@ -90,11 +102,22 @@ class CalendarPresentationTest {
                     notes = "Cycle felt regular.",
                 ),
             ),
+            Locale.US,
         )
 
         assertThat(items.first().id).isEqualTo("newer")
-        assertThat(items.first().dateRangeLabel).isEqualTo("Mar 11 - Mar 15")
-        assertThat(items.first().cycleLengthLabel).isEqualTo("28 day cycle")
+        assertThat(items.first().dateRangeLabel).isEqualTo(
+            UiText.Resource(R.string.cycle_range, listOf("Mar 11, 2026", "Mar 15, 2026")),
+        )
+        assertThat(items.first().cycleLengthLabel).isEqualTo(
+            UiText.Plural(R.plurals.history_cycle_length, 28, listOf(28)),
+        )
+    }
+
+    @Test
+    fun cycleRangeLabel_ongoingUsesRangeResourceWithSingleDate() {
+        assertThat(formatCycleRangeLabel(LocalDate.of(2026, 3, 11), null, Locale.US))
+            .isEqualTo(UiText.Resource(R.string.cycle_range_ongoing, listOf("Mar 11, 2026")))
     }
 
     @Test
@@ -102,10 +125,10 @@ class CalendarPresentationTest {
         val days = buildCalendarDays(
             CalendarUiState(
                 month = YearMonth.of(2026, 3),
-                monthLabel = formatMonthLabel(YearMonth.of(2026, 3)),
                 selectedDate = LocalDate.of(2026, 3, 16),
             ),
             today = LocalDate.of(2026, 3, 16),
+            firstDayOfWeek = DayOfWeek.MONDAY,
         )
 
         assertThat(days).hasSize(42)
@@ -113,8 +136,8 @@ class CalendarPresentationTest {
     }
 
     @Test
-    fun orderedWeekdays_areMondayFirst() {
-        assertThat(orderedWeekdays()).containsExactly(
+    fun orderedWeekdays_areMondayFirstWhenMondayRequested() {
+        assertThat(orderedWeekdays(DayOfWeek.MONDAY)).containsExactly(
             DayOfWeek.MONDAY,
             DayOfWeek.TUESDAY,
             DayOfWeek.WEDNESDAY,
@@ -126,17 +149,43 @@ class CalendarPresentationTest {
     }
 
     @Test
+    fun orderedWeekdays_areSundayFirstWhenSundayRequested() {
+        assertThat(orderedWeekdays(DayOfWeek.SUNDAY)).containsExactly(
+            DayOfWeek.SUNDAY,
+            DayOfWeek.MONDAY,
+            DayOfWeek.TUESDAY,
+            DayOfWeek.WEDNESDAY,
+            DayOfWeek.THURSDAY,
+            DayOfWeek.FRIDAY,
+            DayOfWeek.SATURDAY,
+        ).inOrder()
+    }
+
+    @Test
+    fun weekStart_derivesFromLocaleConventions() {
+        assertThat(WeekFields.of(Locale.US).firstDayOfWeek).isEqualTo(DayOfWeek.SUNDAY)
+        assertThat(WeekFields.of(Locale.UK).firstDayOfWeek).isEqualTo(DayOfWeek.MONDAY)
+    }
+
+    @Test
     fun calendarGridStart_monthStartingMonday_alignsWithoutLeadingDays() {
-        val start = calendarGridStart(YearMonth.of(2021, 3))
+        val start = calendarGridStart(YearMonth.of(2021, 3), DayOfWeek.MONDAY)
 
         assertThat(start).isEqualTo(LocalDate.of(2021, 3, 1))
     }
 
     @Test
     fun calendarGridStart_monthStartingSunday_alignsWithPreviousMonday() {
-        val start = calendarGridStart(YearMonth.of(2021, 8))
+        val start = calendarGridStart(YearMonth.of(2021, 8), DayOfWeek.MONDAY)
 
         assertThat(start).isEqualTo(LocalDate.of(2021, 7, 26))
+    }
+
+    @Test
+    fun calendarGridStart_sundayFirstWeek_alignsOnSundayMonthStart() {
+        val start = calendarGridStart(YearMonth.of(2021, 8), DayOfWeek.SUNDAY)
+
+        assertThat(start).isEqualTo(LocalDate.of(2021, 8, 1))
     }
 
     @Test
@@ -145,10 +194,10 @@ class CalendarPresentationTest {
         val days = buildCalendarDays(
             CalendarUiState(
                 month = month,
-                monthLabel = formatMonthLabel(month),
                 selectedDate = LocalDate.of(2028, 2, 29),
             ),
             today = LocalDate.of(2028, 2, 29),
+            firstDayOfWeek = DayOfWeek.MONDAY,
         )
 
         val leapDay = days.first { it.date == LocalDate.of(2028, 2, 29) }
@@ -167,10 +216,10 @@ class CalendarPresentationTest {
         val days = buildCalendarDays(
             CalendarUiState(
                 month = month,
-                monthLabel = formatMonthLabel(month),
                 selectedDate = LocalDate.of(2027, 2, 28),
             ),
             today = LocalDate.of(2027, 2, 28),
+            firstDayOfWeek = DayOfWeek.MONDAY,
         )
 
         assertThat(days.count { YearMonth.from(it.date) == month }).isEqualTo(28)
@@ -183,10 +232,10 @@ class CalendarPresentationTest {
         val days = buildCalendarDays(
             CalendarUiState(
                 month = month,
-                monthLabel = formatMonthLabel(month),
                 selectedDate = LocalDate.of(2027, 1, 1),
             ),
             today = LocalDate.of(2027, 1, 1),
+            firstDayOfWeek = DayOfWeek.MONDAY,
         )
 
         val decemberDay = days.first { it.date == LocalDate.of(2026, 12, 31) }
@@ -244,6 +293,45 @@ class CalendarPresentationTest {
     }
 
     @Test
+    fun calendarDayStateDescription_exposesStructuredStatesInDisplayOrder() {
+        val states = calendarDayStateDescription(
+            CalendarDay(
+                date = LocalDate.of(2026, 3, 23),
+                isCurrentMonth = true,
+                isPeriodDay = false,
+                isFertileDay = false,
+                isOvulationDay = true,
+                isToday = true,
+                isSelected = true,
+            ),
+        )
+
+        assertThat(states).containsExactly(
+            CalendarDayState.Selected,
+            CalendarDayState.Today,
+            CalendarDayState.Ovulation,
+            CalendarDayState.CurrentMonth,
+        ).inOrder()
+    }
+
+    @Test
+    fun calendarDayStateDescription_marksOutsideMonthAsFinalToken() {
+        val states = calendarDayStateDescription(
+            CalendarDay(
+                date = LocalDate.of(2026, 2, 23),
+                isCurrentMonth = false,
+                isPeriodDay = false,
+                isFertileDay = false,
+                isOvulationDay = false,
+                isToday = false,
+                isSelected = false,
+            ),
+        )
+
+        assertThat(states).containsExactly(CalendarDayState.OutsideMonth)
+    }
+
+    @Test
     fun anchoredDay_restoresThirtyFirstWhenReturningToLongMonth() {
         val march = YearMonth.of(2026, 3)
         val february = YearMonth.of(2026, 2)
@@ -268,9 +356,11 @@ class CalendarPresentationTest {
             validator = CycleRecordValidator(),
         )
 
-        assertThat(validated.startDateError).isEqualTo("Start date cannot be in the future.")
-        assertThat(validated.endDateError).isEqualTo("Use YYYY-MM-DD for the end date.")
-        assertThat(validated.cycleLengthError).isEqualTo("Cycle length is required.")
+        assertThat(validated.startDateError).isEqualTo(UiText.Resource(R.string.editor_start_date_future))
+        assertThat(validated.endDateError).isEqualTo(
+            UiText.Resource(R.string.editor_end_date_format, listOf("YYYY-MM-DD")),
+        )
+        assertThat(validated.cycleLengthError).isEqualTo(UiText.Resource(R.string.editor_cycle_length_required))
         assertThat(validated.isSaveEnabled).isFalse()
     }
 }

@@ -1,6 +1,7 @@
 package com.cyclecare.feature.logging
 
 import androidx.lifecycle.SavedStateHandle
+import com.cyclecare.core.designsystem.text.pluralUiText
 import com.cyclecare.core.domain.CycleRepository
 import com.cyclecare.core.domain.PredictionRepository
 import com.cyclecare.core.domain.ProfileRepository
@@ -75,7 +76,9 @@ class LoggingValidationTest {
             isSaving = false,
         )
 
-        assertThat(state.notesError).isEqualTo("Notes can be up to 500 characters.")
+        assertThat(state.notesError).isEqualTo(
+            pluralUiText(R.plurals.notes_max_characters, MAX_SYMPTOM_NOTE_LENGTH, MAX_SYMPTOM_NOTE_LENGTH),
+        )
         assertThat(state.isSaveEnabled).isFalse()
     }
 

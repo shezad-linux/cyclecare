@@ -30,6 +30,9 @@ import com.cyclecare.core.designsystem.DashboardKeyValueRow
 import com.cyclecare.core.designsystem.DashboardPill
 import com.cyclecare.core.designsystem.DashboardSectionCard
 import com.cyclecare.core.designsystem.GradientHeaderCard
+import com.cyclecare.core.designsystem.text.UiText
+import com.cyclecare.core.designsystem.text.resolve
+import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.domain.PrivacyRepository
 import com.cyclecare.core.domain.PrivacyRules
 import com.cyclecare.core.model.ConsentState
@@ -50,7 +53,7 @@ data class PrivacyUiState(
     val entryMode: PrivacyEntryMode = PrivacyEntryMode.Setup,
     val pinEntry: String = "",
     val secureAuthCapability: SecureAuthCapability = SecureAuthCapability.None,
-    val message: String? = null,
+    val message: UiText? = null,
 )
 
 class PrivacyViewModel(
@@ -60,7 +63,7 @@ class PrivacyViewModel(
     private val stagedPin = MutableStateFlow<String?>(null)
     private val entryMode = MutableStateFlow(PrivacyEntryMode.Setup)
     private val secureAuthCapability = MutableStateFlow(SecureAuthCapability.None)
-    private val message = MutableStateFlow<String?>(null)
+    private val message = MutableStateFlow<UiText?>(null)
 
     private val privacyState = combine(
         privacyRepository.observeConsent(),
@@ -74,7 +77,7 @@ class PrivacyViewModel(
         entryMode,
         secureAuthCapability,
         message,
-    ) { requestedMode: PrivacyEntryMode, capability: SecureAuthCapability, messageText: String? ->
+    ) { requestedMode: PrivacyEntryMode, capability: SecureAuthCapability, messageText: UiText? ->
         Triple(requestedMode, capability, messageText)
     }
 
@@ -102,7 +105,7 @@ class PrivacyViewModel(
             if ((!capability.supportsBiometric || !hasPin || !consent.appLockEnabled) && consent.biometricEnabled) {
                 privacyRepository.setBiometricEnabled(false)
                 if (!capability.supportsBiometric) {
-                    message.value = "Biometric unlock is no longer available on this device."
+                    message.value = uiText(R.string.biometric_unlock_is_no_longer_available_on_this_device)
                 }
             }
         }
@@ -122,14 +125,14 @@ class PrivacyViewModel(
         viewModelScope.launch {
             if (enabled && !privacyRepository.hasPinConfigured().first()) {
                 entryMode.value = PrivacyEntryMode.Setup
-                message.value = "Create and confirm a PIN first."
+                message.value = uiText(R.string.create_and_confirm_pin_first)
                 return@launch
             }
             privacyRepository.setAppLockEnabled(enabled)
             message.value = if (enabled) {
-                "App lock is on for sensitive screens."
+                uiText(R.string.app_lock_is_on_for_sensitive_screens)
             } else {
-                "App lock is off."
+                uiText(R.string.app_lock_is_off)
             }
         }
     }
@@ -138,14 +141,14 @@ class PrivacyViewModel(
         pinEntry.value = ""
         stagedPin.value = null
         entryMode.value = PrivacyEntryMode.VerifyCurrentPin
-        message.value = "Enter your current PIN to continue."
+        message.value = uiText(R.string.enter_your_current_pin_to_continue)
     }
 
     fun startPinSetup() {
         pinEntry.value = ""
         stagedPin.value = null
         entryMode.value = PrivacyEntryMode.Setup
-        message.value = "Create a 4-digit PIN for sensitive screens."
+        message.value = uiText(R.string.create_a_4_digit_pin_for_sensitive_screens)
     }
 
     fun onBiometricEnabled() {
@@ -153,18 +156,18 @@ class PrivacyViewModel(
             val consent = privacyRepository.observeConsent().first()
             val hasPin = privacyRepository.hasPinConfigured().first()
             if (!hasPin || !consent.appLockEnabled || !secureAuthCapability.value.supportsBiometric) {
-                message.value = "Turn on app lock and keep a PIN before enabling biometric unlock."
+                message.value = uiText(R.string.turn_on_app_lock_and_keep_a_pin_before_enabling_biometric_unlock)
                 return@launch
             }
             privacyRepository.setBiometricEnabled(true)
-            message.value = "Biometric unlock is ready."
+            message.value = uiText(R.string.biometric_unlock_is_ready)
         }
     }
 
     fun disableBiometric() {
         viewModelScope.launch {
             privacyRepository.setBiometricEnabled(false)
-            message.value = "Biometric unlock is off."
+            message.value = uiText(R.string.biometric_unlock_is_off)
         }
     }
 
@@ -174,12 +177,16 @@ class PrivacyViewModel(
             stagedPin.value = null
             pinEntry.value = ""
             entryMode.value = PrivacyEntryMode.Setup
-            message.value = "Access recovered. Create a new PIN."
+            message.value = uiText(R.string.access_recovered_create_a_new_pin)
         }
     }
 
     fun showMessage(messageText: String) {
-        message.value = messageText
+        // Already-localized text from the non-composable platform auth
+        // controller: either the biometric prompt's own string
+        // (platform-owned) or a message the controller resolved from its
+        // resources against its Context.
+        message.value = UiText.Raw(messageText)
     }
 
     fun submitPrimaryAction() {
@@ -197,13 +204,13 @@ class PrivacyViewModel(
     private fun stagePinForConfirmation(nextMode: PrivacyEntryMode) {
         val currentPin = pinEntry.value
         if (!PrivacyRules.isPinValid(currentPin)) {
-            message.value = "PIN must be exactly 4 digits."
+            message.value = uiText(R.string.pin_must_be_exactly_4_digits)
             return
         }
         stagedPin.value = currentPin
         pinEntry.value = ""
         entryMode.value = nextMode
-        message.value = "Enter the same PIN again to confirm it."
+        message.value = uiText(R.string.enter_the_same_pin_again_to_confirm_it)
     }
 
     private fun verifyCurrentPin() {
@@ -211,11 +218,11 @@ class PrivacyViewModel(
             val valid = privacyRepository.validatePin(pinEntry.value)
             pinEntry.value = ""
             if (!valid) {
-                message.value = "Current PIN didn't match. Try again."
+                message.value = uiText(R.string.current_pin_didnt_match_try_again)
                 return@launch
             }
             entryMode.value = PrivacyEntryMode.CreateNewPin
-            message.value = "Enter a new 4-digit PIN."
+            message.value = uiText(R.string.enter_a_new_4_digit_pin)
         }
     }
 
@@ -227,7 +234,7 @@ class PrivacyViewModel(
                 stagedPin.value = null
                 pinEntry.value = ""
                 entryMode.value = if (initialSetup) PrivacyEntryMode.Setup else PrivacyEntryMode.CreateNewPin
-                message.value = "PINs didn't match. Start again."
+                message.value = uiText(R.string.pins_didnt_match_start_again)
                 return@launch
             }
 
@@ -240,9 +247,9 @@ class PrivacyViewModel(
             pinEntry.value = ""
             entryMode.value = PrivacyEntryMode.Dashboard
             message.value = if (initialSetup) {
-                "PIN saved. App lock is on."
+                uiText(R.string.pin_saved_app_lock_is_on)
             } else {
-                "PIN updated locally."
+                uiText(R.string.pin_updated_locally)
             }
         }
     }
@@ -355,7 +362,7 @@ private fun PrivacyScreen(
                             },
                         )
                         DashboardPill(
-                            text = uiState.secureAuthCapability.summaryLabel(),
+                            text = uiState.secureAuthCapability.summaryLabel().resolve(),
                             emphasized = uiState.secureAuthCapability != SecureAuthCapability.None,
                         )
                     }
@@ -380,7 +387,7 @@ private fun PrivacyScreen(
                         )
                         DashboardKeyValueRow(
                             label = stringResource(R.string.recovery),
-                            value = uiState.secureAuthCapability.summaryLabel(),
+                            value = uiState.secureAuthCapability.summaryLabel().resolve(),
                         )
                         if (uiState.secureAuthCapability.supportsBiometric) {
                             SettingSwitchRow(
@@ -469,7 +476,7 @@ private fun PrivacyScreen(
                             }
                             uiState.message?.let { text ->
                                 Text(
-                                    text = text,
+                                    text = text.resolve(),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.primary,
                                 )
@@ -493,7 +500,7 @@ private fun PrivacyScreen(
                         title = entryContent.title,
                         subtitle = entryContent.subtitle,
                         pinLength = uiState.pinEntry.length,
-                        message = uiState.message,
+                        message = uiState.message?.resolve(),
                         primaryActionLabel = entryContent.primaryActionLabel,
                         primaryEnabled = uiState.pinEntry.length == 4,
                         onPrimaryAction = onSubmitPrimary,
@@ -538,44 +545,44 @@ private data class PrivacyEntryContent(
 private fun PrivacyEntryMode.toContent(): PrivacyEntryContent = when (this) {
     PrivacyEntryMode.Dashboard -> PrivacyEntryContent(
         title = stringResource(R.string.pin_ready),
-        subtitle = "Your app lock is configured.",
+        subtitle = stringResource(R.string.your_app_lock_is_configured),
         primaryActionLabel = stringResource(R.string.update_pin),
     )
     PrivacyEntryMode.Setup -> PrivacyEntryContent(
         title = stringResource(R.string.create_a_pin),
-        subtitle = "Choose a 4-digit PIN before app lock can turn on.",
-        primaryActionLabel = "Continue",
+        subtitle = stringResource(R.string.choose_a_4_digit_pin_before_app_lock_can_turn_on),
+        primaryActionLabel = stringResource(R.string.continue_label),
     )
     PrivacyEntryMode.ConfirmSetup -> PrivacyEntryContent(
-        title = "Confirm your PIN",
-        subtitle = "Enter the same 4 digits again to lock in local access.",
+        title = stringResource(R.string.confirm_your_pin),
+        subtitle = stringResource(R.string.enter_the_same_4_digits_again_to_lock_in_local_access),
         primaryActionLabel = stringResource(R.string.save_pin),
         secondaryActionLabel = stringResource(R.string.start_over),
         secondaryAction = PrivacySecondaryAction.StartSetup,
     )
     PrivacyEntryMode.VerifyCurrentPin -> PrivacyEntryContent(
-        title = "Verify current PIN",
-        subtitle = "Confirm your existing PIN before changing it.",
+        title = stringResource(R.string.verify_current_pin),
+        subtitle = stringResource(R.string.confirm_your_existing_pin_before_changing_it),
         primaryActionLabel = stringResource(R.string.verify_pin),
         secondaryActionLabel = stringResource(R.string.recover_access),
         secondaryAction = PrivacySecondaryAction.Recover,
     )
     PrivacyEntryMode.CreateNewPin -> PrivacyEntryContent(
-        title = "Create a new PIN",
+        title = stringResource(R.string.create_a_new_pin),
         subtitle = stringResource(R.string.choose_a_fresh_4_digit_pin_for_local_app_lock),
-        primaryActionLabel = "Continue",
+        primaryActionLabel = stringResource(R.string.continue_label),
     )
     PrivacyEntryMode.ConfirmNewPin -> PrivacyEntryContent(
-        title = "Confirm new PIN",
-        subtitle = "Re-enter the new PIN to finish the update.",
+        title = stringResource(R.string.confirm_new_pin),
+        subtitle = stringResource(R.string.re_enter_the_new_pin_to_finish_the_update),
         primaryActionLabel = stringResource(R.string.update_pin),
         secondaryActionLabel = stringResource(R.string.start_over),
         secondaryAction = PrivacySecondaryAction.StartChange,
     )
     PrivacyEntryMode.Unlock -> PrivacyEntryContent(
-        title = "Unlock CycleCare",
-        subtitle = "Enter your 4-digit PIN to reopen local cycle data.",
-        primaryActionLabel = "Unlock",
+        title = stringResource(R.string.unlock_cyclecare),
+        subtitle = stringResource(R.string.enter_your_4_digit_pin_to_reopen_local_cycle_data),
+        primaryActionLabel = stringResource(R.string.unlock),
         secondaryActionLabel = stringResource(R.string.recover_access),
         secondaryAction = PrivacySecondaryAction.Recover,
     )

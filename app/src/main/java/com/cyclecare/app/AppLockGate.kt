@@ -1,4 +1,5 @@
 package com.cyclecare.app
+import com.cyclecare.core.designsystem.text.resolve
 import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -161,7 +162,7 @@ internal fun AppLockGate(
                         Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
                             DashboardPill(text = if (canUseBiometric) "Biometric ready" else "PIN required")
                             DashboardPill(
-                                text = capability.summaryLabel(),
+                                text = capability.summaryLabel().resolve(),
                                 emphasized = capability != SecureAuthCapability.None,
                             )
                         }

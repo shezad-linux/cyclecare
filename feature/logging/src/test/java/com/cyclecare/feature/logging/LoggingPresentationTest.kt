@@ -13,8 +13,10 @@ import com.cyclecare.core.model.SymptomLog
 import com.cyclecare.core.model.TrackingGoal
 import com.cyclecare.core.model.UserProfile
 import com.cyclecare.core.designsystem.PeriodHeroMode
+import com.cyclecare.core.designsystem.text.uiText
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
+import java.util.Locale
 import org.junit.Test
 
 class LoggingPresentationTest {
@@ -35,34 +37,32 @@ class LoggingPresentationTest {
         )
 
         assertThat(uiState.hasExistingEntry).isFalse()
-        assertThat(uiState.saveCtaLabel).isEqualTo("Save today's entry")
+        assertThat(uiState.saveCtaLabel).isEqualTo(uiText(R.string.save_cta_save))
         assertThat(uiState.isDetailsExpanded).isFalse()
-        assertThat(uiState.dateLabel).isEqualTo("Monday, Mar 16")
+        assertThat(buildLogDateLabel(today, Locale.US)).isEqualTo("Monday, Mar 16")
     }
 
     @Test
     fun `active period uses period check in copy`() {
         val uiState = LoggingUiState(
             heroMode = PeriodHeroMode.Active,
-            cyclePhaseLabel = "Early cycle",
             cyclePhase = CyclePhase.PERIOD_DAYS,
         )
 
-        assertThat(loggingHeroEyebrow(uiState)).isEqualTo("Period check-in")
-        assertThat(buildSmartLoggingInsight(uiState)).isEqualTo("Take a moment to log today's symptoms.")
+        assertThat(loggingHeroEyebrow(uiState)).isEqualTo(uiText(R.string.hero_eyebrow_period_check_in))
+        assertThat(buildSmartLoggingInsight(uiState)).isEqualTo(uiText(R.string.hero_insight_active_period))
     }
 
     @Test
     fun `predicted period keeps daily check in copy`() {
         val uiState = LoggingUiState(
             heroMode = PeriodHeroMode.Predicted,
-            cyclePhaseLabel = "Late cycle",
             // Control flow reads the phase value, not the English label.
             cyclePhase = CyclePhase.LATE,
         )
 
-        assertThat(loggingHeroEyebrow(uiState)).isEqualTo("Daily check-in")
-        assertThat(buildSmartLoggingInsight(uiState)).isEqualTo("Period expected soon. Logging symptoms helps track regularity.")
+        assertThat(loggingHeroEyebrow(uiState)).isEqualTo(uiText(R.string.hero_eyebrow_daily_check_in))
+        assertThat(buildSmartLoggingInsight(uiState)).isEqualTo(uiText(R.string.hero_insight_late_cycle))
     }
 
     @Test
@@ -106,9 +106,10 @@ class LoggingPresentationTest {
         )
 
         assertThat(uiState.heroMode).isEqualTo(PeriodHeroMode.Active)
-        assertThat(uiState.cyclePhaseLabel).isEqualTo("Period days")
-        assertThat(loggingHeroEyebrow(uiState)).isEqualTo("Period check-in")
-        assertThat(buildSmartLoggingInsight(uiState)).isEqualTo("Take a moment to log today's symptoms.")
+        assertThat(uiState.cyclePhase).isEqualTo(CyclePhase.PERIOD_DAYS)
+        assertThat(uiState.cyclePhase?.displayKey()).isEqualTo(uiText(R.string.cycle_phase_period_days))
+        assertThat(loggingHeroEyebrow(uiState)).isEqualTo(uiText(R.string.hero_eyebrow_period_check_in))
+        assertThat(buildSmartLoggingInsight(uiState)).isEqualTo(uiText(R.string.hero_insight_active_period))
     }
 
     @Test
@@ -148,16 +149,16 @@ class LoggingPresentationTest {
             prediction = prediction,
             todayEntry = entry,
             editor = buildEditorState(entry = entry, hydrationKey = entry.id),
-            saveMessage = "Saved to your local timeline.",
+            saveMessage = uiText(R.string.saved_to_local_timeline),
             isSaving = false,
         )
 
         assertThat(uiState.hasExistingEntry).isTrue()
-        assertThat(uiState.saveCtaLabel).isEqualTo("Update today's entry")
-        assertThat(uiState.entryStatusLabel).isEqualTo("Editing today's saved check-in")
-        assertThat(uiState.cycleProgressLabel).isEqualTo("Day 6 / 28")
+        assertThat(uiState.saveCtaLabel).isEqualTo(uiText(R.string.save_cta_update))
+        assertThat(uiState.entryStatusLabel).isEqualTo(uiText(R.string.editing_todays_saved_check_in))
+        assertThat(uiState.cycleProgressLabel).isEqualTo(uiText(R.string.cycle_progress_day, 6, 28))
         assertThat(uiState.isDetailsExpanded).isTrue()
-        assertThat(uiState.dischargeType?.displayLabel()).isEqualTo("Egg white")
+        assertThat(uiState.dischargeType?.displayLabel()).isEqualTo(uiText(R.string.discharge_egg_white))
     }
 
     @Test

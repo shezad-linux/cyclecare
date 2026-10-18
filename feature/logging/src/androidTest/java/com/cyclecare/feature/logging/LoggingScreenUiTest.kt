@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToNode
+import androidx.test.platform.app.InstrumentationRegistry
 import com.cyclecare.core.designsystem.CycleCareTheme
 import org.junit.Rule
 import org.junit.Test
@@ -16,6 +17,13 @@ import org.junit.Test
 class LoggingScreenUiTest {
     @get:Rule
     val composeRule = createComposeRule()
+
+    private fun getString(resId: Int, vararg formatArgs: Any): String =
+        InstrumentationRegistry.getInstrumentation().targetContext.getString(resId, *formatArgs)
+
+    private fun getQuantityString(pluralResId: Int, quantity: Int, vararg formatArgs: Any): String =
+        InstrumentationRegistry.getInstrumentation().targetContext.resources
+            .getQuantityString(pluralResId, quantity, *formatArgs)
 
     @Test
     fun notesOverflowShowsInlineErrorAndDisablesSave() {
@@ -50,9 +58,16 @@ class LoggingScreenUiTest {
         composeRule.onNodeWithTag(LoggingTags.LIST)
             .performScrollToNode(hasTestTag(LoggingTags.NotesField))
         composeRule.onNodeWithTag(LoggingTags.NotesField).assert(
-            stateContains("Notes can be up to 500 characters."),
+            stateContains(
+                getQuantityString(
+                    R.plurals.notes_max_characters,
+                    MAX_SYMPTOM_NOTE_LENGTH,
+                    MAX_SYMPTOM_NOTE_LENGTH,
+                ),
+            ),
         )
-        composeRule.onNodeWithText("Save today's entry").assertIsNotEnabled()
+        composeRule.onNodeWithText(getString(R.string.save_cta_save))
+            .assertIsNotEnabled()
     }
 
     @Test
@@ -74,9 +89,9 @@ class LoggingScreenUiTest {
         }
 
         composeRule.onNodeWithTag(LoggingTags.HeroCard).assertExists()
-        composeRule.onNodeWithText("Editing today's saved check-in").assertExists()
+        composeRule.onNodeWithText(getString(R.string.editing_todays_saved_check_in)).assertExists()
         composeRule.onNodeWithTag(LoggingTags.SaveBar).assertExists()
-        composeRule.onNodeWithText("Update today's entry").assertExists()
+        composeRule.onNodeWithText(getString(R.string.save_cta_update)).assertExists()
     }
 
     private fun stateContains(value: String): SemanticsMatcher = SemanticsMatcher(

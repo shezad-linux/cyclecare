@@ -79,4 +79,86 @@
     <string name="start_over">Start over</string>
 
     <string name="verify_pin">Verify PIN</string>
+
+    <string name="access_recovered_create_a_new_pin">Access recovered. Create a new PIN.</string>
+
+    <string name="app_lock_is_off">App lock is off.</string>
+
+    <string name="app_lock_is_on_for_sensitive_screens">App lock is on for sensitive screens.</string>
+
+    <string name="biometric_and_screen_lock_recovery">Biometric and screen-lock recovery</string>
+
+    <string name="biometric_not_recognized_try_again_or_use_your_screen_lock">Biometric not recognized. Try again or use your screen lock.</string>
+
+    <string name="biometric_recovery">Biometric recovery</string>
+
+    <string name="biometric_unlock_is_no_longer_available_on_this_device">Biometric unlock is no longer available on this device.</string>
+
+    <string name="biometric_unlock_is_off">Biometric unlock is off.</string>
+
+    <string name="biometric_unlock_is_ready">Biometric unlock is ready.</string>
+
+    <string name="cancel">Cancel</string>
+
+    <string name="choose_a_4_digit_pin_before_app_lock_can_turn_on">Choose a 4-digit PIN before app lock can turn on.</string>
+
+    <string name="confirm_new_pin">Confirm new PIN</string>
+
+    <string name="confirm_your_existing_pin_before_changing_it">Confirm your existing PIN before changing it.</string>
+
+    <string name="confirm_your_pin">Confirm your PIN</string>
+
+    <string name="continue_label">Continue</string>
+
+    <string name="create_a_4_digit_pin_for_sensitive_screens">Create a 4-digit PIN for sensitive screens.</string>
+
+    <string name="create_a_new_pin">Create a new PIN</string>
+
+    <string name="create_and_confirm_pin_first">Create and confirm a PIN first.</string>
+
+    <string name="current_pin_didnt_match_try_again">Current PIN didn\'t match. Try again.</string>
+
+    <string name="enter_a_new_4_digit_pin">Enter a new 4-digit PIN.</string>
+
+    <string name="enter_the_same_4_digits_again_to_lock_in_local_access">Enter the same 4 digits again to lock in local access.</string>
+
+    <string name="enter_the_same_pin_again_to_confirm_it">Enter the same PIN again to confirm it.</string>
+
+    <string name="enter_your_4_digit_pin_to_reopen_local_cycle_data">Enter your 4-digit PIN to reopen local cycle data.</string>
+
+    <string name="enter_your_current_pin_to_continue">Enter your current PIN to continue.</string>
+
+    <string name="no_secure_recovery">No secure recovery</string>
+
+    <string name="pin_must_be_exactly_4_digits">PIN must be exactly 4 digits.</string>
+
+    <string name="pin_saved_app_lock_is_on">PIN saved. App lock is on.</string>
+
+    <string name="pin_updated_locally">PIN updated locally.</string>
+
+    <string name="pins_didnt_match_start_again">PINs didn\'t match. Start again.</string>
+
+    <string name="re_enter_the_new_pin_to_finish_the_update">Re-enter the new PIN to finish the update.</string>
+
+    <string name="screen_lock_confirmation_unavailable_on_this_device">Screen-lock confirmation is unavailable on this device.</string>
+
+    <string name="screen_lock_recovery">Screen-lock recovery</string>
+
+    <string name="secure_authentication_unavailable_in_this_screen">Secure authentication is unavailable in this screen.</string>
+
+    <string name="secure_recovery_unavailable_on_this_device">Secure recovery isn\'t available on this device.</string>
+
+    <string name="set_up_a_screen_lock_for_secure_recovery">Set up a screen lock first to use secure recovery.</string>
+
+    <string name="turn_on_app_lock_and_keep_a_pin_before_enabling_biometric_unlock">Turn on app lock and keep a PIN before enabling biometric unlock.</string>
+
+    <string name="unlock">Unlock</string>
+
+    <string name="unlock_cyclecare">Unlock CycleCare</string>
+
+    <string name="use_screen_lock">Use screen lock</string>
+
+    <string name="verify_current_pin">Verify current PIN</string>
+
+    <string name="your_app_lock_is_configured">Your app lock is configured.</string>
 </resources>

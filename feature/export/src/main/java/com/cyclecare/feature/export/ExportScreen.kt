@@ -6,6 +6,7 @@ import com.cyclecare.core.designsystem.token.CycleCareSpace
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +36,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cyclecare.core.designsystem.DashboardSectionCard
 import com.cyclecare.core.designsystem.GradientHeaderCard
 import com.cyclecare.core.designsystem.MetricCard
+import com.cyclecare.core.designsystem.text.UiText
+import com.cyclecare.core.designsystem.text.resolve
+import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.domain.ExportRepository
 import com.cyclecare.core.model.ExportArtifact
 import com.cyclecare.core.model.ExportFormat
@@ -45,9 +49,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+sealed interface ExportStatus {
+    data object Idle : ExportStatus
+    data class Working(val format: ExportFormat) : ExportStatus
+    data class Success(val artifact: ExportArtifact) : ExportStatus
+    data object Error : ExportStatus
+}
+
 data class ExportUiState(
     val lastArtifact: ExportArtifact? = null,
-    val statusMessage: String = "Generate a local markdown or PDF report and keep it on-device.",
+    val status: ExportStatus = ExportStatus.Idle,
     val isWorking: Boolean = false,
 )
 
@@ -59,7 +70,7 @@ class ExportViewModel(
 
     fun createReport(format: ExportFormat) {
         viewModelScope.launch {
-            mutableState.update { it.copy(isWorking = true, statusMessage = "Generating ${format.name.lowercase()} report...") }
+            mutableState.update { it.copy(isWorking = true, status = ExportStatus.Working(format)) }
             runCatching {
                 exportRepository.createReport(format)
             }.onSuccess { artifact ->
@@ -67,14 +78,14 @@ class ExportViewModel(
                     it.copy(
                         lastArtifact = artifact,
                         isWorking = false,
-                        statusMessage = "Saved ${artifact.format.name.lowercase()} report to ${artifact.displayName}.",
+                        status = ExportStatus.Success(artifact),
                     )
                 }
             }.onFailure {
                 mutableState.update {
                     it.copy(
                         isWorking = false,
-                        statusMessage = "Export failed locally. Please try again.",
+                        status = ExportStatus.Error,
                     )
                 }
             }
@@ -87,6 +98,25 @@ class ExportViewModelFactory(
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = ExportViewModel(exportRepository) as T
+}
+
+internal fun ExportStatus.toUiText(): UiText = when (this) {
+    ExportStatus.Idle -> uiText(R.string.export_idle_hint)
+    is ExportStatus.Working -> when (format) {
+        ExportFormat.Markdown -> uiText(R.string.generating_markdown_report)
+        ExportFormat.Pdf -> uiText(R.string.generating_pdf_report)
+    }
+    is ExportStatus.Success -> when (artifact.format) {
+        ExportFormat.Markdown -> uiText(R.string.saved_markdown_report, artifact.displayName)
+        ExportFormat.Pdf -> uiText(R.string.saved_pdf_report, artifact.displayName)
+    }
+    ExportStatus.Error -> uiText(R.string.export_failed_locally)
+}
+
+@StringRes
+internal fun ExportFormat.labelRes(): Int = when (this) {
+    ExportFormat.Markdown -> R.string.format_markdown
+    ExportFormat.Pdf -> R.string.format_pdf
 }
 
 @Composable
@@ -119,7 +149,7 @@ private fun ExportScreen(
     ) {
         GradientHeaderCard(
             title = stringResource(R.string.export_report),
-            subtitle = uiState.statusMessage,
+            subtitle = uiState.status.toUiText().resolve(),
         )
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
@@ -175,7 +205,7 @@ private fun ExportScreen(
             DashboardSectionCard(
                 title = stringResource(R.string.latest_export),
                 subtitle = artifact.displayName,
-                eyebrow = artifact.format.name,
+                eyebrow = stringResource(artifact.format.labelRes()),
                 accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
@@ -218,7 +248,8 @@ private fun shareArtifact(
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(
-        Intent.createChooser(shareIntent, "Share CycleCare report").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        Intent.createChooser(shareIntent, uiText(R.string.share_report_chooser_title).resolve(context))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
     )
 }
 

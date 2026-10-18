@@ -53,6 +53,10 @@ import com.cyclecare.core.designsystem.PeriodActiveAccentColor
 import com.cyclecare.core.designsystem.PeriodActiveContainerColor
 import com.cyclecare.core.designsystem.PeriodHeroMode
 import com.cyclecare.core.designsystem.ScreenDebugPreviews
+import com.cyclecare.core.designsystem.text.UiText
+import com.cyclecare.core.designsystem.text.pluralUiText
+import com.cyclecare.core.designsystem.text.resolve
+import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.domain.CycleRepository
 import com.cyclecare.core.domain.PredictionRepository
 import com.cyclecare.core.domain.ProfileRepository
@@ -83,8 +87,7 @@ import kotlinx.coroutines.launch
 
 data class LoggingUiState(
     val dateLabel: String = buildLogDateLabel(LocalDate.now()),
-    val cycleProgressLabel: String? = null,
-    val cyclePhaseLabel: String = "",
+    val cycleProgressLabel: UiText? = null,
     /**
      * The phase as a value, not as a display string. Controls which
      * copy the hero insight shows; see [CyclePhase].
@@ -97,12 +100,12 @@ data class LoggingUiState(
     val cycleDay: Int? = null,
     val heroMode: PeriodHeroMode = PeriodHeroMode.Predicted,
     val heroProgress: Float = 0f,
-    val privacyNote: String = "Saved locally on this device by default.",
+    val privacyNote: UiText = uiText(R.string.privacy_note_saved_locally),
     val existingEntryId: String? = null,
     val hasExistingEntry: Boolean = false,
-    val entryStatusLabel: String? = null,
-    val saveCtaLabel: String = "Save today's entry",
-    val saveMessage: String? = null,
+    val entryStatusLabel: UiText? = null,
+    val saveCtaLabel: UiText = uiText(R.string.save_cta_save),
+    val saveMessage: UiText? = null,
     val completedSections: Int = 0,
     val totalSections: Int = 4,
     // Null means not tracked, which is a first-class answer and not a
@@ -115,11 +118,11 @@ data class LoggingUiState(
     val notes: String = "",
     val isDetailsExpanded: Boolean = false,
     val notesRemaining: Int = MAX_SYMPTOM_NOTE_LENGTH,
-    val notesError: String? = null,
+    val notesError: UiText? = null,
     val isSaveEnabled: Boolean = true,
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
-    val streakLabel: String = "0 day streak!",
+    val streakLabel: UiText = pluralUiText(R.plurals.streak_days, 0, 0),
     val cycleScore: Int = 80,
     val hasYesterdayEntry: Boolean = false,
 )
@@ -146,7 +149,21 @@ internal data class LoggingEditorState(
     val isDetailsExpanded: Boolean = false,
 )
 
-private val logDateFormatter = DateTimeFormatter.ofPattern("EEEE, MMM d", Locale.US)
+internal const val MAX_SYMPTOM_NOTE_LENGTH = 500
+
+internal fun buildLogDateLabel(
+    date: LocalDate,
+    locale: Locale = Locale.getDefault(),
+): String = date.format(DateTimeFormatter.ofPattern("EEEE, MMM d", locale))
+
+internal fun buildCycleProgressLabel(
+    profile: UserProfile?,
+    prediction: PredictionSnapshot?,
+): UiText? = if (profile != null && prediction != null) {
+    uiText(R.string.cycle_progress_day, prediction.cycleDay, profile.averageCycleLength)
+} else {
+    null
+}
 
 private object LoggingStateKeys {
     const val HydrationKey = "hydration_key"
@@ -168,19 +185,6 @@ internal object LoggingTags {
     fun notTrackedChip(): String = "logging_not_tracked"
     const val NotesField = "logging_notes_field"
     const val NotesError = "logging_notes_error"
-}
-
-internal const val MAX_SYMPTOM_NOTE_LENGTH = 500
-
-internal fun buildLogDateLabel(date: LocalDate): String = date.format(logDateFormatter)
-
-internal fun buildCycleProgressLabel(
-    profile: UserProfile?,
-    prediction: PredictionSnapshot?,
-): String? = if (profile != null && prediction != null) {
-    "Day ${prediction.cycleDay} / ${profile.averageCycleLength}"
-} else {
-    null
 }
 
 internal fun buildCycleProgressRatio(
@@ -217,8 +221,12 @@ internal fun buildLogHeroMode(
     }
 }
 
-internal fun loggingHeroEyebrow(uiState: LoggingUiState): String =
-    if (uiState.heroMode == PeriodHeroMode.Active) "Period check-in" else "Daily check-in"
+internal fun loggingHeroEyebrow(uiState: LoggingUiState): UiText =
+    if (uiState.heroMode == PeriodHeroMode.Active) {
+        uiText(R.string.hero_eyebrow_period_check_in)
+    } else {
+        uiText(R.string.hero_eyebrow_daily_check_in)
+    }
 
 /**
  * Which part of the cycle the user is in.
@@ -255,13 +263,13 @@ private fun resolveCyclePhase(
     }
 }
 
-private fun CyclePhase.displayKey(): String = when (this) {
-    CyclePhase.PERIOD_DAYS -> "Period days"
-    CyclePhase.EARLY -> "Early cycle"
-    CyclePhase.MID -> "Mid cycle"
-    CyclePhase.FERTILE_WINDOW -> "Fertile window"
-    CyclePhase.LATE -> "Late cycle"
-    CyclePhase.APPROACHING_PERIOD -> "Approaching period"
+internal fun CyclePhase.displayKey(): UiText = when (this) {
+    CyclePhase.PERIOD_DAYS -> uiText(R.string.cycle_phase_period_days)
+    CyclePhase.EARLY -> uiText(R.string.cycle_phase_early_cycle)
+    CyclePhase.MID -> uiText(R.string.cycle_phase_mid_cycle)
+    CyclePhase.FERTILE_WINDOW -> uiText(R.string.cycle_phase_fertile_window)
+    CyclePhase.LATE -> uiText(R.string.cycle_phase_late_cycle)
+    CyclePhase.APPROACHING_PERIOD -> uiText(R.string.cycle_phase_approaching_period)
 }
 
 internal fun buildEditorState(
@@ -283,11 +291,15 @@ internal fun buildEditorState(
     )
 }
 
-internal fun validateSymptomNotes(notes: String): String? =
+internal fun validateSymptomNotes(notes: String): UiText? =
     if (notes.length <= MAX_SYMPTOM_NOTE_LENGTH) {
         null
     } else {
-        "Notes can be up to $MAX_SYMPTOM_NOTE_LENGTH characters."
+        pluralUiText(
+            R.plurals.notes_max_characters,
+            MAX_SYMPTOM_NOTE_LENGTH,
+            MAX_SYMPTOM_NOTE_LENGTH,
+        )
     }
 
 internal fun calculateStreak(logs: List<SymptomLog>, today: LocalDate): Int {
@@ -316,41 +328,44 @@ internal fun calculateCycleScore(completedSections: Int, streak: Int): Int {
     return (base + sectionsBonus + streakBonus).coerceAtMost(100)
 }
 
-internal fun buildEnergyStreakInsight(logs: List<SymptomLog>, today: LocalDate): String? {
+internal fun buildEnergyStreakInsight(logs: List<SymptomLog>, today: LocalDate): UiText? {
     val targetDays = listOf(today, today.minusDays(1), today.minusDays(2))
     val energyLevels = targetDays.map { date ->
         logs.find { it.date == date }?.energyLevel
     }
-    return if (energyLevels.all { it == EnergyLevel.Steady }) {
-        "Energy steady for 3 days in a row!"
-    } else if (energyLevels.all { it == EnergyLevel.High }) {
-        "High energy level sustained for 3 days!"
-    } else if (energyLevels.all { it == EnergyLevel.Low }) {
-        "Energy has been low for 3 days. Get some restful sleep."
-    } else {
-        null
+    return when {
+        energyLevels.all { it == EnergyLevel.Steady } ->
+            pluralUiText(R.plurals.energy_steady_days, targetDays.size, targetDays.size)
+
+        energyLevels.all { it == EnergyLevel.High } ->
+            pluralUiText(R.plurals.energy_high_days, targetDays.size, targetDays.size)
+
+        energyLevels.all { it == EnergyLevel.Low } ->
+            pluralUiText(R.plurals.energy_low_days, targetDays.size, targetDays.size)
+
+        else -> null
     }
 }
 
-internal fun buildCompletionInsight(logs: List<SymptomLog>, today: LocalDate): String {
+internal fun buildCompletionInsight(logs: List<SymptomLog>, today: LocalDate): UiText {
     val energyInsight = buildEnergyStreakInsight(logs, today)
     if (energyInsight != null) return energyInsight
 
     val moodDays = listOf(today, today.minusDays(1))
     val moods = moodDays.map { date -> logs.find { it.date == date }?.mood }
     if (moods.all { it == Mood.Happy }) {
-        return "Great to see! You've been happy for 2 days in a row."
+        return pluralUiText(R.plurals.mood_happy_days, moodDays.size, moodDays.size)
     } else if (moods.all { it == Mood.Stable }) {
-        return "Feeling balanced: stable mood logged for 2 days."
+        return pluralUiText(R.plurals.mood_stable_days, moodDays.size, moodDays.size)
     }
 
     val painDays = listOf(today, today.minusDays(1), today.minusDays(2))
     val pains = painDays.map { date -> logs.find { it.date == date }?.painLevel }
     if (pains.all { it == PainLevel.None }) {
-        return "Pain-free for 3 days. Your cycle is going smoothly!"
+        return pluralUiText(R.plurals.pain_free_days, painDays.size, painDays.size)
     }
 
-    return "Saved! Check-in complete. Keep up the great habit."
+    return uiText(R.string.saved_checkin_complete)
 }
 
 internal fun buildLoggingUiState(
@@ -359,7 +374,7 @@ internal fun buildLoggingUiState(
     prediction: PredictionSnapshot?,
     todayEntry: SymptomLog?,
     editor: LoggingEditorState,
-    saveMessage: String?,
+    saveMessage: UiText?,
     isSaving: Boolean,
     isSaved: Boolean = false,
     symptoms: List<SymptomLog> = emptyList(),
@@ -385,7 +400,11 @@ internal fun buildLoggingUiState(
     val yesterdayEntry = activeSymptoms.find { it.date == today.minusDays(1) }
     val streak = calculateStreak(activeSymptoms, today)
     val cycleScore = calculateCycleScore(completedSections, streak)
-    val streakLabel = if (streak > 0) "$streak day streak!" else "No streak yet"
+    val streakLabel = if (streak > 0) {
+        pluralUiText(R.plurals.streak_days, streak, streak)
+    } else {
+        uiText(R.string.no_streak_yet)
+    }
 
     val finalSaveMessage = if (isSaved) {
         buildCompletionInsight(activeSymptoms, today)
@@ -396,18 +415,17 @@ internal fun buildLoggingUiState(
     return LoggingUiState(
         dateLabel = buildLogDateLabel(today),
         cycleProgressLabel = buildCycleProgressLabel(profile, prediction),
-        cyclePhaseLabel = resolveCyclePhase(cycleDay, cycleLength, heroMode)?.displayKey().orEmpty(),
         cyclePhase = resolveCyclePhase(cycleDay, cycleLength, heroMode),
         cycleDay = cycleDay,
         heroMode = heroMode,
         heroProgress = buildCycleProgressRatio(profile, prediction),
         existingEntryId = editor.existingEntryId,
         hasExistingEntry = editor.existingEntryId != null,
-        entryStatusLabel = if (todayEntry != null) "Editing today's saved check-in" else null,
+        entryStatusLabel = if (todayEntry != null) uiText(R.string.editing_todays_saved_check_in) else null,
         saveCtaLabel = when {
-            isSaved -> "Edit today's entry"
-            editor.existingEntryId != null -> "Update today's entry"
-            else -> "Save today's entry"
+            isSaved -> uiText(R.string.save_cta_edit)
+            editor.existingEntryId != null -> uiText(R.string.save_cta_update)
+            else -> uiText(R.string.save_cta_save)
         },
         saveMessage = finalSaveMessage,
         completedSections = completedSections,
@@ -430,40 +448,40 @@ internal fun buildLoggingUiState(
     )
 }
 
-internal fun Mood.displayLabel(): String = when (this) {
-    Mood.Stable -> "Stable"
-    Mood.Happy -> "Happy"
-    Mood.Low -> "Low"
-    Mood.Irritable -> "Irritable"
-    Mood.Anxious -> "Anxious"
+internal fun Mood.displayLabel(): UiText = when (this) {
+    Mood.Stable -> uiText(R.string.mood_stable)
+    Mood.Happy -> uiText(R.string.mood_happy)
+    Mood.Low -> uiText(R.string.mood_low)
+    Mood.Irritable -> uiText(R.string.mood_irritable)
+    Mood.Anxious -> uiText(R.string.mood_anxious)
 }
 
-internal fun PainLevel.displayLabel(): String = when (this) {
-    PainLevel.None -> "None"
-    PainLevel.Light -> "Light"
-    PainLevel.Moderate -> "Moderate"
-    PainLevel.Strong -> "Strong"
+internal fun PainLevel.displayLabel(): UiText = when (this) {
+    PainLevel.None -> uiText(R.string.pain_none)
+    PainLevel.Light -> uiText(R.string.pain_light)
+    PainLevel.Moderate -> uiText(R.string.pain_moderate)
+    PainLevel.Strong -> uiText(R.string.pain_strong)
 }
 
-internal fun PainLevel.helperText(): String = when (this) {
-    PainLevel.None -> "No pain today"
-    PainLevel.Light -> "Mild discomfort"
-    PainLevel.Moderate -> "Noticeable pain"
-    PainLevel.Strong -> "Hard to ignore"
+internal fun PainLevel.helperText(): UiText = when (this) {
+    PainLevel.None -> uiText(R.string.pain_helper_none)
+    PainLevel.Light -> uiText(R.string.pain_helper_light)
+    PainLevel.Moderate -> uiText(R.string.pain_helper_moderate)
+    PainLevel.Strong -> uiText(R.string.pain_helper_strong)
 }
 
-internal fun EnergyLevel.displayLabel(): String = when (this) {
-    EnergyLevel.Low -> "Low"
-    EnergyLevel.Steady -> "Steady"
-    EnergyLevel.High -> "High"
+internal fun EnergyLevel.displayLabel(): UiText = when (this) {
+    EnergyLevel.Low -> uiText(R.string.energy_low)
+    EnergyLevel.Steady -> uiText(R.string.energy_steady)
+    EnergyLevel.High -> uiText(R.string.energy_high)
 }
 
-internal fun DischargeType.displayLabel(): String = when (this) {
-    DischargeType.None -> "None"
-    DischargeType.Dry -> "Dry"
-    DischargeType.Creamy -> "Creamy"
-    DischargeType.Sticky -> "Sticky"
-    DischargeType.EggWhite -> "Egg white"
+internal fun DischargeType.displayLabel(): UiText = when (this) {
+    DischargeType.None -> uiText(R.string.discharge_none)
+    DischargeType.Dry -> uiText(R.string.discharge_dry)
+    DischargeType.Creamy -> uiText(R.string.discharge_creamy)
+    DischargeType.Sticky -> uiText(R.string.discharge_sticky)
+    DischargeType.EggWhite -> uiText(R.string.discharge_egg_white)
 }
 
 class LoggingViewModel(
@@ -475,7 +493,7 @@ class LoggingViewModel(
 ) : ViewModel() {
     private val today = LocalDate.now()
     private val editorFlow = MutableStateFlow(savedStateHandle.toLoggingEditorState())
-    private val saveMessageFlow = MutableStateFlow<String?>(null)
+    private val saveMessageFlow = MutableStateFlow<UiText?>(null)
     private val isSavingFlow = MutableStateFlow(false)
     private val isSavedFlow = MutableStateFlow(false)
 
@@ -602,7 +620,7 @@ class LoggingViewModel(
                         notes = state.notes.ifBlank { null },
                     ),
                 )
-                saveMessageFlow.value = "Saved to your local timeline."
+                saveMessageFlow.value = uiText(R.string.saved_to_local_timeline)
                 isSavedFlow.value = true
             } finally {
                 isSavingFlow.value = false
@@ -662,8 +680,8 @@ internal fun LoggingScreen(
     Scaffold(
         bottomBar = {
             SaveBar(
-                saveCtaLabel = uiState.saveCtaLabel,
-                saveMessage = uiState.saveMessage,
+                saveCtaLabel = uiState.saveCtaLabel.resolve(),
+                saveMessage = uiState.saveMessage?.resolve(),
                 enabled = uiState.isSaveEnabled,
                 isSaving = uiState.isSaving,
                 onSave = onSave,
@@ -707,7 +725,7 @@ internal fun LoggingScreen(
                                 selected = uiState.mood == mood,
                                 onClick = { onMoodSelected(mood) },
                                 modifier = Modifier.testTag(LoggingTags.mood(mood)),
-                                text = mood.displayLabel(),
+                                text = mood.displayLabel().resolve(),
                             )
                         }
                     }
@@ -716,7 +734,8 @@ internal fun LoggingScreen(
             item {
                 SelectionSectionCard(
                     title = stringResource(R.string.pain),
-                    helperText = uiState.painLevel?.helperText() ?: stringResource(R.string.not_tracked),
+                    helperText = uiState.painLevel?.helperText()?.resolve()
+                        ?: stringResource(R.string.not_tracked),
                     accent = MaterialTheme.colorScheme.surface,
                 ) {
                     FlowRow(
@@ -731,7 +750,7 @@ internal fun LoggingScreen(
                             SelectionChip(
                                 selected = uiState.painLevel == painLevel,
                                 onClick = { onPainSelected(painLevel) },
-                                text = painLevel.displayLabel(),
+                                text = painLevel.displayLabel().resolve(),
                             )
                         }
                     }
@@ -755,7 +774,7 @@ internal fun LoggingScreen(
                             SelectionChip(
                                 selected = uiState.energyLevel == energyLevel,
                                 onClick = { onEnergySelected(energyLevel) },
-                                text = energyLevel.displayLabel(),
+                                text = energyLevel.displayLabel().resolve(),
                             )
                         }
                     }
@@ -779,7 +798,7 @@ internal fun LoggingScreen(
                             SelectionChip(
                                 selected = uiState.dischargeType == dischargeType,
                                 onClick = { onDischargeSelected(dischargeType) },
-                                text = dischargeType.displayLabel(),
+                                text = dischargeType.displayLabel().resolve(),
                             )
                         }
                     }
@@ -826,17 +845,15 @@ private fun LoggingHeroCard(
                     uiState.cycleDay,
                     uiState.cyclePhase,
                 )
-                if (smartInsight.isNotBlank()) {
-                    Text(
-                        text = smartInsight,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (isActivePeriod) {
-                            PeriodActiveAccentColor()
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
-                }
+                Text(
+                    text = smartInsight.resolve(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isActivePeriod) {
+                        PeriodActiveAccentColor()
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
             }
             if (uiState.hasYesterdayEntry) {
                 androidx.compose.material3.HorizontalDivider(
@@ -876,7 +893,7 @@ internal fun buildSmartLoggingInsight(
     // formatted label, so existing call sites stay correct.
     cycleDay: Int? = uiState.cycleDay,
     cyclePhase: CyclePhase? = uiState.cyclePhase,
-): String {
+): UiText {
     // The cycle day used to be parsed back out of the formatted
     // "Day N / M" label. Reordering or translating that label would make
     // toIntOrNull() return null and silently disable the countdown, so
@@ -887,19 +904,15 @@ internal fun buildSmartLoggingInsight(
     }
 
     return when {
-        uiState.heroMode == PeriodHeroMode.Active -> "Take a moment to log today's symptoms."
-        cyclePhase == CyclePhase.FERTILE_WINDOW ->
-            "You're in your fertile window. Logging symptoms helps track patterns."
+        uiState.heroMode == PeriodHeroMode.Active -> uiText(R.string.hero_insight_active_period)
+        cyclePhase == CyclePhase.FERTILE_WINDOW -> uiText(R.string.hero_insight_fertile_window)
         cyclePhase == CyclePhase.EARLY && daysUntilFertile != null ->
-            "Fertile window starts in $daysUntilFertile days."
-        cyclePhase == CyclePhase.LATE ->
-            "Period expected soon. Logging symptoms helps track regularity."
-        cyclePhase == CyclePhase.MID ->
-            "Mid cycle phase. Fertile window approaching in a few days."
-        cyclePhase == CyclePhase.APPROACHING_PERIOD ->
-            "Period expected soon. Note any symptoms you notice."
-        uiState.hasExistingEntry -> "Your entry for today is saved. Update anytime."
-        else -> "Logging symptoms helps improve your predictions over time."
+            pluralUiText(R.plurals.fertile_window_starts_in_days, daysUntilFertile, daysUntilFertile)
+        cyclePhase == CyclePhase.LATE -> uiText(R.string.hero_insight_late_cycle)
+        cyclePhase == CyclePhase.MID -> uiText(R.string.hero_insight_mid_cycle)
+        cyclePhase == CyclePhase.APPROACHING_PERIOD -> uiText(R.string.hero_insight_approaching_period)
+        uiState.hasExistingEntry -> uiText(R.string.hero_insight_existing_entry)
+        else -> uiText(R.string.hero_insight_default)
     }
 }
 
@@ -926,7 +939,7 @@ private fun LoggingHeroText(
                 verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4),
             ) {
                 Text(
-                    text = loggingHeroEyebrow(uiState),
+                    text = loggingHeroEyebrow(uiState).resolve(),
                     style = MaterialTheme.typography.labelLarge,
                     color = accentColor,
                     fontWeight = FontWeight.SemiBold,
@@ -942,7 +955,7 @@ private fun LoggingHeroText(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 MetricPill(
-                    text = stringResource(R.string.streak_with_8s_check_in, uiState.streakLabel),
+                    text = stringResource(R.string.streak_with_8s_check_in, uiState.streakLabel.resolve()),
                     tone = MetricPillTone.Neutral,
                 )
             }
@@ -957,7 +970,11 @@ private fun LoggingHeroText(
                         verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space2),
                     ) {
                         Text(
-                            text = "${uiState.completedSections}/${uiState.totalSections}",
+                            text = stringResource(
+                                R.string.count_ratio,
+                                uiState.completedSections,
+                                uiState.totalSections,
+                            ),
                             style = MaterialTheme.typography.titleLarge,
                             color = accentColor,
                             fontWeight = FontWeight.Bold,
@@ -982,7 +999,11 @@ private fun LoggingHeroText(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = "${uiState.completedSections}/${uiState.totalSections}",
+                    text = stringResource(
+                        R.string.count_ratio,
+                        uiState.completedSections,
+                        uiState.totalSections,
+                    ),
                     style = MaterialTheme.typography.labelLarge,
                     color = accentColor,
                 )
@@ -999,11 +1020,11 @@ private fun LoggingHeroText(
             verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
         ) {
             uiState.cycleProgressLabel?.let { label ->
-                MetricPill(text = label)
+                MetricPill(text = label.resolve())
             }
-            if (uiState.cyclePhase != null) {
+            uiState.cyclePhase?.let { phase ->
                 MetricPill(
-                    text = uiState.cyclePhaseLabel,
+                    text = phase.displayKey().resolve(),
                     tone = MetricPillTone.Highlight,
                 )
             }
@@ -1013,13 +1034,13 @@ private fun LoggingHeroText(
             )
             uiState.entryStatusLabel?.let { label ->
                 MetricPill(
-                    text = label,
+                    text = label.resolve(),
                     tone = MetricPillTone.Highlight,
                 )
             }
         }
         Text(
-            text = uiState.privacyNote,
+            text = uiState.privacyNote.resolve(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -1082,6 +1103,13 @@ private fun DetailsCard(
                 }
             }
             if (uiState.isDetailsExpanded) {
+                val notesUsed = MAX_SYMPTOM_NOTE_LENGTH - uiState.notesRemaining
+                val notesErrorText = uiState.notesError?.resolve()
+                val notesCounterText = stringResource(
+                    R.string.count_ratio,
+                    notesUsed,
+                    MAX_SYMPTOM_NOTE_LENGTH,
+                )
                 OutlinedTextField(
                     value = uiState.medication,
                     onValueChange = onMedicationChanged,
@@ -1094,8 +1122,7 @@ private fun DetailsCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .semantics {
-                            stateDescription = uiState.notesError
-                                ?: "${MAX_SYMPTOM_NOTE_LENGTH - uiState.notesRemaining} / $MAX_SYMPTOM_NOTE_LENGTH"
+                            stateDescription = notesErrorText ?: notesCounterText
                         }
                         .testTag(LoggingTags.NotesField),
                     minLines = 3,
@@ -1103,7 +1130,7 @@ private fun DetailsCard(
                     isError = uiState.notesError != null,
                     supportingText = {
                         Text(
-                            uiState.notesError ?: "${MAX_SYMPTOM_NOTE_LENGTH - uiState.notesRemaining} / $MAX_SYMPTOM_NOTE_LENGTH",
+                            notesErrorText ?: notesCounterText,
                             modifier = Modifier.testTag(LoggingTags.NotesError),
                             color = uiState.notesError?.let { MaterialTheme.colorScheme.error }
                                 ?: MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1327,6 +1354,6 @@ internal fun previewLoggingUiState(
         notes = if (hasExistingEntry) "Cramps eased by afternoon." else "",
         isDetailsExpanded = hasExistingEntry,
     ),
-    saveMessage = if (hasExistingEntry) "Saved to your local timeline." else null,
+    saveMessage = if (hasExistingEntry) uiText(R.string.saved_to_local_timeline) else null,
     isSaving = false,
 )

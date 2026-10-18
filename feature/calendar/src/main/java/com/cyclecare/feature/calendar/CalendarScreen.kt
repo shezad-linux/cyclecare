@@ -57,6 +57,7 @@ import com.cyclecare.core.designsystem.token.extendedColors
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.stateDescription
@@ -81,10 +82,17 @@ import com.cyclecare.core.domain.ReminderScheduler
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
 import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.designsystem.text.UiText
+import com.cyclecare.core.designsystem.text.pluralUiText
+import com.cyclecare.core.designsystem.text.resolve
+import com.cyclecare.core.designsystem.text.uiText
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.time.format.TextStyle
+import java.time.temporal.WeekFields
 import java.util.Locale
 import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -97,33 +105,32 @@ import kotlinx.coroutines.launch
 
 data class CalendarUiState(
     val month: YearMonth = YearMonth.now(),
-    val monthLabel: String = formatMonthLabel(YearMonth.now()),
     val selectedDate: LocalDate = LocalDate.now(),
     val selectedDaySummary: SelectedDaySummary = buildSelectedDaySummary(LocalDate.now(), null, null),
     val selectedCycle: CycleRecord? = null,
     val cycles: List<CycleRecord> = emptyList(),
     val prediction: PredictionSnapshot? = null,
     val historyItems: List<CycleHistoryItem> = emptyList(),
-    val historyEmptyMessage: String? = null,
+    val historyEmptyMessage: UiText? = null,
     val legendItems: List<CalendarLegendItem> = defaultCalendarLegendItems(),
     val editor: CycleEditorState = CycleEditorState(),
     val showDeleteConfirmation: Boolean = false,
-    val message: String? = null,
+    val message: UiText? = null,
 )
 
 data class SelectedDaySummary(
     val dateLabel: String,
-    val statusLabel: String,
-    val detail: String,
-    val primaryActionLabel: String?,
+    val statusLabel: UiText,
+    val detail: UiText,
+    val primaryActionLabel: UiText?,
     val type: CalendarLegendType,
 )
 
 data class CycleHistoryItem(
     val id: String,
     val startDate: LocalDate,
-    val dateRangeLabel: String,
-    val cycleLengthLabel: String,
+    val dateRangeLabel: UiText,
+    val cycleLengthLabel: UiText,
     val notesPreview: String? = null,
 )
 
@@ -137,7 +144,7 @@ enum class CalendarLegendType {
 
 data class CalendarLegendItem(
     val type: CalendarLegendType,
-    val label: String,
+    val label: UiText,
 )
 
 data class CycleEditorState(
@@ -150,9 +157,9 @@ data class CycleEditorState(
     val parsedStartDate: LocalDate? = null,
     val parsedEndDate: LocalDate? = null,
     val parsedCycleLength: Int? = null,
-    val startDateError: String? = null,
-    val endDateError: String? = null,
-    val cycleLengthError: String? = null,
+    val startDateError: UiText? = null,
+    val endDateError: UiText? = null,
+    val cycleLengthError: UiText? = null,
     val isSaveEnabled: Boolean = false,
     val isSaving: Boolean = false,
     val error: String? = null,
@@ -175,11 +182,24 @@ private data class CalendarBaseState(
     val prediction: PredictionSnapshot?,
 )
 
-private val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.US)
-private val selectedDateFormatter = DateTimeFormatter.ofPattern("EEEE, MMM d", Locale.US)
-private val dayRangeFormatter = DateTimeFormatter.ofPattern("MMM d", Locale.US)
-private val crossYearRangeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.US)
-private val calendarFirstDayOfWeek = DayOfWeek.MONDAY
+/**
+ * Month labels are formatted as a localized month name plus year. There is
+ * no [DateTimeFormatter.ofLocalizedDate] equivalent for a bare YearMonth
+ * (formatting a YearMonth with a LONG localized formatter throws
+ * UnsupportedTemporalTypeException for the missing day-of-month), so the
+ * pattern stays in code with the resolved locale driving the month names.
+ */
+private fun monthFormatter(locale: Locale): DateTimeFormatter =
+    DateTimeFormatter.ofPattern("MMMM yyyy", locale)
+
+private fun selectedDateFormatter(locale: Locale): DateTimeFormatter =
+    DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale)
+
+private fun rangeDateFormatter(locale: Locale): DateTimeFormatter =
+    DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
+
+/** The editor's machine-readable date hint; must survive translation verbatim. */
+private const val IsoDateFormatHint = "YYYY-MM-DD"
 
 private object CalendarStateKeys {
     const val Month = "month"
@@ -204,29 +224,37 @@ internal object CalendarTags {
     fun history(id: String): String = "calendar_history_$id"
 }
 
-internal fun formatMonthLabel(month: YearMonth): String = month.format(monthFormatter)
+internal fun formatMonthLabel(
+    month: YearMonth,
+    locale: Locale = Locale.getDefault(),
+): String = month.format(monthFormatter(locale))
 
-internal fun formatCalendarDate(date: LocalDate): String = date.format(selectedDateFormatter)
+internal fun formatCalendarDate(
+    date: LocalDate,
+    locale: Locale = Locale.getDefault(),
+): String = date.format(selectedDateFormatter(locale))
 
 /**
  * A null end date means the period is still in progress, which is shown
  * as an open range rather than being hidden or guessed at.
  */
-internal fun formatCycleRangeLabel(startDate: LocalDate, endDate: LocalDate?): String {
-    if (endDate == null) {
-        return "${startDate.format(dayRangeFormatter)} - ongoing"
-    }
-    return when {
-        startDate.year != endDate.year -> {
-            "${startDate.format(crossYearRangeFormatter)} - ${endDate.format(crossYearRangeFormatter)}"
-        }
-        else -> {
-            "${startDate.format(dayRangeFormatter)} - ${endDate.format(dayRangeFormatter)}"
-        }
+internal fun formatCycleRangeLabel(
+    startDate: LocalDate,
+    endDate: LocalDate?,
+    locale: Locale = Locale.getDefault(),
+): UiText {
+    val formattedStart = startDate.format(rangeDateFormatter(locale))
+    return if (endDate == null) {
+        uiText(R.string.cycle_range_ongoing, formattedStart)
+    } else {
+        uiText(R.string.cycle_range, formattedStart, endDate.format(rangeDateFormatter(locale)))
     }
 }
 
-internal fun buildHistoryItems(cycles: List<CycleRecord>): List<CycleHistoryItem> =
+internal fun buildHistoryItems(
+    cycles: List<CycleRecord>,
+    locale: Locale = Locale.getDefault(),
+): List<CycleHistoryItem> =
     cycles
         .filter { it.source != CycleSource.Predicted }
         .sortedByDescending { it.startDate }
@@ -235,8 +263,12 @@ internal fun buildHistoryItems(cycles: List<CycleRecord>): List<CycleHistoryItem
             CycleHistoryItem(
                 id = cycle.id,
                 startDate = cycle.startDate,
-                dateRangeLabel = formatCycleRangeLabel(cycle.startDate, cycle.endDate),
-                cycleLengthLabel = "${cycle.cycleLength} day cycle",
+                dateRangeLabel = formatCycleRangeLabel(cycle.startDate, cycle.endDate, locale),
+                cycleLengthLabel = pluralUiText(
+                    R.plurals.history_cycle_length,
+                    cycle.cycleLength,
+                    cycle.cycleLength,
+                ),
                 notesPreview = cycle.notes?.takeIf { it.isNotBlank() }?.let { notes ->
                     if (notes.length > 90) "${notes.take(87)}..." else notes
                 },
@@ -254,21 +286,21 @@ internal fun validateCycleEditorState(
     val cycleLength = editor.cycleLengthText.toIntOrNull()
 
     val startDateError = when {
-        editor.startDateText.isBlank() -> "Start date is required."
-        startDate == null -> "Use YYYY-MM-DD for the start date."
-        startDate.isAfter(today) -> "Start date cannot be in the future."
+        editor.startDateText.isBlank() -> uiText(R.string.editor_start_date_required)
+        startDate == null -> uiText(R.string.editor_start_date_format, IsoDateFormatHint)
+        startDate.isAfter(today) -> uiText(R.string.editor_start_date_future)
         else -> null
     }
     val endDateError = when {
-        editor.endDateText.isBlank() -> "End date is required."
-        endDate == null -> "Use YYYY-MM-DD for the end date."
-        endDate.isAfter(today) -> "End date cannot be in the future."
+        editor.endDateText.isBlank() -> uiText(R.string.editor_end_date_required)
+        endDate == null -> uiText(R.string.editor_end_date_format, IsoDateFormatHint)
+        endDate.isAfter(today) -> uiText(R.string.editor_end_date_future)
         else -> null
     }
     val cycleLengthError = when {
-        editor.cycleLengthText.isBlank() -> "Cycle length is required."
-        cycleLength == null -> "Cycle length must be a whole number."
-        cycleLength !in 20..45 -> "Cycle length must stay between 20 and 45 days."
+        editor.cycleLengthText.isBlank() -> uiText(R.string.editor_cycle_length_required)
+        cycleLength == null -> uiText(R.string.editor_cycle_length_whole_number)
+        cycleLength !in 20..45 -> uiText(R.string.editor_cycle_length_range, 20, 45)
         else -> null
     }
 
@@ -305,20 +337,36 @@ internal fun validateCycleEditorState(
 }
 
 internal fun defaultCalendarLegendItems(): List<CalendarLegendItem> = listOf(
-    CalendarLegendItem(CalendarLegendType.Period, "Period"),
-    CalendarLegendItem(CalendarLegendType.Fertile, "Fertile window"),
-    CalendarLegendItem(CalendarLegendType.Ovulation, "Ovulation"),
-    CalendarLegendItem(CalendarLegendType.TodaySelected, "Today / selected"),
+    CalendarLegendItem(CalendarLegendType.Period, uiText(R.string.legend_period)),
+    CalendarLegendItem(CalendarLegendType.Fertile, uiText(R.string.legend_fertile_window)),
+    CalendarLegendItem(CalendarLegendType.Ovulation, uiText(R.string.ovulation)),
+    CalendarLegendItem(CalendarLegendType.TodaySelected, uiText(R.string.legend_today_selected)),
 )
 
-internal fun calendarDayStateDescription(day: CalendarDay): String = buildList {
-    if (day.isSelected) add("selected")
-    if (day.isToday) add("today")
-    if (day.isPeriodDay) add("period")
-    if (day.isFertileDay) add("fertile")
-    if (day.isOvulationDay) add("ovulation")
-    add(if (day.isCurrentMonth) "current month" else "outside month")
-}.joinToString(", ")
+/**
+ * Structured TalkBack state for a day cell, in display order. The
+ * localized sentence is assembled in the composable from
+ * [CalendarDayState] rather than produced here, because the tokens must
+ * resolve against the current locale's resources.
+ */
+internal enum class CalendarDayState {
+    Selected,
+    Today,
+    Period,
+    Fertile,
+    Ovulation,
+    CurrentMonth,
+    OutsideMonth,
+}
+
+internal fun calendarDayStateDescription(day: CalendarDay): List<CalendarDayState> = buildList {
+    if (day.isSelected) add(CalendarDayState.Selected)
+    if (day.isToday) add(CalendarDayState.Today)
+    if (day.isPeriodDay) add(CalendarDayState.Period)
+    if (day.isFertileDay) add(CalendarDayState.Fertile)
+    if (day.isOvulationDay) add(CalendarDayState.Ovulation)
+    add(if (day.isCurrentMonth) CalendarDayState.CurrentMonth else CalendarDayState.OutsideMonth)
+}
 
 internal fun calendarDayFillType(day: CalendarDay): CalendarLegendType? = when {
     day.isPeriodDay -> CalendarLegendType.Period
@@ -327,9 +375,7 @@ internal fun calendarDayFillType(day: CalendarDay): CalendarLegendType? = when {
     else -> null
 }
 
-internal fun orderedWeekdays(
-    firstDayOfWeek: DayOfWeek = calendarFirstDayOfWeek,
-): List<DayOfWeek> {
+internal fun orderedWeekdays(firstDayOfWeek: DayOfWeek): List<DayOfWeek> {
     val weekdays = DayOfWeek.entries
     val startIndex = weekdays.indexOf(firstDayOfWeek)
     return weekdays.drop(startIndex) + weekdays.take(startIndex)
@@ -337,7 +383,7 @@ internal fun orderedWeekdays(
 
 internal fun calendarGridStart(
     month: YearMonth,
-    firstDayOfWeek: DayOfWeek = calendarFirstDayOfWeek,
+    firstDayOfWeek: DayOfWeek,
 ): LocalDate {
     val firstDay = month.atDay(1)
     val offset = (7 + (firstDay.dayOfWeek.value - firstDayOfWeek.value)) % 7
@@ -349,6 +395,7 @@ internal fun buildSelectedDaySummary(
     selectedCycle: CycleRecord?,
     prediction: PredictionSnapshot?,
     today: LocalDate = LocalDate.now(),
+    locale: Locale = Locale.getDefault(),
 ): SelectedDaySummary {
     val isOvulationDay = prediction?.ovulationDate == selectedDate
     val isFertileDay = prediction?.fertileWindow?.let { selectedDate >= it.start && selectedDate <= it.endInclusive } == true
@@ -359,40 +406,41 @@ internal fun buildSelectedDaySummary(
     return when {
         selectedCycle != null -> {
             val periodLength = java.time.temporal.ChronoUnit.DAYS.between(selectedCycle.startDate, selectedCycle.endDate).toInt() + 1
-            val cycleNotes = selectedCycle.notes
+            val cycleNotes = selectedCycle.notes?.takeIf { it.isNotBlank() }?.take(80)
+            val isFirstDay = selectedDate == selectedCycle.startDate
+            val isLastDay = selectedDate == selectedCycle.endDate
+            val detail = when {
+                isFirstDay && cycleNotes != null ->
+                    uiText(R.string.summary_period_detail_first_day_notes, periodLength, selectedCycle.cycleLength, cycleNotes)
+                isFirstDay ->
+                    uiText(R.string.summary_period_detail_first_day, periodLength, selectedCycle.cycleLength)
+                isLastDay && cycleNotes != null ->
+                    uiText(R.string.summary_period_detail_last_day_notes, periodLength, selectedCycle.cycleLength, cycleNotes)
+                isLastDay ->
+                    uiText(R.string.summary_period_detail_last_day, periodLength, selectedCycle.cycleLength)
+                cycleNotes != null ->
+                    uiText(R.string.summary_period_detail_notes, periodLength, selectedCycle.cycleLength, cycleNotes)
+                else ->
+                    uiText(R.string.summary_period_detail, periodLength, selectedCycle.cycleLength)
+            }
             SelectedDaySummary(
-                dateLabel = formatCalendarDate(selectedDate),
-                statusLabel = "Period day",
-                detail = buildString {
-                    append("${periodLength}-day period • ${selectedCycle.cycleLength}d cycle")
-                    if (selectedDate == selectedCycle.startDate) {
-                        append(" • First day of period")
-                    } else if (selectedDate == selectedCycle.endDate) {
-                        append(" • Last day of period")
-                    }
-                    if (!cycleNotes.isNullOrBlank()) {
-                        append(". ${cycleNotes.take(80)}")
-                    }
-                },
-                primaryActionLabel = "Update entry",
+                dateLabel = formatCalendarDate(selectedDate, locale),
+                statusLabel = uiText(R.string.summary_status_period_day),
+                detail = detail,
+                primaryActionLabel = uiText(R.string.update_entry),
                 type = CalendarLegendType.Period,
             )
         }
 
         isOvulationDay -> SelectedDaySummary(
-            dateLabel = formatCalendarDate(selectedDate),
-            statusLabel = "Ovulation estimate",
-            detail = buildString {
-                append("Peak fertility • ")
-                if (isFuture) {
-                    append("This is a future estimate based on your local history.")
-                } else if (isToday) {
-                    append("Tracking symptoms today may help with future insights.")
-                } else {
-                    append("Consider logging how you feel on this date.")
-                }
+            dateLabel = formatCalendarDate(selectedDate, locale),
+            statusLabel = uiText(R.string.summary_status_ovulation_estimate),
+            detail = when {
+                isFuture -> uiText(R.string.summary_ovulation_detail_future)
+                isToday -> uiText(R.string.summary_ovulation_detail_today)
+                else -> uiText(R.string.summary_ovulation_detail_past)
             },
-            primaryActionLabel = if (isFuture) null else "Log period on this date",
+            primaryActionLabel = if (isFuture) null else uiText(R.string.summary_action_log_period),
             type = CalendarLegendType.Ovulation,
         )
 
@@ -401,63 +449,69 @@ internal fun buildSelectedDaySummary(
                 java.time.temporal.ChronoUnit.DAYS.between(it.start, selectedDate).toInt() + 1
             } ?: 1
             SelectedDaySummary(
-                dateLabel = formatCalendarDate(selectedDate),
-                statusLabel = "Fertile window",
-                detail = buildString {
-                    append("Day $daysInFertileWindow of fertile window • ")
-                    if (isFuture) {
-                        append("This is a future estimate based on your local history.")
-                    } else if (isToday) {
-                        append("Track symptoms for better insights.")
-                    } else {
-                        append("Log mood and energy for future reference.")
-                    }
+                dateLabel = formatCalendarDate(selectedDate, locale),
+                statusLabel = uiText(R.string.summary_status_fertile_window),
+                detail = when {
+                    isFuture -> uiText(R.string.summary_fertile_detail_future, daysInFertileWindow)
+                    isToday -> uiText(R.string.summary_fertile_detail_today, daysInFertileWindow)
+                    else -> uiText(R.string.summary_fertile_detail_past, daysInFertileWindow)
                 },
-                primaryActionLabel = if (isFuture) null else "Log period on this date",
+                primaryActionLabel = if (isFuture) null else uiText(R.string.summary_action_log_period),
                 type = CalendarLegendType.Fertile,
             )
         }
 
-        selectedDate.isAfter(today) -> SelectedDaySummary(
-            dateLabel = formatCalendarDate(selectedDate),
-            statusLabel = "Future date",
-            detail = buildString {
-                append("This date is in the future. ")
-                daysUntilPeriod?.let { days ->
-                    if (days > 0) {
-                        val daysUntilSelected = java.time.temporal.ChronoUnit.DAYS.between(today, selectedDate).toInt()
-                        if (daysUntilSelected <= days + 7 && daysUntilSelected > 0) {
-                            append("Your period is expected around ${prediction?.nextPeriodDate?.format(dayRangeFormatter) ?: "soon"}.")
-                        }
+        selectedDate.isAfter(today) -> {
+            val detail = if (daysUntilPeriod != null && daysUntilPeriod > 0) {
+                val daysUntilSelected = java.time.temporal.ChronoUnit.DAYS.between(today, selectedDate).toInt()
+                if (daysUntilSelected <= daysUntilPeriod + 7 && daysUntilSelected > 0) {
+                    val expectedDate = prediction?.nextPeriodDate
+                    if (expectedDate != null) {
+                        uiText(R.string.summary_future_detail_expected, expectedDate.format(rangeDateFormatter(locale)))
+                    } else {
+                        uiText(R.string.summary_future_detail_expected_soon)
                     }
+                } else {
+                    uiText(R.string.summary_future_detail)
                 }
-            },
-            primaryActionLabel = null,
-            type = CalendarLegendType.Neutral,
-        )
+            } else {
+                uiText(R.string.summary_future_detail)
+            }
+            SelectedDaySummary(
+                dateLabel = formatCalendarDate(selectedDate, locale),
+                statusLabel = uiText(R.string.summary_status_future_date),
+                detail = detail,
+                primaryActionLabel = null,
+                type = CalendarLegendType.Neutral,
+            )
+        }
 
         else -> {
-            val insightText = when {
+            val insight = when {
                 daysUntilPeriod != null && daysUntilPeriod > 0 -> {
                     val daysUntilSelected = java.time.temporal.ChronoUnit.DAYS.between(today, selectedDate).toInt()
                     val daysFromPeriod = daysUntilPeriod - daysUntilSelected
                     when {
-                        daysFromPeriod in -14..-1 -> "Late cycle • Consider checking in"
-                        daysFromPeriod == 0 -> "Period expected today"
-                        daysFromPeriod in 1..7 -> "Period expected ${if (daysFromPeriod == 1) "tomorrow" else "in $daysFromPeriod days"}"
-                        daysFromPeriod < 0 -> "Cycle day ${daysUntilPeriod + 1}"
+                        daysFromPeriod in -14..-1 -> uiText(R.string.summary_insight_late_cycle)
+                        daysFromPeriod == 0 -> uiText(R.string.summary_insight_period_today)
+                        daysFromPeriod in 1..7 -> pluralUiText(
+                            R.plurals.summary_insight_period_in_days,
+                            daysFromPeriod,
+                            daysFromPeriod,
+                        )
+                        daysFromPeriod < 0 -> uiText(R.string.summary_insight_cycle_day, daysUntilPeriod + 1)
                         else -> null
                     }
                 }
-                isToday -> "Track how you're feeling today"
+                isToday -> uiText(R.string.summary_insight_track_today)
                 else -> null
             }
 
             SelectedDaySummary(
-                dateLabel = formatCalendarDate(selectedDate),
-                statusLabel = if (isToday) "Today" else "No cycle event",
-                detail = insightText ?: "No logged entry or prediction for this date yet. Track your symptoms or period when ready.",
-                primaryActionLabel = "Log period on this date",
+                dateLabel = formatCalendarDate(selectedDate, locale),
+                statusLabel = if (isToday) uiText(R.string.summary_status_today) else uiText(R.string.summary_status_no_event),
+                detail = insight ?: uiText(R.string.summary_neutral_detail_empty),
+                primaryActionLabel = uiText(R.string.summary_action_log_period),
                 type = CalendarLegendType.Neutral,
             )
         }
@@ -519,7 +573,7 @@ class CalendarViewModel(
     private val anchorDayOfMonthFlow = MutableStateFlow(restoredPosition.anchorDayOfMonth)
     private val editorFlow = MutableStateFlow(savedStateHandle.toCycleEditorState())
     private val showDeleteConfirmationFlow = MutableStateFlow(false)
-    private val messageFlow = MutableStateFlow<String?>(null)
+    private val messageFlow = MutableStateFlow<UiText?>(null)
 
     private val baseState = combine(
         monthFlow,
@@ -550,7 +604,6 @@ class CalendarViewModel(
         )
         CalendarUiState(
             month = base.month,
-            monthLabel = formatMonthLabel(base.month),
             selectedDate = base.selectedDate,
             selectedDaySummary = buildSelectedDaySummary(
                 selectedDate = base.selectedDate,
@@ -562,7 +615,7 @@ class CalendarViewModel(
             prediction = base.prediction,
             historyItems = historyItems,
             historyEmptyMessage = if (historyItems.isEmpty()) {
-                "Your logged cycles will appear here once you save them. History makes predictions and reminder timing more reliable."
+                uiText(R.string.history_empty_message)
             } else {
                 null
             },
@@ -687,7 +740,7 @@ class CalendarViewModel(
             selectedDateFlow.update { candidate.startDate }
             anchorDayOfMonthFlow.update { candidate.startDate.dayOfMonth }
             persistCalendarPosition(YearMonth.from(candidate.startDate), candidate.startDate, candidate.startDate.dayOfMonth)
-            messageFlow.update { "Cycle history updated locally." }
+            messageFlow.update { uiText(R.string.cycle_history_updated_locally) }
             editorFlow.update { CycleEditorState() }
             savedStateHandle.clearCycleEditorState()
         }
@@ -699,7 +752,7 @@ class CalendarViewModel(
             cycleRepository.deleteCycle(selectedCycle.id)
             reminderScheduler.refreshSchedules()
             showDeleteConfirmationFlow.update { false }
-            messageFlow.update { "Cycle entry removed locally." }
+            messageFlow.update { uiText(R.string.cycle_entry_removed_locally) }
         }
     }
 
@@ -785,8 +838,11 @@ internal fun CalendarScreen(
     onDismissDeleteConfirmation: () -> Unit,
     onDeleteCycle: () -> Unit,
 ) {
-    val days = remember(uiState.month, uiState.selectedDate, uiState.cycles, uiState.prediction) {
-        buildCalendarDays(uiState)
+    val locale = LocalConfiguration.current.locales[0]
+    val firstDayOfWeek = remember(locale) { WeekFields.of(locale).firstDayOfWeek }
+    val monthLabel = remember(uiState.month, locale) { formatMonthLabel(uiState.month, locale) }
+    val days = remember(uiState.month, uiState.selectedDate, uiState.cycles, uiState.prediction, firstDayOfWeek) {
+        buildCalendarDays(uiState, firstDayOfWeek = firstDayOfWeek)
     }
 
     Column(
@@ -837,7 +893,7 @@ internal fun CalendarScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            uiState.monthLabel,
+                            monthLabel,
                             modifier = Modifier.testTag(CalendarTags.MONTH_LABEL),
                             // The month is this screen's display element,
                             // so it sits on the display ramp rather than
@@ -871,9 +927,9 @@ internal fun CalendarScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(daySpacing),
                         ) {
-                            orderedWeekdays().forEach { dayOfWeek ->
+                            orderedWeekdays(firstDayOfWeek).forEach { dayOfWeek ->
                                 Text(
-                                    dayOfWeek.name.take(3),
+                                    dayOfWeek.getDisplayName(TextStyle.SHORT, locale),
                                     modifier = Modifier.weight(1f),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
@@ -926,7 +982,7 @@ internal fun CalendarScreen(
                     Text(uiState.selectedDaySummary.dateLabel, style = MaterialTheme.typography.titleLarge)
                     StatusPill(summary = uiState.selectedDaySummary)
                 }
-                Text(uiState.selectedDaySummary.detail, style = MaterialTheme.typography.bodyLarge)
+                Text(uiState.selectedDaySummary.detail.resolve(), style = MaterialTheme.typography.bodyLarge)
                 if (!uiState.selectedCycle?.notes.isNullOrBlank()) {
                     Text(
                         uiState.selectedCycle?.notes.orEmpty(),
@@ -937,12 +993,12 @@ internal fun CalendarScreen(
 
                 if (uiState.selectedCycle == null && uiState.selectedDaySummary.primaryActionLabel != null) {
                     Button(onClick = onOpenCreate, modifier = Modifier.fillMaxWidth()) {
-                        Text(uiState.selectedDaySummary.primaryActionLabel)
+                        Text(uiState.selectedDaySummary.primaryActionLabel.resolve())
                     }
                 } else {
                     if (uiState.selectedCycle != null) {
                         Button(onClick = onOpenEdit, modifier = Modifier.fillMaxWidth()) {
-                            Text(uiState.selectedDaySummary.primaryActionLabel ?: stringResource(R.string.update_entry))
+                            Text(uiState.selectedDaySummary.primaryActionLabel?.resolve() ?: stringResource(R.string.update_entry))
                         }
                         TextButton(onClick = onShowDeleteConfirmation, modifier = Modifier.fillMaxWidth()) {
                             Text(stringResource(R.string.delete_cycle_entry))
@@ -952,7 +1008,7 @@ internal fun CalendarScreen(
 
                 uiState.message?.let { message ->
                     Text(
-                        message,
+                        message.resolve(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -972,7 +1028,7 @@ internal fun CalendarScreen(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.44f),
                 ) {
                     Text(
-                        text = uiState.historyEmptyMessage.orEmpty(),
+                        text = uiState.historyEmptyMessage?.resolve().orEmpty(),
                         style = MaterialTheme.typography.bodyLarge,
                     )
                 }
@@ -1017,7 +1073,7 @@ internal fun CalendarScreen(
                     isError = uiState.editor.startDateError != null,
                     supportingText = {
                         uiState.editor.startDateError?.let { error ->
-                            Text(error, color = MaterialTheme.colorScheme.error)
+                            Text(error.resolve(), color = MaterialTheme.colorScheme.error)
                         }
                     },
                 )
@@ -1030,7 +1086,7 @@ internal fun CalendarScreen(
                     isError = uiState.editor.endDateError != null,
                     supportingText = {
                         uiState.editor.endDateError?.let { error ->
-                            Text(error, color = MaterialTheme.colorScheme.error)
+                            Text(error.resolve(), color = MaterialTheme.colorScheme.error)
                         }
                     },
                 )
@@ -1043,7 +1099,7 @@ internal fun CalendarScreen(
                     isError = uiState.editor.cycleLengthError != null,
                     supportingText = {
                         uiState.editor.cycleLengthError?.let { error ->
-                            Text(error, color = MaterialTheme.colorScheme.error)
+                            Text(error.resolve(), color = MaterialTheme.colorScheme.error)
                         }
                     },
                 )
@@ -1121,11 +1177,14 @@ private fun CalendarDayCell(
         day.isToday -> MaterialTheme.colorScheme.secondary
         else -> Color.Transparent
     }
+    val dayStateText = calendarDayStateDescription(day)
+        .map { state -> stringResource(state.labelRes()) }
+        .joinToString(", ")
 
     Surface(
         modifier = modifier
             .testTag(CalendarTags.day(day.date))
-            .semantics { stateDescription = calendarDayStateDescription(day) }
+            .semantics { stateDescription = dayStateText }
             .clickable(onClick = onClick),
         color = containerColor,
         shape = RoundedCornerShape(18.dp),
@@ -1189,12 +1248,22 @@ private fun LegendChip(item: CalendarLegendItem) {
                     .background(accent.copy(alpha = 0.9f), CircleShape),
             )
             Text(
-                item.label,
+                item.label.resolve(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
+}
+
+private fun CalendarDayState.labelRes(): Int = when (this) {
+    CalendarDayState.Selected -> R.string.day_state_selected
+    CalendarDayState.Today -> R.string.day_state_today
+    CalendarDayState.Period -> R.string.day_state_period
+    CalendarDayState.Fertile -> R.string.day_state_fertile
+    CalendarDayState.Ovulation -> R.string.day_state_ovulation
+    CalendarDayState.CurrentMonth -> R.string.day_state_current_month
+    CalendarDayState.OutsideMonth -> R.string.day_state_outside_month
 }
 
 @Composable
@@ -1216,7 +1285,7 @@ private fun StatusPill(summary: SelectedDaySummary) {
                 tint = accent,
                 modifier = Modifier.size(18.dp),
             )
-            Text(summary.statusLabel, style = MaterialTheme.typography.labelLarge)
+            Text(summary.statusLabel.resolve(), style = MaterialTheme.typography.labelLarge)
         }
     }
 }
@@ -1245,9 +1314,9 @@ private fun HistoryCard(
         Column(
             verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10),
         ) {
-            Text(item.dateRangeLabel, style = MaterialTheme.typography.titleMedium)
+            Text(item.dateRangeLabel.resolve(), style = MaterialTheme.typography.titleMedium)
             Text(
-                item.cycleLengthLabel,
+                item.cycleLengthLabel.resolve(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1265,7 +1334,7 @@ private fun HistoryCard(
 internal fun buildCalendarDays(
     uiState: CalendarUiState,
     today: LocalDate = LocalDate.now(),
-    firstDayOfWeek: DayOfWeek = calendarFirstDayOfWeek,
+    firstDayOfWeek: DayOfWeek,
 ): List<CalendarDay> {
     val month = uiState.month
     val start = calendarGridStart(month, firstDayOfWeek)
@@ -1385,7 +1454,6 @@ private fun CalendarScreenPreview() {
         CalendarScreen(
             uiState = CalendarUiState(
                 month = previewMonth,
-                monthLabel = formatMonthLabel(previewMonth),
                 selectedDate = sampleCycle.startDate,
                 selectedDaySummary = buildSelectedDaySummary(sampleCycle.startDate, sampleCycle, samplePrediction),
                 selectedCycle = sampleCycle,

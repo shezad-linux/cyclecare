@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.platform.app.InstrumentationRegistry
 import com.cyclecare.core.designsystem.CycleCareTheme
 import com.cyclecare.core.domain.CycleRecordValidator
 import com.cyclecare.core.model.CycleRecord
@@ -24,6 +25,7 @@ import com.cyclecare.core.model.DateRange
 import com.cyclecare.core.model.PredictionSnapshot
 import java.time.LocalDate
 import java.time.YearMonth
+import java.util.Locale
 import org.junit.Rule
 import org.junit.Test
 
@@ -36,13 +38,13 @@ class CalendarScreenUiTest {
         setCalendarContent(initialState = previewCalendarState())
 
         composeRule.onNodeWithTag(CalendarTags.day(LocalDate.of(2026, 3, 11))).assert(
-            stateContains("period"),
+            stateContains(localizedString(R.string.day_state_period)),
         )
         composeRule.onNodeWithTag(CalendarTags.day(LocalDate.of(2026, 3, 19))).assert(
-            stateContains("fertile"),
+            stateContains(localizedString(R.string.day_state_fertile)),
         )
         composeRule.onNodeWithTag(CalendarTags.day(LocalDate.of(2026, 3, 23))).assert(
-            stateContains("ovulation"),
+            stateContains(localizedString(R.string.day_state_ovulation)),
         )
     }
 
@@ -53,10 +55,10 @@ class CalendarScreenUiTest {
         composeRule.onNodeWithTag(CalendarTags.day(LocalDate.of(2026, 3, 23))).performClick()
 
         composeRule.onNodeWithTag(CalendarTags.SELECTED_DAY_PANEL).assert(
-            hasAnyDescendant(hasText("Ovulation estimate")),
+            hasAnyDescendant(hasText(localizedString(R.string.summary_status_ovulation_estimate))),
         )
         composeRule.onNodeWithTag(CalendarTags.day(LocalDate.of(2026, 3, 23))).assert(
-            stateContains("selected"),
+            stateContains(localizedString(R.string.day_state_selected)),
         )
     }
 
@@ -65,13 +67,13 @@ class CalendarScreenUiTest {
         setCalendarContent(initialState = previewCalendarState())
 
         composeRule.onNodeWithTag(CalendarTags.day(LocalDate.of(2026, 2, 23))).assert(
-            stateContains("outside month"),
+            stateContains(localizedString(R.string.day_state_outside_month)),
         )
         composeRule.onNodeWithTag(CalendarTags.day(LocalDate.of(2026, 2, 23))).performClick()
 
-        composeRule.onNodeWithText("February 2026").assertIsDisplayed()
+        composeRule.onNodeWithText(monthLabelText(YearMonth.of(2026, 2))).assertIsDisplayed()
         composeRule.onNodeWithTag(CalendarTags.day(LocalDate.of(2026, 2, 23))).assert(
-            stateContains("selected"),
+            stateContains(localizedString(R.string.day_state_selected)),
         )
     }
 
@@ -86,7 +88,6 @@ class CalendarScreenUiTest {
                         val targetMonth = state.month.minusMonths(1)
                         state = state.copy(
                             month = targetMonth,
-                            monthLabel = formatMonthLabel(targetMonth),
                             selectedDate = targetMonth.withAnchoredDay(state.selectedDate.dayOfMonth),
                         )
                     },
@@ -94,7 +95,6 @@ class CalendarScreenUiTest {
                         val targetMonth = state.month.plusMonths(1)
                         state = state.copy(
                             month = targetMonth,
-                            monthLabel = formatMonthLabel(targetMonth),
                             selectedDate = targetMonth.withAnchoredDay(state.selectedDate.dayOfMonth),
                         )
                     },
@@ -117,9 +117,9 @@ class CalendarScreenUiTest {
 
         composeRule.onNodeWithTag(CalendarTags.MONTH_LABEL).assertIsDisplayed()
         composeRule.onNodeWithTag(CalendarTags.NEXT_MONTH).performClick()
-        composeRule.onNodeWithText("April 2026").assertIsDisplayed()
+        composeRule.onNodeWithText(monthLabelText(YearMonth.of(2026, 4))).assertIsDisplayed()
         composeRule.onNodeWithTag(CalendarTags.PREVIOUS_MONTH).performClick()
-        composeRule.onNodeWithText("March 2026").assertIsDisplayed()
+        composeRule.onNodeWithText(monthLabelText(YearMonth.of(2026, 3))).assertIsDisplayed()
     }
 
     @Test
@@ -158,10 +158,10 @@ class CalendarScreenUiTest {
             }
         }
 
-        composeRule.onNodeWithText("Start date cannot be in the future.").assertIsDisplayed()
-        composeRule.onNodeWithText("Use YYYY-MM-DD for the end date.").assertIsDisplayed()
-        composeRule.onNodeWithText("Cycle length is required.").assertIsDisplayed()
-        composeRule.onNodeWithText("Save locally").assertIsNotEnabled()
+        composeRule.onNodeWithText(localizedString(R.string.editor_start_date_future)).assertIsDisplayed()
+        composeRule.onNodeWithText(localizedString(R.string.editor_end_date_format, "YYYY-MM-DD")).assertIsDisplayed()
+        composeRule.onNodeWithText(localizedString(R.string.editor_cycle_length_required)).assertIsDisplayed()
+        composeRule.onNodeWithText(localizedString(R.string.save_locally)).assertIsNotEnabled()
     }
 
     @Test
@@ -184,7 +184,6 @@ class CalendarScreenUiTest {
                 CalendarScreen(
                     uiState = CalendarUiState(
                         month = YearMonth.of(2026, 3),
-                        monthLabel = formatMonthLabel(YearMonth.of(2026, 3)),
                         selectedDate = LocalDate.of(2026, 3, 23),
                         selectedDaySummary = buildSelectedDaySummary(
                             selectedDate = LocalDate.of(2026, 3, 23),
@@ -214,9 +213,9 @@ class CalendarScreenUiTest {
         }
 
         composeRule.onNodeWithTag(CalendarTags.SELECTED_DAY_PANEL).assert(
-            hasAnyDescendant(hasText("Ovulation estimate")),
+            hasAnyDescendant(hasText(localizedString(R.string.summary_status_ovulation_estimate))),
         )
-        composeRule.onAllNodesWithText("Log period on this date").assertCountEquals(0)
+        composeRule.onAllNodesWithText(localizedString(R.string.summary_action_log_period)).assertCountEquals(0)
     }
 
     private fun setCalendarContent(initialState: CalendarUiState) {
@@ -269,7 +268,6 @@ class CalendarScreenUiTest {
         val month = YearMonth.of(2026, 3)
         return CalendarUiState(
             month = month,
-            monthLabel = formatMonthLabel(month),
             selectedDate = cycle.startDate,
             selectedDaySummary = buildSelectedDaySummary(cycle.startDate, cycle, prediction),
             selectedCycle = cycle,
@@ -283,7 +281,6 @@ class CalendarScreenUiTest {
         val selectedCycle = cycles.firstOrNull { date >= it.startDate && date <= it.endDate }
         return copy(
             month = YearMonth.from(date),
-            monthLabel = formatMonthLabel(YearMonth.from(date)),
             selectedDate = date,
             selectedCycle = selectedCycle,
             selectedDaySummary = buildSelectedDaySummary(date, selectedCycle, prediction),
@@ -299,4 +296,13 @@ class CalendarScreenUiTest {
             false
         }
     }
+
+    private fun localizedString(resId: Int, vararg args: Any): String =
+        InstrumentationRegistry.getInstrumentation().targetContext.getString(resId, *args)
+
+    private fun monthLabelText(month: YearMonth): String =
+        formatMonthLabel(month, deviceLocale())
+
+    private fun deviceLocale(): Locale =
+        InstrumentationRegistry.getInstrumentation().targetContext.resources.configuration.locales[0]
 }

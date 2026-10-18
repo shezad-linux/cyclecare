@@ -35,4 +35,87 @@
     <string name="view_cycle_trends">View cycle trends</string>
     <string name="view_symptom_patterns">View symptom patterns</string>
     <string name="your_data_stays_private_on_this_device">Your data stays private on this device.</string>
+
+    <!-- Insight state copy -->
+    <string name="trend_charts_building_summary">Once you have two logged cycles, this section will show the shape of your recent cycle lengths and period lengths.</string>
+    <string name="symptom_patterns_locked_summary">Keep logging symptoms to unlock grouped symptom clusters and phase-based insights.</string>
+    <string name="build_stronger_patterns_summary">Keep logging mood, pain, energy, and body cues to unlock grouped symptom clusters and phase-based insights.</string>
+    <string name="variability_steady_lately">Steady lately</string>
+    <string name="variability_more_variation">More variation</string>
+    <string name="variability_consistent">Your cycle is consistent</string>
+    <string name="variability_close_to_average">Recent cycles stay close to your average</string>
+    <string name="variability_more_variation_than_usual">Recent cycles show more variation than usual</string>
+    <string name="variability_above_baseline">Cycle lengths vary more than your baseline</string>
+    <string name="cycle_window_recent_cycles">Based on your recent cycles</string>
+    <string name="narrative_build_stronger_patterns">Build stronger patterns</string>
+    <string name="narrative_what_we_know">What we know</string>
+    <string name="keep_logging_to_unlock_patterns">Keep logging to unlock patterns</string>
+    <string name="symptoms_show_patterns_related_to_cycle_phases">Your symptoms show patterns related to your cycle phases</string>
+    <string name="start_logging_to_build_insights">Start logging to build your insights over time.</string>
+    <string name="log_a_few_days_to_see_patterns">Log a few days to see patterns</string>
+    <string name="section_mood">Mood</string>
+    <string name="section_energy">Energy</string>
+    <string name="section_pain">Pain</string>
+    <string name="section_body_cues">Body cues</string>
+    <string name="shows_up_most_often">%1$s shows up most often</string>
+    <string name="keep_logging_to_reveal_patterns">Keep logging to reveal patterns.</string>
+    <string name="phase_period">Period</string>
+    <string name="phase_fertile_window">Fertile window</string>
+
+    <!-- Enum labels. pain_none and discharge_none are intentionally distinct keys -->
+    <string name="mood_stable">Stable</string>
+    <string name="mood_happy">Happy</string>
+    <string name="mood_low">Low</string>
+    <string name="mood_irritable">Irritable</string>
+    <string name="mood_anxious">Anxious</string>
+    <string name="energy_low">Low</string>
+    <string name="energy_steady">Steady</string>
+    <string name="energy_high">High</string>
+    <string name="pain_none">None</string>
+    <string name="pain_light">Light</string>
+    <string name="pain_moderate">Moderate</string>
+    <string name="pain_strong">Strong</string>
+    <string name="discharge_none">None</string>
+    <string name="discharge_dry">Dry</string>
+    <string name="discharge_creamy">Creamy</string>
+    <string name="discharge_sticky">Sticky</string>
+    <string name="discharge_egg_white">Egg white</string>
+
+    <!-- Chart labels -->
+    <string name="cycle_point_label">C%1$d</string>
+    <string name="period_point_label">P%1$d</string>
+    <string name="day_compact">%1$dd</string>
+
+    <plurals name="n_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <plurals name="n_day_rhythm">
+        <item quantity="one">%1$d day rhythm</item>
+        <item quantity="other">%1$d day rhythm</item>
+    </plurals>
+    <plurals name="min_max_day_range">
+        <item quantity="one">%1$d-%2$d day range</item>
+        <item quantity="other">%1$d-%2$d day range</item>
+    </plurals>
+    <plurals name="your_last_cycle_was_n_days_within_typical_range">
+        <item quantity="one">Your last cycle was %1$d day, within typical range</item>
+        <item quantity="other">Your last cycle was %1$d days, within typical range</item>
+    </plurals>
+    <plurals name="your_last_cycle_was_n_days_keep_logging_to_refine_your_insights">
+        <item quantity="one">Your last cycle was %1$d day. Keep logging to refine your insights.</item>
+        <item quantity="other">Your last cycle was %1$d days. Keep logging to refine your insights.</item>
+    </plurals>
+    <plurals name="n_of_m_cycles_logged">
+        <item quantity="one">%1$d of %2$d cycle logged</item>
+        <item quantity="other">%1$d of %2$d cycles logged</item>
+    </plurals>
+    <plurals name="n_of_m_days_logged">
+        <item quantity="one">%1$d of %2$d day logged</item>
+        <item quantity="other">%1$d of %2$d days logged</item>
+    </plurals>
+    <plurals name="n_cycles_logged">
+        <item quantity="one">%1$d cycle logged</item>
+        <item quantity="other">%1$d cycles logged</item>
+    </plurals>
 </resources>

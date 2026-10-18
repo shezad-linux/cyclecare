@@ -1,5 +1,7 @@
 package com.cyclecare.feature.insights
 
+import com.cyclecare.core.designsystem.text.pluralUiText
+import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.model.DischargeType
 import com.cyclecare.core.model.EnergyLevel
 import com.cyclecare.core.model.InsightPhase
@@ -61,13 +63,28 @@ class InsightsPresentationTest {
             ),
         )
 
-        assertThat(uiState.averageCycleText).isEqualTo("29 days")
-        assertThat(uiState.variabilityLabel).isEqualTo("Steady lately")
-        assertThat(uiState.variabilityText).isEqualTo("27-31 day range")
+        assertThat(uiState.averageCycleText).isEqualTo(pluralUiText(R.plurals.n_days, 29, 29))
+        assertThat(uiState.variabilityLabel).isEqualTo(uiText(R.string.variability_steady_lately))
+        assertThat(uiState.variabilityText).isEqualTo(pluralUiText(R.plurals.min_max_day_range, 31, 27, 31))
         assertThat(uiState.cycleTrendBars).hasSize(6)
         assertThat(uiState.periodTrendItems).hasSize(6)
-        assertThat(uiState.phaseHighlights.single().badgeLabel).isEqualTo("Period")
-        assertThat(uiState.symptomSections.map { it.title }).containsExactly("Mood", "Energy", "Pain", "Body cues").inOrder()
+        assertThat(uiState.phaseHighlights.single().badgeLabel).isEqualTo(uiText(R.string.phase_period))
+        assertThat(uiState.symptomSections.map { it.title }).containsExactly(
+            uiText(R.string.section_mood),
+            uiText(R.string.section_energy),
+            uiText(R.string.section_pain),
+            uiText(R.string.section_body_cues),
+        ).inOrder()
+
+        assertThat(uiState.averagePeriodText).isEqualTo(pluralUiText(R.plurals.n_days, 5, 5))
+        assertThat(uiState.cycleTrendBars.first().valueLabel).isEqualTo(pluralUiText(R.plurals.n_days, 28, 28))
+        assertThat(uiState.periodTrendItems.first().valueLabel).isEqualTo(uiText(R.string.day_compact, 5))
+        assertThat(uiState.cycleProgressLabel).isEqualTo(pluralUiText(R.plurals.n_of_m_cycles_logged, 6, 6, 2))
+        assertThat(uiState.symptomProgressLabel).isEqualTo(pluralUiText(R.plurals.n_of_m_days_logged, 13, 13, 5))
+        assertThat(uiState.cycleTrendSummary).isEqualTo(
+            pluralUiText(R.plurals.your_last_cycle_was_n_days_within_typical_range, 29, 29),
+        )
+        assertThat(uiState.symptomSections.first().topLabel).isEqualTo(uiText(R.string.mood_stable))
     }
 
     @Test
@@ -116,8 +133,10 @@ class InsightsPresentationTest {
 
         assertThat(uiState.hasEnoughCycleData).isFalse()
         assertThat(uiState.hasEnoughSymptomData).isFalse()
-        assertThat(uiState.cycleTrendSummary).contains("two logged cycles")
-        assertThat(uiState.symptomSummary).contains("Keep logging symptoms")
-        assertThat(uiState.narrativeTitle).isEqualTo("Build stronger patterns")
+        assertThat(uiState.cycleTrendSummary).isEqualTo(uiText(R.string.trend_charts_building_summary))
+        assertThat(uiState.symptomSummary).isEqualTo(uiText(R.string.symptom_patterns_locked_summary))
+        assertThat(uiState.narrativeTitle).isEqualTo(uiText(R.string.narrative_build_stronger_patterns))
+        assertThat(uiState.cycleProgressLabel).isEqualTo(pluralUiText(R.plurals.n_of_m_cycles_logged, 1, 1, 2))
+        assertThat(uiState.symptomProgressLabel).isEqualTo(pluralUiText(R.plurals.n_of_m_days_logged, 1, 1, 5))
     }
 }
