@@ -1605,6 +1605,15 @@ internal fun HomeCycleStatusScreen(
                     )
                 }
             }
+            // Body copy, not a glanceable figure. It used to live in the
+            // hero card, where on a 320x536 screen the explanation
+            // pushed the hero to fill the entire viewport and the
+            // actions below it were never composed at all.
+            Text(
+                text = uiState.cycleSourceSummary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Button(onClick = onOpenEditCycle, modifier = Modifier.fillMaxWidth()) {
                 Text("Edit cycle")
             }
@@ -1716,14 +1725,6 @@ private fun CycleStatusHeroText(
             horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
             verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
         ) {
-            Text(
-                text = "${(progress * 100).roundToInt()}%",
-                // A standalone number, so the display ramp with tabular
-                // figures: without tnum the percentage jitters in width
-                // as it animates.
-                style = CycleCareTypography.numericLarge,
-                color = MaterialTheme.colorScheme.onPrimary,
-            )
             MetricPill(
                 text = uiState.cycleModeLabel,
                 tone = MetricPillTone.Inverse,
@@ -1753,11 +1754,7 @@ private fun CycleStatusHeroText(
                 trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.24f),
             )
         }
-        Text(
-            uiState.cycleSourceSummary,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.86f),
-        )
+
     }
 }
 
