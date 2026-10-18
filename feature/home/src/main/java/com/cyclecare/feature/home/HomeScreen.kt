@@ -57,6 +57,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -1095,7 +1096,7 @@ internal fun HomeScreen(
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     Text(
-                        "Your data stays private on this device.",
+                        stringResource(R.string.your_data_stays_private_on_this_device),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -1143,7 +1144,7 @@ private fun HomeDashboardHeader(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Dashboard",
+                        text = stringResource(R.string.dashboard),
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.headlineMedium,
                         maxLines = 1,
@@ -1155,7 +1156,7 @@ private fun HomeDashboardHeader(
                     )
                 }
                 Text(
-                    text = "Cycle, reminders, and insights in one local view.",
+                    text = stringResource(R.string.cycle_reminders_and_insights_in_one_local_view),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
@@ -1173,13 +1174,13 @@ private fun HomeDashboardHeader(
                     verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4),
                 ) {
                     Text(
-                        text = "Dashboard",
+                        text = stringResource(R.string.dashboard),
                         style = MaterialTheme.typography.headlineMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = "Cycle, reminders, and insights in one local view.",
+                        text = stringResource(R.string.cycle_reminders_and_insights_in_one_local_view),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
@@ -1320,7 +1321,7 @@ private fun FertilityTeaserCard(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4)) {
                     Text(
-                        "Ovulation estimate",
+                        stringResource(R.string.ovulation_estimate),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -1685,7 +1686,7 @@ private fun CycleStatusHeroText(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space14)) {
         Text(
-            "Cycle detail",
+            stringResource(R.string.cycle_detail),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.84f),
         )
@@ -1726,7 +1727,7 @@ private fun CycleStatusHeroText(
         }
         Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
             Text(
-                "Cycle progress",
+                stringResource(R.string.cycle_progress),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.82f),
             )
@@ -1788,7 +1789,7 @@ internal fun HomeFertilityDetailScreen(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10)) {
                     Text(
-                        "Fertility timing is estimated from your saved baseline and recent logged cycle history. It should be read as guidance, not a medical measurement.",
+                        stringResource(R.string.fertility_timing_is_estimated_from_your_saved_baseline_and_r),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -1865,7 +1866,7 @@ private fun EditCycleSheet(
 
             if (!editor.isExpanded && editor.editingId == null) {
                 Text(
-                    "Start a new period today or expand the details if you need to correct dates before saving.",
+                    stringResource(R.string.start_a_new_period_today_or_expand_the_details_if_you_need_t),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -1880,7 +1881,7 @@ private fun EditCycleSheet(
                     ) {
                         Text("Period started today", style = MaterialTheme.typography.titleMedium)
                         Text(
-                            "Use your saved baseline and period length for a quick local entry.",
+                            stringResource(R.string.use_your_saved_baseline_and_period_length_for_a_quick_local_),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -1901,9 +1902,9 @@ private fun EditCycleSheet(
             } else {
                 Text(
                     text = if (hasCurrentCycle) {
-                        "Update the cycle entry covering today. Changes stay local and refresh the timeline immediately."
+                        stringResource(R.string.update_the_cycle_entry_covering_today_changes_stay_local_and)
                     } else {
-                        "Adjust the period dates, cycle length, and notes before saving them locally."
+                        stringResource(R.string.adjust_the_period_dates_cycle_length_and_notes_before_saving)
                     },
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1968,11 +1969,11 @@ private fun EditCycleSheet(
                 ) {
                     Text(
                         if (editor.isSaving) {
-                            "Saving..."
+                            stringResource(R.string.saving)
                         } else if (editor.editingId == null) {
-                            "Save cycle"
+                            stringResource(R.string.save_cycle)
                         } else {
-                            "Save changes"
+                            stringResource(R.string.save_changes)
                         },
                     )
                 }

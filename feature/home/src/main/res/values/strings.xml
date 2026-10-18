@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="adjust_the_period_dates_cycle_length_and_notes_before_saving">Adjust the period dates, cycle length, and notes before saving them locally.</string>
+    <string name="cycle_detail">Cycle detail</string>
+    <string name="cycle_progress">Cycle progress</string>
+    <string name="cycle_reminders_and_insights_in_one_local_view">Cycle, reminders, and insights in one local view.</string>
+    <string name="dashboard">Dashboard</string>
+    <string name="fertility_timing_is_estimated_from_your_saved_baseline_and_r">Fertility timing is estimated from your saved baseline and recent logged cycle history. It should be read as guidance, not a medical measurement.</string>
+    <string name="ovulation_estimate">Ovulation estimate</string>
+    <string name="save_changes">Save changes</string>
+    <string name="save_cycle">Save cycle</string>
+    <string name="saving">Saving...</string>
+    <string name="start_a_new_period_today_or_expand_the_details_if_you_need_t">Start a new period today or expand the details if you need to correct dates before saving.</string>
+    <string name="update_the_cycle_entry_covering_today_changes_stay_local_and">Update the cycle entry covering today. Changes stay local and refresh the timeline immediately.</string>
+    <string name="use_your_saved_baseline_and_period_length_for_a_quick_local_">Use your saved baseline and period length for a quick local entry.</string>
+    <string name="your_data_stays_private_on_this_device">Your data stays private on this device.</string>
+</resources>
