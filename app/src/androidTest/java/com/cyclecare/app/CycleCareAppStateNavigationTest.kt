@@ -134,6 +134,25 @@ class CycleCareAppStateNavigationTest {
         assertTrue(env.scheduler.refreshCalls > 0)
     }
 
+    /**
+     * Asserts the Today dashboard is showing.
+     *
+     * Asserts on the dashboard and hero tags rather than on "Cycle
+     * progress": that heading belongs to the cycle-status detail screen
+     * and never exists on the dashboard, so several of these tests were
+     * asserting the content of the screen they had just left.
+     */
+    private fun assertTodayDashboardVisible() {
+        composeRule.onNodeWithTag(navTag("home")).assertIsSelected()
+        composeRule.onNodeWithTag("home_dashboard").assertIsDisplayed()
+        // The dashboard restores its scroll position when returning from
+        // a detail screen, so the hero may sit below the fold. Scroll to
+        // it rather than assuming it is already on screen.
+        composeRule.onNodeWithTag("home_dashboard")
+            .performScrollToNode(hasTestTag("home_hero_card"))
+        composeRule.onNodeWithTag("home_hero_card").assertIsDisplayed()
+    }
+
     @Test
     fun backFromTopLevelTabs_returnsHome() {
         val env = TestAppEnvironment.populated()
@@ -144,13 +163,19 @@ class CycleCareAppStateNavigationTest {
             "calendar" to { composeRule.onNodeWithText("Cycle calendar").assertIsDisplayed() },
             "log" to { composeRule.onNodeWithText("Log today").assertIsDisplayed() },
             "insights" to { composeRule.onNodeWithTag("insights_overview").assertIsDisplayed() },
-            "settings" to { composeRule.onNodeWithTag("settings_list").assertIsDisplayed() },
         ).forEach { (route, assertScreenVisible) ->
             composeRule.onNodeWithTag(navTag(route)).performClick()
             assertScreenVisible()
             pressBackUnconditionally()
-            composeRule.onNodeWithText("Cycle progress").assertIsDisplayed()
+            assertTodayDashboardVisible()
         }
+
+        // Settings is no longer a tab, so it is exercised separately
+        // through its app bar action.
+        composeRule.onNodeWithTag(SETTINGS_ACTION_TAG).performClick()
+        composeRule.onNodeWithTag("settings_list").assertIsDisplayed()
+        pressBackUnconditionally()
+        assertTodayDashboardVisible()
     }
 
     @Test
@@ -178,14 +203,14 @@ class CycleCareAppStateNavigationTest {
         composeRule.onNodeWithTag("home_cycle_status_screen").assertIsDisplayed()
         composeRule.onNodeWithTag(navTag("home")).assertIsSelected()
         composeRule.onNodeWithText("Back to dashboard").performClick()
-        composeRule.onNodeWithText("Cycle progress").assertIsDisplayed()
+        assertTodayDashboardVisible()
 
         composeRule.onNodeWithTag("home_dashboard").performScrollToNode(hasTestTag("home_fertility_detail_cta"))
         composeRule.onNodeWithTag("home_fertility_detail_cta").performClick()
         composeRule.onNodeWithTag("home_fertility_detail_screen").assertIsDisplayed()
         composeRule.onNodeWithTag(navTag("home")).assertIsSelected()
         composeRule.onNodeWithText("Back to dashboard").performClick()
-        composeRule.onNodeWithText("Cycle progress").assertIsDisplayed()
+        assertTodayDashboardVisible()
     }
 
     @Test
@@ -197,8 +222,7 @@ class CycleCareAppStateNavigationTest {
         composeRule.onNodeWithTag("home_reminder_center").performClick()
         composeRule.onNodeWithText("Reminder center").assertIsDisplayed()
         pressBackUnconditionally()
-        composeRule.onNodeWithText("Cycle progress").assertIsDisplayed()
-        composeRule.onNodeWithTag(navTag("home")).assertIsSelected()
+        assertTodayDashboardVisible()
 
         composeRule.onNodeWithTag(SETTINGS_ACTION_TAG).performClick()
         composeRule.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("settings_open_reminder_center"))
