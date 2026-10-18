@@ -32,6 +32,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -332,17 +334,21 @@ fun SettingsRoute(
                         viewModel.resetLocalData()
                     },
                 ) {
-                    Text("Reset local data")
+                    Text(stringResource(R.string.reset_local_data))
                 }
             },
             dismissButton = {
                 OutlinedButton(onClick = { showResetConfirmation = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             },
-            title = { Text("Reset local data?") },
+            title = { Text(stringResource(R.string.reset_local_data_2)) },
             text = {
-                Text("This clears your profile, cycle history, symptoms, reminders, privacy settings, PIN, and local exports from this device.")
+                Text(
+                    stringResource(
+                        R.string.this_clears_your_profile_cycle_history_symptoms_reminders_p,
+                    ),
+                )
             },
         )
     }
@@ -376,13 +382,19 @@ private fun SettingsScreen(
     ) {
         item {
             GradientHeaderCard(
-                title = "Settings",
-                subtitle = "Local-first controls for reminders, privacy, and export.",
+                title = stringResource(R.string.settings),
+                subtitle = stringResource(R.string.local_first_controls_for_reminders_privacy_and_export),
                 supportingContent = {
                     Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
-                        SettingsBadge(text = "Stored locally")
+                        SettingsBadge(text = stringResource(R.string.stored_locally))
                         SettingsBadge(
-                            text = if (notificationsCanPost) "Notifications on" else "Notifications blocked",
+                            text = stringResource(
+                                if (notificationsCanPost) {
+                                    R.string.notifications_on
+                                } else {
+                                    R.string.notifications_blocked
+                                },
+                            ),
                             emphasized = !notificationsCanPost,
                         )
                     }
@@ -394,19 +406,29 @@ private fun SettingsScreen(
             SettingsMetricGrid(
                 remindersEnabled = uiState.remindersEnabled,
                 unreadReminderCount = unreadReminderCount,
-                previewMode = if (uiState.consentState.hideNotificationPreview) "Private" else "Detailed",
+                previewMode = stringResource(
+                    if (uiState.consentState.hideNotificationPreview) {
+                        R.string.preview_mode_private
+                    } else {
+                        R.string.detailed
+                    },
+                ),
             )
         }
 
         item {
             ActionCard(
-                title = "Reminder center",
+                title = stringResource(R.string.reminder_center),
                 body = if (unreadReminderCount == 0) {
-                    "Reopen recent reminders and in-app alerts even if Android blocked the notification."
+                    stringResource(R.string.reopen_recent_reminders_and_in_app_alerts_even_if_android_bl)
                 } else {
-                    "$unreadReminderCount unread reminder${if (unreadReminderCount == 1) "" else "s"} waiting in your local reminder center."
+                    pluralStringResource(
+                        R.plurals.unread_reminders_waiting_in_your_local_reminder_center,
+                        unreadReminderCount,
+                        unreadReminderCount,
+                    )
                 },
-                actionLabel = "Open reminder center",
+                actionLabel = stringResource(R.string.open_reminder_center),
                 onAction = onOpenReminderCenter,
                 actionModifier = Modifier.testTag(SettingsTags.OPEN_REMINDER_CENTER),
             )
@@ -415,8 +437,10 @@ private fun SettingsScreen(
         if (!notificationsCanPost) {
             item {
                 SectionCard(
-                    title = "Notifications are blocked",
-                    body = "Period, fertile-window, and daily check-in reminders stay local, but Android will not show them until notification access is restored.",
+                    title = stringResource(R.string.notifications_are_blocked),
+                    body = stringResource(
+                        R.string.period_fertile_window_and_daily_check_in_reminders_stay_loca,
+                    ),
                 ) {
                     notificationRecoveryActionLabel?.let { actionLabel ->
                         OutlinedButton(
@@ -439,16 +463,18 @@ private fun SettingsScreen(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
-                    Text("Reminders", style = MaterialTheme.typography.titleLarge)
+                    Text(stringResource(R.string.reminders), style = MaterialTheme.typography.titleLarge)
                     Text(
-                        "Keep local reminder timing active across baseline edits, reboot, and timezone changes.",
+                        stringResource(
+                            R.string.keep_local_reminder_timing_active_across_baseline_edits_rebo,
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     SettingSwitchRow(
                         modifier = Modifier.testTag(SettingsTags.REMINDERS_ENABLED),
-                        title = "Reminders enabled",
-                        detail = "Cancel or restore all future reminder work at once.",
+                        title = stringResource(R.string.reminders_enabled),
+                        detail = stringResource(R.string.cancel_or_restore_all_future_reminder_work_at_once),
                         checked = uiState.remindersEnabled,
                         onCheckedChange = onToggleRemindersEnabled,
                     )
@@ -463,9 +489,11 @@ private fun SettingsScreen(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
-                    Text("Alert channels", style = MaterialTheme.typography.titleLarge)
+                    Text(stringResource(R.string.alert_channels), style = MaterialTheme.typography.titleLarge)
                     Text(
-                        "Choose calm bundled sounds and vibration behavior for cycle, fertility, and daily check-in reminders.",
+                        stringResource(
+                            R.string.choose_calm_bundled_sounds_and_vibration_behavior_for_cycle,
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -502,15 +530,20 @@ private fun SettingsScreen(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
-                    Text("Notification privacy", style = MaterialTheme.typography.titleLarge)
                     Text(
-                        "Keep sensitive details out of visible lock-screen reminders.",
+                        stringResource(R.string.notification_privacy),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Text(
+                        stringResource(R.string.keep_sensitive_details_out_of_visible_lock_screen_reminders),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     SettingSwitchRow(
-                        title = "Hide notification previews",
-                        detail = "Show a generic reminder body until the app is unlocked.",
+                        title = stringResource(R.string.hide_notification_previews),
+                        detail = stringResource(
+                            R.string.show_a_generic_reminder_body_until_the_app_is_unlocked,
+                        ),
                         checked = uiState.consentState.hideNotificationPreview,
                         onCheckedChange = onToggleNotificationPreview,
                     )
@@ -525,15 +558,15 @@ private fun SettingsScreen(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
-                    Text("Reminder rules", style = MaterialTheme.typography.titleLarge)
+                    Text(stringResource(R.string.reminder_rules), style = MaterialTheme.typography.titleLarge)
                     Text(
-                        "Control which local reminders stay active.",
+                        stringResource(R.string.control_which_local_reminders_stay_active),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     if (uiState.reminderItems.isEmpty()) {
                         Text(
-                            "No reminder rules are available yet.",
+                            stringResource(R.string.no_reminder_rules_are_available_yet),
                             style = MaterialTheme.typography.bodyLarge,
                         )
                     } else {
@@ -554,9 +587,9 @@ private fun SettingsScreen(
 
         item {
             ActionCard(
-                title = "Privacy lock",
-                body = "Set or update your PIN before sensitive screens open.",
-                actionLabel = "Open privacy lock",
+                title = stringResource(R.string.privacy_lock),
+                body = stringResource(R.string.set_or_update_your_pin_before_sensitive_screens_open),
+                actionLabel = stringResource(R.string.open_privacy_lock),
                 onAction = onOpenPrivacy,
             )
         }
@@ -564,9 +597,11 @@ private fun SettingsScreen(
         if (showAdPrivacyOptions) {
             item {
                 ActionCard(
-                    title = "Ad privacy choices",
-                    body = "Review or update the ad consent options required for your region.",
-                    actionLabel = "Manage ad privacy",
+                    title = stringResource(R.string.ad_privacy_choices),
+                    body = stringResource(
+                        R.string.review_or_update_the_ad_consent_options_required_for_your_re,
+                    ),
+                    actionLabel = stringResource(R.string.manage_ad_privacy),
                     onAction = onOpenAdPrivacyOptions,
                     actionModifier = Modifier.testTag(SettingsTags.OPEN_AD_PRIVACY),
                 )
@@ -575,18 +610,20 @@ private fun SettingsScreen(
 
         item {
             ActionCard(
-                title = "Export and share",
-                body = "Create local markdown or PDF reports only when you choose to share them.",
-                actionLabel = "Open export",
+                title = stringResource(R.string.export_and_share),
+                body = stringResource(
+                    R.string.create_local_markdown_or_pdf_reports_only_when_you_choose_to,
+                ),
+                actionLabel = stringResource(R.string.open_export),
                 onAction = onOpenExport,
             )
         }
 
         item {
             ActionCard(
-                title = "Reset local data",
-                body = "Clear local health data, reminder settings, privacy state, and return to onboarding.",
-                actionLabel = "Reset local data",
+                title = stringResource(R.string.reset_local_data),
+                body = stringResource(R.string.clear_local_health_data_reminder_settings_privacy_state_and_),
+                actionLabel = stringResource(R.string.reset_local_data),
                 onAction = onOpenResetConfirmation,
                 actionModifier = Modifier.testTag(SettingsTags.OPEN_RESET),
             )
@@ -605,17 +642,17 @@ private fun SettingsMetricGrid(
         if (stackMetrics) {
             Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 SettingsMetricCard(
-                    label = "Reminders",
-                    value = if (remindersEnabled) "On" else "Off",
+                    label = stringResource(R.string.reminders),
+                    value = stringResource(if (remindersEnabled) R.string.on else R.string.off),
                     accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f),
                 )
                 SettingsMetricCard(
-                    label = "Unread center",
+                    label = stringResource(R.string.unread_center),
                     value = unreadReminderCount.toString(),
                     accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.82f),
                 )
                 SettingsMetricCard(
-                    label = "Preview mode",
+                    label = stringResource(R.string.preview_mode),
                     value = previewMode,
                     accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f),
                 )
@@ -624,20 +661,20 @@ private fun SettingsMetricGrid(
             Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                     SettingsMetricCard(
-                        label = "Reminders",
-                        value = if (remindersEnabled) "On" else "Off",
+                        label = stringResource(R.string.reminders),
+                        value = stringResource(if (remindersEnabled) R.string.on else R.string.off),
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f),
                     )
                     SettingsMetricCard(
-                        label = "Unread center",
+                        label = stringResource(R.string.unread_center),
                         value = unreadReminderCount.toString(),
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.82f),
                     )
                 }
                 SettingsMetricCard(
-                    label = "Preview mode",
+                    label = stringResource(R.string.preview_mode),
                     value = previewMode,
                     accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f),
                 )
@@ -671,7 +708,7 @@ private fun SectionCard(
         title = title,
         subtitle = body,
         accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.46f),
-        eyebrow = "Notification access",
+        eyebrow = stringResource(R.string.notification_access),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
             action()
@@ -691,7 +728,7 @@ private fun ActionCard(
         title = title,
         subtitle = body,
         accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f),
-        eyebrow = "Action",
+        eyebrow = stringResource(R.string.action),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
             FilledTonalButton(onClick = onAction, modifier = actionModifier.fillMaxWidth()) {
@@ -756,18 +793,18 @@ private fun ReminderChannelCard(
             onCheckedChange = onToggleChannelEnabled,
         )
         SettingSwitchRow(
-            title = "Sound",
-            detail = "Play a calm bundled sound for this channel.",
+            title = stringResource(R.string.sound),
+            detail = stringResource(R.string.play_a_calm_bundled_sound_for_this_channel),
             checked = item.settings.soundEnabled,
             onCheckedChange = onToggleSoundEnabled,
         )
         SettingSwitchRow(
-            title = "Vibration",
-            detail = "Use vibration for this channel when Android allows it.",
+            title = stringResource(R.string.vibration),
+            detail = stringResource(R.string.use_vibration_for_this_channel_when_android_allows_it),
             checked = item.settings.vibrationEnabled,
             onCheckedChange = onToggleVibrationEnabled,
         )
-        Text("Sound preset", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.sound_preset), style = MaterialTheme.typography.titleSmall)
         Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
             ReminderSoundPreset.entries.forEach { preset ->
                 val selected = preset == item.settings.soundPreset
@@ -795,7 +832,7 @@ private fun ReminderChannelCard(
             enabled = remindersEnabled && item.settings.enabled && item.settings.soundEnabled,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Preview sound")
+            Text(stringResource(R.string.preview_sound))
         }
     }
 }
