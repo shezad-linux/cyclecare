@@ -18,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -266,6 +267,16 @@ fun PrivacyRoute(
         initialValue = authController.capability.value,
     )
 
+    // The onEnableBiometric/onRecoverAccess lambdas below are plain
+    // () -> Unit, not composable scopes, so the prompt copy has to be
+    // resolved here and captured.
+    val enableBiometricTitle = stringResource(R.string.enable_biometric_unlock)
+    val enableBiometricSubtitle =
+        stringResource(R.string.authenticate_once_to_enable_biometric_unlock_for_cyclecare)
+    val recoverAccessTitle = stringResource(R.string.recover_access)
+    val recoverAccessSubtitle =
+        stringResource(R.string.authenticate_with_biometrics_or_your_screen_lock_to_reset_t)
+
     LaunchedEffect(capability) {
         viewModel.synchronizeSecureAuthCapability(capability)
     }
@@ -276,8 +287,8 @@ fun PrivacyRoute(
         onEnableBiometric = {
             authController.authenticate(
                 preference = SecureAuthPreference.PreferBiometric,
-                title = "Enable biometric unlock",
-                subtitle = "Authenticate once to enable biometric unlock for CycleCare.",
+                title = enableBiometricTitle,
+                subtitle = enableBiometricSubtitle,
                 onSuccess = viewModel::onBiometricEnabled,
                 onFailure = viewModel::showMessage,
             )
@@ -291,8 +302,8 @@ fun PrivacyRoute(
         onRecoverAccess = {
             authController.authenticate(
                 preference = SecureAuthPreference.PreferBiometric,
-                title = "Recover access",
-                subtitle = "Authenticate with biometrics or your screen lock to reset the app PIN.",
+                title = recoverAccessTitle,
+                subtitle = recoverAccessSubtitle,
                 onSuccess = viewModel::onSecureRecoveryComplete,
                 onFailure = viewModel::showMessage,
             )
@@ -324,15 +335,25 @@ private fun PrivacyScreen(
     ) {
         item {
             GradientHeaderCard(
-                title = if (uiState.entryMode == PrivacyEntryMode.Dashboard) "Privacy lock" else entryContent.title,
+                title = if (uiState.entryMode == PrivacyEntryMode.Dashboard) {
+                    stringResource(R.string.privacy_lock)
+                } else {
+                    entryContent.title
+                },
                 subtitle = if (uiState.entryMode == PrivacyEntryMode.Dashboard) {
-                    "A local PIN guards sensitive screens, while secure device auth handles recovery."
+                    stringResource(R.string.a_local_pin_guards_sensitive_screens_while_secure_device_au)
                 } else {
                     entryContent.subtitle
                 },
                 supportingContent = {
                     Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
-                        DashboardPill(text = if (uiState.appLockEnabled) "App lock on" else "App lock off")
+                        DashboardPill(
+                            text = if (uiState.appLockEnabled) {
+                                stringResource(R.string.app_lock_on)
+                            } else {
+                                stringResource(R.string.app_lock_off)
+                            },
+                        )
                         DashboardPill(
                             text = uiState.secureAuthCapability.summaryLabel(),
                             emphasized = uiState.secureAuthCapability != SecureAuthCapability.None,
@@ -346,25 +367,25 @@ private fun PrivacyScreen(
             PrivacyEntryMode.Dashboard -> {
                 item {
                     DashboardSectionCard(
-                        title = "Protection",
-                        subtitle = "Use a 4-digit PIN for local lock access and optionally allow biometric unlock.",
-                        eyebrow = "Security",
+                        title = stringResource(R.string.protection),
+                        subtitle = stringResource(R.string.use_a_4_digit_pin_for_local_lock_access_and_optionally_allo),
+                        eyebrow = stringResource(R.string.security),
                     ) {
                         SettingSwitchRow(
-                            title = "Enable app lock",
-                            detail = "Sensitive screens require your PIN after the unlock grace period expires.",
+                            title = stringResource(R.string.enable_app_lock),
+                            detail = stringResource(R.string.sensitive_screens_require_your_pin_after_the_unlock_grace_p),
                             checked = uiState.appLockEnabled,
                             onCheckedChange = onToggleAppLock,
                             switchTag = PrivacyUiTags.APP_LOCK_SWITCH,
                         )
                         DashboardKeyValueRow(
-                            label = "Recovery",
+                            label = stringResource(R.string.recovery),
                             value = uiState.secureAuthCapability.summaryLabel(),
                         )
                         if (uiState.secureAuthCapability.supportsBiometric) {
                             SettingSwitchRow(
-                                title = "Use biometric unlock",
-                                detail = "Authenticate once to allow fingerprint or face unlock when the device supports it.",
+                                title = stringResource(R.string.use_biometric_unlock),
+                                detail = stringResource(R.string.authenticate_once_to_allow_fingerprint_or_face_unlock_when_),
                                 checked = uiState.biometricEnabled,
                                 onCheckedChange = { enabled ->
                                     if (enabled) {
@@ -378,7 +399,7 @@ private fun PrivacyScreen(
                             )
                         } else {
                             Text(
-                                text = "Biometric unlock is unavailable. Screen-lock recovery is still supported when your device has a secure lock screen.",
+                                text = stringResource(R.string.biometric_unlock_is_unavailable_screen_lock_recovery_is_sti),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -387,22 +408,34 @@ private fun PrivacyScreen(
                 }
                 item {
                     DashboardSectionCard(
-                        title = if (uiState.hasPinConfigured) "PIN ready" else "Create your PIN",
-                        subtitle = if (uiState.hasPinConfigured) {
-                            "Update your PIN or recover access using secure device authentication."
+                        title = if (uiState.hasPinConfigured) {
+                            stringResource(R.string.pin_ready)
                         } else {
-                            "Create and confirm a PIN before enabling local app lock."
+                            stringResource(R.string.create_your_pin)
                         },
-                        eyebrow = "PIN access",
+                        subtitle = if (uiState.hasPinConfigured) {
+                            stringResource(R.string.update_your_pin_or_recover_access_using_secure_device_authe)
+                        } else {
+                            stringResource(R.string.create_and_confirm_a_pin_before_enabling_local_app_lock)
+                        },
+                        eyebrow = stringResource(R.string.pin_access),
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                             DashboardKeyValueRow(
-                                label = "Unlock method",
-                                value = if (uiState.biometricEnabled) "PIN and biometric" else "PIN only",
+                                label = stringResource(R.string.unlock_method),
+                                value = if (uiState.biometricEnabled) {
+                                    stringResource(R.string.pin_and_biometric)
+                                } else {
+                                    stringResource(R.string.pin_only)
+                                },
                             )
                             DashboardKeyValueRow(
-                                label = "Notification preview",
-                                value = if (uiState.hideNotificationPreview) "Private" else "Detailed",
+                                label = stringResource(R.string.notification_preview),
+                                value = if (uiState.hideNotificationPreview) {
+                                    stringResource(R.string.private_value)
+                                } else {
+                                    stringResource(R.string.detailed)
+                                },
                             )
                             FilledTonalButton(
                                 onClick = if (uiState.hasPinConfigured) onStartPinChange else onStartPinSetup,
@@ -410,7 +443,13 @@ private fun PrivacyScreen(
                                     .fillMaxWidth()
                                     .testTag(PrivacyUiTags.UPDATE_PIN_BUTTON),
                             ) {
-                                Text(if (uiState.hasPinConfigured) "Update PIN" else "Create PIN")
+                                Text(
+                                    if (uiState.hasPinConfigured) {
+                                        stringResource(R.string.update_pin)
+                                    } else {
+                                        stringResource(R.string.create_pin)
+                                    },
+                                )
                             }
                             if (uiState.secureAuthCapability != SecureAuthCapability.None) {
                                 OutlinedButton(
@@ -419,11 +458,11 @@ private fun PrivacyScreen(
                                         .fillMaxWidth()
                                         .testTag(PrivacyUiTags.RECOVER_BUTTON),
                                 ) {
-                                    Text("Recover access")
+                                    Text(stringResource(R.string.recover_access))
                                 }
                             } else {
                                 Text(
-                                    text = "Secure recovery isn't available on this device. Keep your PIN safe or use Reset local data from Settings if you lose access.",
+                                    text = stringResource(R.string.secure_recovery_isn_t_available_on_this_device_keep_your_pi),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
