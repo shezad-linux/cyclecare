@@ -85,6 +85,16 @@ data class LoggingUiState(
     val dateLabel: String = buildLogDateLabel(LocalDate.now()),
     val cycleProgressLabel: String? = null,
     val cyclePhaseLabel: String = "",
+    /**
+     * The phase as a value, not as a display string. Controls which
+     * copy the hero insight shows; see [CyclePhase].
+     */
+    val cyclePhase: CyclePhase? = null,
+    /**
+     * Cycle day as a number. Previously recovered by parsing
+     * `cycleProgressLabel`, which broke under any translation.
+     */
+    val cycleDay: Int? = null,
     val heroMode: PeriodHeroMode = PeriodHeroMode.Predicted,
     val heroProgress: Float = 0f,
     val privacyNote: String = "Saved locally on this device by default.",
@@ -210,21 +220,48 @@ internal fun buildLogHeroMode(
 internal fun loggingHeroEyebrow(uiState: LoggingUiState): String =
     if (uiState.heroMode == PeriodHeroMode.Active) "Period check-in" else "Daily check-in"
 
-private fun buildCyclePhaseLabel(
+/**
+ * Which part of the cycle the user is in.
+ *
+ * Previously this existed only as the English display string, and
+ * `buildSmartLoggingInsight` compared that string for equality to pick
+ * its copy. Translating it would have made every branch miss silently:
+ * no compile error, no failing test, just a permanently generic hero
+ * insight. The decision now lives in the value rather than in the copy.
+ */
+enum class CyclePhase {
+    PERIOD_DAYS,
+    EARLY,
+    MID,
+    FERTILE_WINDOW,
+    LATE,
+    APPROACHING_PERIOD,
+}
+
+private fun resolveCyclePhase(
     cycleDay: Int?,
     cycleLength: Int,
     heroMode: PeriodHeroMode,
-): String {
-    if (heroMode == PeriodHeroMode.Active) return "Period days"
-    if (cycleDay == null) return ""
+): CyclePhase? {
+    if (heroMode == PeriodHeroMode.Active) return CyclePhase.PERIOD_DAYS
+    if (cycleDay == null) return null
     val cycleProgress = cycleDay.toFloat() / cycleLength.toFloat()
     return when {
-        cycleProgress < 0.15f -> "Early cycle"
-        cycleProgress < 0.40f -> "Mid cycle"
-        cycleProgress < 0.60f -> "Fertile window"
-        cycleProgress < 0.85f -> "Late cycle"
-        else -> "Approaching period"
+        cycleProgress < 0.15f -> CyclePhase.EARLY
+        cycleProgress < 0.40f -> CyclePhase.MID
+        cycleProgress < 0.60f -> CyclePhase.FERTILE_WINDOW
+        cycleProgress < 0.85f -> CyclePhase.LATE
+        else -> CyclePhase.APPROACHING_PERIOD
     }
+}
+
+private fun CyclePhase.displayKey(): String = when (this) {
+    CyclePhase.PERIOD_DAYS -> "Period days"
+    CyclePhase.EARLY -> "Early cycle"
+    CyclePhase.MID -> "Mid cycle"
+    CyclePhase.FERTILE_WINDOW -> "Fertile window"
+    CyclePhase.LATE -> "Late cycle"
+    CyclePhase.APPROACHING_PERIOD -> "Approaching period"
 }
 
 internal fun buildEditorState(
@@ -359,7 +396,9 @@ internal fun buildLoggingUiState(
     return LoggingUiState(
         dateLabel = buildLogDateLabel(today),
         cycleProgressLabel = buildCycleProgressLabel(profile, prediction),
-        cyclePhaseLabel = buildCyclePhaseLabel(cycleDay, cycleLength, heroMode),
+        cyclePhaseLabel = resolveCyclePhase(cycleDay, cycleLength, heroMode)?.displayKey().orEmpty(),
+        cyclePhase = resolveCyclePhase(cycleDay, cycleLength, heroMode),
+        cycleDay = cycleDay,
         heroMode = heroMode,
         heroProgress = buildCycleProgressRatio(profile, prediction),
         existingEntryId = editor.existingEntryId,
@@ -781,8 +820,12 @@ private fun LoggingHeroCard(
             verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
         ) {
             LoggingHeroText(uiState = uiState)
-            if (uiState.cyclePhaseLabel.isNotBlank()) {
-                val smartInsight = buildSmartLoggingInsight(uiState)
+            if (uiState.cyclePhase != null) {
+                val smartInsight = buildSmartLoggingInsight(
+                    uiState,
+                    uiState.cycleDay,
+                    uiState.cyclePhase,
+                )
                 if (smartInsight.isNotBlank()) {
                     Text(
                         text = smartInsight,
@@ -827,24 +870,34 @@ private fun LoggingHeroCard(
     }
 }
 
-internal fun buildSmartLoggingInsight(uiState: LoggingUiState): String {
-    val cyclePhase = uiState.cyclePhaseLabel
-    val daysUntilFertile = uiState.cycleProgressLabel?.let { label ->
-        label.substringAfter("Day ").substringBefore(" /").toIntOrNull()?.let { cycleDay ->
-            val fertileStart = 12
-            if (cycleDay < fertileStart) {
-                fertileStart - cycleDay
-            } else null
-        }
+internal fun buildSmartLoggingInsight(
+    uiState: LoggingUiState,
+    // Defaults read the structured values off the state, never the
+    // formatted label, so existing call sites stay correct.
+    cycleDay: Int? = uiState.cycleDay,
+    cyclePhase: CyclePhase? = uiState.cyclePhase,
+): String {
+    // The cycle day used to be parsed back out of the formatted
+    // "Day N / M" label. Reordering or translating that label would make
+    // toIntOrNull() return null and silently disable the countdown, so
+    // it is now carried as data.
+    val daysUntilFertile = cycleDay?.let { day ->
+        val fertileStart = 12
+        if (day < fertileStart) fertileStart - day else null
     }
 
     return when {
         uiState.heroMode == PeriodHeroMode.Active -> "Take a moment to log today's symptoms."
-        cyclePhase == "Fertile window" -> "You're in your fertile window. Logging symptoms helps track patterns."
-        cyclePhase == "Early cycle" && daysUntilFertile != null -> "Fertile window starts in $daysUntilFertile days."
-        cyclePhase == "Late cycle" -> "Period expected soon. Logging symptoms helps track regularity."
-        cyclePhase == "Mid cycle" -> "Mid cycle phase. Fertile window approaching in a few days."
-        cyclePhase == "Approaching period" -> "Period expected soon. Note any symptoms you notice."
+        cyclePhase == CyclePhase.FERTILE_WINDOW ->
+            "You're in your fertile window. Logging symptoms helps track patterns."
+        cyclePhase == CyclePhase.EARLY && daysUntilFertile != null ->
+            "Fertile window starts in $daysUntilFertile days."
+        cyclePhase == CyclePhase.LATE ->
+            "Period expected soon. Logging symptoms helps track regularity."
+        cyclePhase == CyclePhase.MID ->
+            "Mid cycle phase. Fertile window approaching in a few days."
+        cyclePhase == CyclePhase.APPROACHING_PERIOD ->
+            "Period expected soon. Note any symptoms you notice."
         uiState.hasExistingEntry -> "Your entry for today is saved. Update anytime."
         else -> "Logging symptoms helps improve your predictions over time."
     }
@@ -948,7 +1001,7 @@ private fun LoggingHeroText(
             uiState.cycleProgressLabel?.let { label ->
                 MetricPill(text = label)
             }
-            if (uiState.cyclePhaseLabel.isNotBlank()) {
+            if (uiState.cyclePhase != null) {
                 MetricPill(
                     text = uiState.cyclePhaseLabel,
                     tone = MetricPillTone.Highlight,

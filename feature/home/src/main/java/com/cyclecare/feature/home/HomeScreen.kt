@@ -156,6 +156,17 @@ data class HomeReminderTeaser(
     val title: String = "No future reminder queued",
     val detail: String = "Enable reminder rules in Settings to surface the next alert here.",
     val supporting: String = "Delivered reminders still appear in your local reminder center.",
+    /**
+     * Whether this reminder can be actioned from the card, rather than
+     * only inspected.
+     *
+     * This used to be decided by `teaser.title.contains("check-in")`,
+     * which silently breaks the moment the title is translated: the
+     * card would fall back to "View details" and offer no way to check
+     * in. The decision belongs to the producer, which knows the reminder
+     * type, not to a substring match on rendered copy.
+     */
+    val isActionable: Boolean = false,
 )
 
 data class HomeInsightTeaser(
@@ -449,6 +460,9 @@ private fun buildReminderTeaser(
             title = nextReminder.type.dashboardLabel(),
             detail = nextReminder.body,
             supporting = "Next up ${nextReminder.scheduledAt.format(reminderDateTimeFormatter)}",
+            // The producer knows the type; the renderer must not infer it
+            // from translated copy.
+            isActionable = nextReminder.type == ReminderType.DailyLog,
         )
     }
 }
@@ -1363,7 +1377,7 @@ private fun ReminderTeaserCard(
     onOpenReminderCenter: () -> Unit,
     onTrackToday: () -> Unit,
 ) {
-    val isDailyCheckIn = teaser.title.contains("check-in", ignoreCase = true)
+    val isDailyCheckIn = teaser.isActionable
     DashboardSectionCard(
         title = teaser.title,
         subtitle = teaser.detail,

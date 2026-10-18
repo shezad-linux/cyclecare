@@ -45,6 +45,7 @@ class LoggingPresentationTest {
         val uiState = LoggingUiState(
             heroMode = PeriodHeroMode.Active,
             cyclePhaseLabel = "Early cycle",
+            cyclePhase = CyclePhase.PERIOD_DAYS,
         )
 
         assertThat(loggingHeroEyebrow(uiState)).isEqualTo("Period check-in")
@@ -56,6 +57,8 @@ class LoggingPresentationTest {
         val uiState = LoggingUiState(
             heroMode = PeriodHeroMode.Predicted,
             cyclePhaseLabel = "Late cycle",
+            // Control flow reads the phase value, not the English label.
+            cyclePhase = CyclePhase.LATE,
         )
 
         assertThat(loggingHeroEyebrow(uiState)).isEqualTo("Daily check-in")
