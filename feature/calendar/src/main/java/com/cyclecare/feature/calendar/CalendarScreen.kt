@@ -852,6 +852,15 @@ internal fun CalendarScreen(
                     val daySpacing = 8.dp
                     val dayCellSize = (maxWidth - (daySpacing * 6)) / 7
 
+                    // A lazy grid inside this scrolling column has to be
+                    // given a fixed height. Deriving that height from the
+                    // row count actually present, rather than always
+                    // assuming six rows, is what makes every day
+                    // reachable: days in rows the grid had no room for
+                    // were laid out with zero bounds, so tapping them
+                    // silently did nothing.
+                    val gridRowCount = ((days.size + 6) / 7).coerceIn(1, 6)
+
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -873,7 +882,7 @@ internal fun CalendarScreen(
                             columns = GridCells.Fixed(7),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height((dayCellSize * 6) + (daySpacing * 5)),
+                                .height((dayCellSize * gridRowCount) + (daySpacing * (gridRowCount - 1))),
                             userScrollEnabled = false,
                             verticalArrangement = Arrangement.spacedBy(daySpacing),
                             horizontalArrangement = Arrangement.spacedBy(daySpacing),
