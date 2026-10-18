@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="average">Average</string>
+    <string name="avg_cycle">Avg cycle</string>
+    <string name="avg_period">Avg period</string>
+    <string name="back_to_insights">Back to insights</string>
+    <string name="based_on_logged_cycles">Based on logged cycles</string>
+    <string name="cycle">cycle</string>
+    <string name="cycle_trend_chart_locked">Cycle trend chart locked</string>
+    <string name="cycle_trends">Cycle trends</string>
+    <string name="cycle_variability">Cycle variability</string>
+    <string name="cycles">cycles</string>
+    <string name="cycles_logged">cycles logged</string>
+    <string name="days_logged_this_cycle">days logged this cycle</string>
+    <string name="grouped_from_recent_symptom_logs_inside_your_current">Grouped from recent symptom logs inside your current insight window.</string>
+    <string name="insights">Insights</string>
+    <string name="last_six_cycle_lengths">Last six cycle lengths</string>
+    <string name="local_analysis">Local analysis</string>
+    <string name="log_at_least_two_full_cycles_to_unlock_this_chart_and">Log at least two full cycles to unlock this chart and the variability breakdown below.</string>
+    <string name="more_logging_needed">More logging needed</string>
+    <string name="once_you_have_at_least_five_recent_symptom_logs_th">Once you have at least five recent symptom logs, this view will group mood, energy, pain, discharge, and phase-based highlights.</string>
+    <string name="pattern_clusters_unlock_after_a_few_more_check_ins">Pattern clusters unlock after a few more check-ins</string>
+    <string name="pattern_depth_unlocked">Pattern depth unlocked</string>
+    <string name="pattern_summary">Pattern summary</string>
+    <string name="period_length_comparisons_will_appear_here_once_your">Period-length comparisons will appear here once your logged history grows.</string>
+    <string name="period_length_strip">Period length strip</string>
+    <string name="phase_callouts">Phase callouts</string>
+    <string name="range">Range</string>
+    <string name="read_this_trend">Read this trend</string>
+    <string name="recent_cycle_trends">Recent cycle trends</string>
+    <string name="symptom_clustering_needs_more_check_ins">Symptom clustering needs more check-ins</string>
+    <string name="symptom_patterns">Symptom patterns</string>
+    <string name="this_chart_only_uses_recent_logged_or_imported_cycles">This chart only uses recent logged or imported cycles. Predicted future cycles do not affect these metrics.</string>
+    <string name="trend_charts_are_still_building">Trend charts are still building</string>
+    <string name="view_cycle_trends">View cycle trends</string>
+    <string name="view_symptom_patterns">View symptom patterns</string>
+    <string name="your_data_stays_private_on_this_device">Your data stays private on this device.</string>
+</resources>

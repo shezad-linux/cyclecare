@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -310,7 +311,7 @@ internal fun InsightsOverviewScreen(
     ) {
         item {
             GradientHeaderCard(
-                title = "Insights",
+                title = stringResource(R.string.insights),
                 subtitle = uiState.variabilityDetail,
                 supportingContent = {
                     FlowRow(
@@ -319,7 +320,11 @@ internal fun InsightsOverviewScreen(
                     ) {
                         InsightBadge(text = uiState.variabilityLabel, emphasized = true)
                         if (uiState.cyclesLoggedCount > 0) {
-                            val cycleSuffix = if (uiState.cyclesLoggedCount == 1) "cycle" else "cycles"
+                            val cycleSuffix = if (uiState.cyclesLoggedCount == 1) {
+                                stringResource(R.string.cycle)
+                            } else {
+                                stringResource(R.string.cycles)
+                            }
                             InsightBadge(text = "${uiState.cyclesLoggedCount} $cycleSuffix logged")
                         }
                     }
@@ -332,7 +337,7 @@ internal fun InsightsOverviewScreen(
         item {
             ElevatedInsightCard {
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
-                    Text("Cycle variability", style = MaterialTheme.typography.titleLarge)
+                    Text(stringResource(R.string.cycle_variability), style = MaterialTheme.typography.titleLarge)
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                         verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
@@ -357,7 +362,7 @@ internal fun InsightsOverviewScreen(
             item {
                 ElevatedInsightCard {
                     Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space14)) {
-                        Text("Recent cycle trends", style = MaterialTheme.typography.titleLarge)
+                        Text(stringResource(R.string.recent_cycle_trends), style = MaterialTheme.typography.titleLarge)
                         MiniBarChart(
                             points = uiState.cycleTrendBars,
                             accent = MaterialTheme.colorScheme.primary,
@@ -374,7 +379,7 @@ internal fun InsightsOverviewScreen(
                                 .fillMaxWidth()
                                 .testTag(InsightsTags.CycleTrendsCta),
                         ) {
-                            Text("View cycle trends")
+                            Text(stringResource(R.string.view_cycle_trends))
                         }
                     }
                 }
@@ -383,11 +388,11 @@ internal fun InsightsOverviewScreen(
             item {
                 ElevatedInsightCard {
                     Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
-                        Text("Trend charts are still building", style = MaterialTheme.typography.titleLarge)
+                        Text(stringResource(R.string.trend_charts_are_still_building), style = MaterialTheme.typography.titleLarge)
                         InsightProgressBadge(
                             current = uiState.cyclesLoggedCount,
                             total = uiState.cyclesNeededForInsights,
-                            label = "cycles logged",
+                            label = stringResource(R.string.cycles_logged),
                         )
                         Text(
                             uiState.cycleProgressLabel,
@@ -407,7 +412,7 @@ internal fun InsightsOverviewScreen(
             item {
                 ElevatedInsightCard {
                     Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space14)) {
-                        Text("Symptom patterns", style = MaterialTheme.typography.titleLarge)
+                        Text(stringResource(R.string.symptom_patterns), style = MaterialTheme.typography.titleLarge)
                         uiState.phaseHighlights.take(2).forEach { item ->
                             PhaseHighlightCard(item = item)
                         }
@@ -430,7 +435,7 @@ internal fun InsightsOverviewScreen(
                                 .fillMaxWidth()
                                 .testTag(InsightsTags.SymptomPatternsCta),
                         ) {
-                            Text("View symptom patterns")
+                            Text(stringResource(R.string.view_symptom_patterns))
                         }
                     }
                 }
@@ -439,11 +444,11 @@ internal fun InsightsOverviewScreen(
             item {
                 ElevatedInsightCard {
                     Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
-                        Text("Symptom clustering needs more check-ins", style = MaterialTheme.typography.titleLarge)
+                        Text(stringResource(R.string.symptom_clustering_needs_more_check_ins), style = MaterialTheme.typography.titleLarge)
                         InsightProgressBadge(
                             current = uiState.daysLoggedThisCycle,
                             total = uiState.daysNeededForSymptomInsights,
-                            label = "days logged this cycle",
+                            label = stringResource(R.string.days_logged_this_cycle),
                         )
                         Text(
                             uiState.symptomProgressLabel,
@@ -473,7 +478,7 @@ internal fun InsightsOverviewScreen(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        "Your data stays private on this device.",
+                        stringResource(R.string.your_data_stays_private_on_this_device),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -499,12 +504,12 @@ internal fun CycleTrendsScreen(
                 onClick = onBackToOverview,
                 modifier = Modifier.testTag(InsightsTags.BackToOverview),
             ) {
-                Text("Back to insights")
+                Text(stringResource(R.string.back_to_insights))
             }
         }
         item {
             GradientHeaderCard(
-                title = "Cycle trends",
+                title = stringResource(R.string.cycle_trends),
                 subtitle = uiState.cycleWindowLabel,
                 supportingContent = {
                     FlowRow(
@@ -512,7 +517,7 @@ internal fun CycleTrendsScreen(
                         verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                     ) {
                         InsightBadge(text = uiState.variabilityLabel, emphasized = true)
-                        InsightBadge(text = "Based on logged cycles")
+                        InsightBadge(text = stringResource(R.string.based_on_logged_cycles))
                     }
                 },
             )
@@ -520,7 +525,7 @@ internal fun CycleTrendsScreen(
         item {
             ElevatedInsightCard {
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space14)) {
-                    Text("Last six cycle lengths", style = MaterialTheme.typography.titleLarge)
+                    Text(stringResource(R.string.last_six_cycle_lengths), style = MaterialTheme.typography.titleLarge)
                     if (uiState.hasEnoughCycleData) {
                         MiniBarChart(
                             points = uiState.cycleTrendBars,
@@ -530,8 +535,8 @@ internal fun CycleTrendsScreen(
                         )
                     } else {
                         InsightEmptyState(
-                            title = "Cycle trend chart locked",
-                            detail = "Log at least two full cycles to unlock this chart and the variability breakdown below.",
+                            title = stringResource(R.string.cycle_trend_chart_locked),
+                            detail = stringResource(R.string.log_at_least_two_full_cycles_to_unlock_this_chart_and),
                         )
                     }
                 }
@@ -540,12 +545,12 @@ internal fun CycleTrendsScreen(
         item {
             ElevatedInsightCard {
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space14)) {
-                    Text("Period length strip", style = MaterialTheme.typography.titleLarge)
+                    Text(stringResource(R.string.period_length_strip), style = MaterialTheme.typography.titleLarge)
                     if (uiState.hasEnoughCycleData) {
                         PeriodLengthStrip(items = uiState.periodTrendItems)
                     } else {
                         Text(
-                            "Period-length comparisons will appear here once your logged history grows.",
+                            stringResource(R.string.period_length_comparisons_will_appear_here_once_your),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -559,13 +564,13 @@ internal fun CycleTrendsScreen(
                 verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             ) {
                 MetricCard(
-                    label = "Average",
+                    label = stringResource(R.string.average),
                     value = uiState.averageCycleText,
                     modifier = Modifier.widthIn(min = 150.dp),
                     accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.88f),
                 )
                 MetricCard(
-                    label = "Range",
+                    label = stringResource(R.string.range),
                     value = uiState.variabilityText,
                     modifier = Modifier.widthIn(min = 150.dp),
                     accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f),
@@ -575,14 +580,14 @@ internal fun CycleTrendsScreen(
         item {
             ElevatedInsightCard {
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10)) {
-                    Text("Read this trend", style = MaterialTheme.typography.titleLarge)
+                    Text(stringResource(R.string.read_this_trend), style = MaterialTheme.typography.titleLarge)
                     Text(
                         uiState.cycleTrendSummary,
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        "This chart only uses recent logged or imported cycles. Predicted future cycles do not affect these metrics.",
+                        stringResource(R.string.this_chart_only_uses_recent_logged_or_imported_cycles),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -608,23 +613,27 @@ internal fun SymptomPatternsScreen(
                 onClick = onBackToOverview,
                 modifier = Modifier.testTag(InsightsTags.BackToOverview),
             ) {
-                Text("Back to insights")
+                Text(stringResource(R.string.back_to_insights))
             }
         }
         item {
             GradientHeaderCard(
-                title = "Symptom patterns",
-                subtitle = "Grouped from recent symptom logs inside your current insight window.",
+                title = stringResource(R.string.symptom_patterns),
+                subtitle = stringResource(R.string.grouped_from_recent_symptom_logs_inside_your_current),
                 supportingContent = {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                         verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                     ) {
                         InsightBadge(
-                            text = if (uiState.hasEnoughSymptomData) "Pattern depth unlocked" else "More logging needed",
+                            text = if (uiState.hasEnoughSymptomData) {
+                                stringResource(R.string.pattern_depth_unlocked)
+                            } else {
+                                stringResource(R.string.more_logging_needed)
+                            },
                             emphasized = uiState.hasEnoughSymptomData,
                         )
-                        InsightBadge(text = "Local analysis")
+                        InsightBadge(text = stringResource(R.string.local_analysis))
                     }
                 },
             )
@@ -632,7 +641,7 @@ internal fun SymptomPatternsScreen(
         item {
             ElevatedInsightCard {
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
-                    Text("Pattern summary", style = MaterialTheme.typography.titleLarge)
+                    Text(stringResource(R.string.pattern_summary), style = MaterialTheme.typography.titleLarge)
                     Text(
                         uiState.symptomSummary,
                         style = MaterialTheme.typography.bodyLarge,
@@ -645,8 +654,8 @@ internal fun SymptomPatternsScreen(
             item {
                 ElevatedInsightCard {
                     InsightEmptyState(
-                        title = "Pattern clusters unlock after a few more check-ins",
-                        detail = "Once you have at least five recent symptom logs, this view will group mood, energy, pain, discharge, and phase-based highlights.",
+                        title = stringResource(R.string.pattern_clusters_unlock_after_a_few_more_check_ins),
+                        detail = stringResource(R.string.once_you_have_at_least_five_recent_symptom_logs_th),
                     )
                 }
             }
@@ -655,7 +664,7 @@ internal fun SymptomPatternsScreen(
                 item {
                     ElevatedInsightCard {
                         Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
-                            Text("Phase callouts", style = MaterialTheme.typography.titleLarge)
+                            Text(stringResource(R.string.phase_callouts), style = MaterialTheme.typography.titleLarge)
                             uiState.phaseHighlights.forEach { item ->
                                 PhaseHighlightCard(item = item)
                             }
@@ -693,12 +702,12 @@ private fun InsightsMetricGrid(uiState: InsightsUiState) {
         if (stackMetrics) {
             Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 InsightMetricCard(
-                    label = "Avg cycle",
+                    label = stringResource(R.string.avg_cycle),
                     value = uiState.averageCycleText,
                     accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f),
                 )
                 InsightMetricCard(
-                    label = "Avg period",
+                    label = stringResource(R.string.avg_period),
                     value = uiState.averagePeriodText,
                     accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.84f),
                 )
@@ -706,13 +715,13 @@ private fun InsightsMetricGrid(uiState: InsightsUiState) {
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 InsightMetricCard(
-                    label = "Avg cycle",
+                    label = stringResource(R.string.avg_cycle),
                     value = uiState.averageCycleText,
                     modifier = Modifier.weight(1f),
                     accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f),
                 )
                 InsightMetricCard(
-                    label = "Avg period",
+                    label = stringResource(R.string.avg_period),
                     value = uiState.averagePeriodText,
                     modifier = Modifier.weight(1f),
                     accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.84f),
