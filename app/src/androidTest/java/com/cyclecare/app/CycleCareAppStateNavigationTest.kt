@@ -268,12 +268,14 @@ class CycleCareAppStateNavigationTest {
     /**
      * Asserts March 23 is selected and shown in the day panel.
      *
-     * KNOWN DEFECT: this currently fails after activity recreation. The
-     * displayed month survives but the selected day resets, so the cell
-     * reports "fertile, ovulation, current month" with no "selected"
-     * state. The assertion is kept at its correct value deliberately so
-     * the defect stays visible rather than being written around; see the
-     * open item on calendar selection restoration.
+     * KNOWN DEFECT: this fails after activity recreation. The selected
+     * day is lost, so the cell reports "fertile, ovulation, current
+     * month" with no "selected" state. Making the restore atomic fixed
+     * the inconsistent-restore symptom but not this one: the
+     * destination's SavedStateHandle is coming back empty, so the
+     * selected date never survives recreation. The assertion is kept at
+     * its correct value deliberately so the defect stays visible rather
+     * than being written around.
      */
     private fun assertCalendarSelectionIsMarch23() {
         composeRule.onNodeWithTag("calendar_scroll")

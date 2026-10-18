@@ -462,6 +462,13 @@ internal fun buildSelectedDaySummary(
     }
 }
 
+/** Month, selected date and anchor day restored together as one unit. */
+private data class RestoredCalendarPosition(
+    val month: YearMonth,
+    val selectedDate: LocalDate,
+    val anchorDayOfMonth: Int,
+)
+
 class CalendarViewModel(
     private val cycleRepository: CycleRepository,
     predictionRepository: PredictionRepository,
@@ -469,18 +476,45 @@ class CalendarViewModel(
     private val validator: CycleRecordValidator,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val restoredSelectedDate = savedStateHandle.get<String>(CalendarStateKeys.SelectedDate)
-        ?.let(LocalDate::parse)
-        ?: LocalDate.now()
-    private val restoredMonth = savedStateHandle.get<String>(CalendarStateKeys.Month)
-        ?.let(YearMonth::parse)
-        ?: YearMonth.from(restoredSelectedDate)
+    /**
+     * Restores the calendar position as one consistent unit.
+     *
+     * These three values used to be read independently. When only some
+     * of the saved keys came back, the result was internally
+     * contradictory: the displayed month restored to March while the
+     * selected day silently fell back to today's day-of-month, so the
+     * day panel showed a date nobody had selected. Deriving all three
+     * from a single decision removes that class of inconsistency.
+     */
+    private val restoredPosition: RestoredCalendarPosition = run {
+        val savedDate = savedStateHandle.get<String>(CalendarStateKeys.SelectedDate)
+            ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+
+        if (savedDate != null) {
+            RestoredCalendarPosition(
+                month = YearMonth.from(savedDate),
+                selectedDate = savedDate,
+                anchorDayOfMonth = savedDate.dayOfMonth,
+            )
+        } else {
+            val month = savedStateHandle.get<String>(CalendarStateKeys.Month)
+                ?.let { runCatching { YearMonth.parse(it) }.getOrNull() }
+                ?: YearMonth.now()
+            val day = savedStateHandle.get<Int>(CalendarStateKeys.AnchorDayOfMonth)
+                ?: LocalDate.now().dayOfMonth
+            // Clamp: a 31st anchor restored into a 30-day month would
+            // otherwise throw.
+            val date = month.atDay(minOf(day, month.lengthOfMonth()))
+            RestoredCalendarPosition(month, date, date.dayOfMonth)
+        }
+    }
+
+    private val restoredSelectedDate = restoredPosition.selectedDate
+    private val restoredMonth = restoredPosition.month
 
     private val monthFlow = MutableStateFlow(restoredMonth)
     private val selectedDateFlow = MutableStateFlow(restoredSelectedDate)
-    private val anchorDayOfMonthFlow = MutableStateFlow(
-        savedStateHandle.get<Int>(CalendarStateKeys.AnchorDayOfMonth) ?: restoredSelectedDate.dayOfMonth,
-    )
+    private val anchorDayOfMonthFlow = MutableStateFlow(restoredPosition.anchorDayOfMonth)
     private val editorFlow = MutableStateFlow(savedStateHandle.toCycleEditorState())
     private val showDeleteConfirmationFlow = MutableStateFlow(false)
     private val messageFlow = MutableStateFlow<String?>(null)
