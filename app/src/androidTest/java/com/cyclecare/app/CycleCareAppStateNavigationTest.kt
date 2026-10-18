@@ -77,6 +77,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
+/**
+ * Settings moved out of the tab bar into the app bar, so it is reached
+ * through its action rather than a navigation tag.
+ */
+private const val SETTINGS_ACTION_TAG = "app_bar_settings"
+
 class CycleCareAppStateNavigationTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
@@ -111,7 +117,7 @@ class CycleCareAppStateNavigationTest {
         val env = TestAppEnvironment.populated()
 
         renderApp(env)
-        composeRule.onNodeWithTag(navTag("settings")).performClick()
+        composeRule.onNodeWithTag(SETTINGS_ACTION_TAG).performClick()
         composeRule.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("settings_open_reset"))
         composeRule.onNodeWithTag("settings_open_reset", useUnmergedTree = true).performClick()
         composeRule.onNodeWithTag("settings_confirm_reset").performClick()
@@ -194,7 +200,7 @@ class CycleCareAppStateNavigationTest {
         composeRule.onNodeWithText("Cycle progress").assertIsDisplayed()
         composeRule.onNodeWithTag(navTag("home")).assertIsSelected()
 
-        composeRule.onNodeWithTag(navTag("settings")).performClick()
+        composeRule.onNodeWithTag(SETTINGS_ACTION_TAG).performClick()
         composeRule.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("settings_open_reminder_center"))
         composeRule.onNodeWithTag("settings_open_reminder_center").performClick()
         composeRule.onNodeWithText("Reminder center").assertIsDisplayed()
@@ -282,7 +288,7 @@ class CycleCareAppStateNavigationTest {
         }
 
         renderApp(env)
-        composeRule.onNodeWithTag(navTag("settings")).performClick()
+        composeRule.onNodeWithTag(SETTINGS_ACTION_TAG).performClick()
         composeRule.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("settings_notification_recovery"))
         composeRule.onNodeWithTag("settings_notification_recovery").assertIsDisplayed()
         composeRule.onNodeWithText("Open notification settings").assertIsDisplayed()
@@ -503,7 +509,7 @@ class CycleCareAppStateNavigationTest {
     }
 
     private fun openPrivacyFromSettings() {
-        composeRule.onNodeWithTag(navTag("settings")).performClick()
+        composeRule.onNodeWithTag(SETTINGS_ACTION_TAG).performClick()
         composeRule.waitUntil(5_000) {
             composeRule.onAllNodes(hasTestTag("settings_list")).fetchSemanticsNodes().isNotEmpty()
         }
