@@ -1,38 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="a_local_pin_guards_sensitive_screens_while_secure_device_au">A local PIN guards sensitive screens, while secure device auth handles recovery.</string>
+
     <string name="app_lock_off">App lock off</string>
+
     <string name="app_lock_on">App lock on</string>
+
     <string name="authenticate_once_to_allow_fingerprint_or_face_unlock_when_">Authenticate once to allow fingerprint or face unlock when the device supports it.</string>
+
     <string name="authenticate_once_to_enable_biometric_unlock_for_cyclecare">Authenticate once to enable biometric unlock for CycleCare.</string>
+
     <string name="authenticate_with_biometrics_or_your_screen_lock_to_reset_t">Authenticate with biometrics or your screen lock to reset the app PIN.</string>
+
     <string name="biometric_unlock_is_unavailable_screen_lock_recovery_is_sti">Biometric unlock is unavailable. Screen-lock recovery is still supported when your device has a secure lock screen.</string>
+
     <string name="create_and_confirm_a_pin_before_enabling_local_app_lock">Create and confirm a PIN before enabling local app lock.</string>
+
     <string name="create_pin">Create PIN</string>
+
     <string name="create_your_pin">Create your PIN</string>
+
     <string name="delete">Delete</string>
+
     <string name="detailed">Detailed</string>
+
     <string name="digit_empty">Digit %1$d, empty</string>
+
     <string name="digit_entered">Digit %1$d, entered</string>
+
     <string name="enable_app_lock">Enable app lock</string>
+
     <string name="enable_biometric_unlock">Enable biometric unlock</string>
+
     <string name="notification_preview">Notification preview</string>
+
     <string name="pin_access">PIN access</string>
+
     <string name="pin_and_biometric">PIN and biometric</string>
+
     <string name="pin_entry_of_4_digits_entered">PIN entry, %1$d of 4 digits entered</string>
+
     <string name="pin_only">PIN only</string>
+
     <string name="pin_ready">PIN ready</string>
+
     <string name="privacy_lock">Privacy lock</string>
+
     <string name="private_value">Private</string>
+
     <string name="protection">Protection</string>
+
     <string name="recover_access">Recover access</string>
+
     <string name="recovery">Recovery</string>
+
     <string name="secure_recovery_isn_t_available_on_this_device_keep_your_pi">Secure recovery isn\'t available on this device. Keep your PIN safe or use Reset local data from Settings if you lose access.</string>
+
     <string name="security">Security</string>
+
     <string name="sensitive_screens_require_your_pin_after_the_unlock_grace_p">Sensitive screens require your PIN after the unlock grace period expires.</string>
+
     <string name="unlock_method">Unlock method</string>
+
     <string name="update_pin">Update PIN</string>
+
     <string name="update_your_pin_or_recover_access_using_secure_device_authe">Update your PIN or recover access using secure device authentication.</string>
+
     <string name="use_a_4_digit_pin_for_local_lock_access_and_optionally_allo">Use a 4-digit PIN for local lock access and optionally allow biometric unlock.</string>
+
     <string name="use_biometric_unlock">Use biometric unlock</string>
+
+    <string name="choose_a_fresh_4_digit_pin_for_local_app_lock">Choose a fresh 4-digit PIN for local app lock.</string>
+
+    <string name="create_a_pin">Create a PIN</string>
+
+    <string name="save_pin">Save PIN</string>
+
+    <string name="start_over">Start over</string>
+
+    <string name="verify_pin">Verify PIN</string>
 </resources>

@@ -534,48 +534,49 @@ private data class PrivacyEntryContent(
     val secondaryAction: PrivacySecondaryAction? = null,
 )
 
+@Composable
 private fun PrivacyEntryMode.toContent(): PrivacyEntryContent = when (this) {
     PrivacyEntryMode.Dashboard -> PrivacyEntryContent(
-        title = "PIN ready",
+        title = stringResource(R.string.pin_ready),
         subtitle = "Your app lock is configured.",
-        primaryActionLabel = "Update PIN",
+        primaryActionLabel = stringResource(R.string.update_pin),
     )
     PrivacyEntryMode.Setup -> PrivacyEntryContent(
-        title = "Create a PIN",
+        title = stringResource(R.string.create_a_pin),
         subtitle = "Choose a 4-digit PIN before app lock can turn on.",
         primaryActionLabel = "Continue",
     )
     PrivacyEntryMode.ConfirmSetup -> PrivacyEntryContent(
         title = "Confirm your PIN",
         subtitle = "Enter the same 4 digits again to lock in local access.",
-        primaryActionLabel = "Save PIN",
-        secondaryActionLabel = "Start over",
+        primaryActionLabel = stringResource(R.string.save_pin),
+        secondaryActionLabel = stringResource(R.string.start_over),
         secondaryAction = PrivacySecondaryAction.StartSetup,
     )
     PrivacyEntryMode.VerifyCurrentPin -> PrivacyEntryContent(
         title = "Verify current PIN",
         subtitle = "Confirm your existing PIN before changing it.",
-        primaryActionLabel = "Verify PIN",
-        secondaryActionLabel = "Recover access",
+        primaryActionLabel = stringResource(R.string.verify_pin),
+        secondaryActionLabel = stringResource(R.string.recover_access),
         secondaryAction = PrivacySecondaryAction.Recover,
     )
     PrivacyEntryMode.CreateNewPin -> PrivacyEntryContent(
         title = "Create a new PIN",
-        subtitle = "Choose a fresh 4-digit PIN for local app lock.",
+        subtitle = stringResource(R.string.choose_a_fresh_4_digit_pin_for_local_app_lock),
         primaryActionLabel = "Continue",
     )
     PrivacyEntryMode.ConfirmNewPin -> PrivacyEntryContent(
         title = "Confirm new PIN",
         subtitle = "Re-enter the new PIN to finish the update.",
-        primaryActionLabel = "Update PIN",
-        secondaryActionLabel = "Start over",
+        primaryActionLabel = stringResource(R.string.update_pin),
+        secondaryActionLabel = stringResource(R.string.start_over),
         secondaryAction = PrivacySecondaryAction.StartChange,
     )
     PrivacyEntryMode.Unlock -> PrivacyEntryContent(
         title = "Unlock CycleCare",
         subtitle = "Enter your 4-digit PIN to reopen local cycle data.",
         primaryActionLabel = "Unlock",
-        secondaryActionLabel = "Recover access",
+        secondaryActionLabel = stringResource(R.string.recover_access),
         secondaryAction = PrivacySecondaryAction.Recover,
     )
 }
