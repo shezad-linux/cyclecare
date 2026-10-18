@@ -35,6 +35,9 @@ jobs:
       - name: No ad-targeting APIs in the app module
         run: ./scripts/guard-no-ad-targeting.sh
 
+      - name: Every typography role is used
+        run: ./scripts/guard-typography-roles.sh
+
       - name: Secret scan
         uses: gitleaks/gitleaks-action@v2
         env:

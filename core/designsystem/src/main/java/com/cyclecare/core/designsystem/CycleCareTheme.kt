@@ -164,6 +164,7 @@ fun PeriodActiveAccentColor(): Color =
 fun GradientHeaderCard(
     title: String,
     subtitle: String,
+    titleStyle: TextStyle = MaterialTheme.typography.headlineSmall,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(20.dp),
     gradientColors: List<Color>? = null,
@@ -200,7 +201,7 @@ fun GradientHeaderCard(
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(
                             text = title,
-                            style = MaterialTheme.typography.headlineSmall,
+                            style = titleStyle,
                             color = MaterialTheme.colorScheme.onPrimary,
                         )
                         Text(
@@ -224,7 +225,7 @@ fun GradientHeaderCard(
                     ) {
                         Text(
                             text = title,
-                            style = MaterialTheme.typography.headlineSmall,
+                            style = titleStyle,
                             color = MaterialTheme.colorScheme.onPrimary,
                         )
                         Text(

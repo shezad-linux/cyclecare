@@ -838,7 +838,10 @@ internal fun CalendarScreen(
                         Text(
                             uiState.monthLabel,
                             modifier = Modifier.testTag(CalendarTags.MONTH_LABEL),
-                            style = MaterialTheme.typography.headlineSmall,
+                            // The month is this screen's display element,
+                            // so it sits on the display ramp rather than
+                            // the headline step.
+                            style = MaterialTheme.typography.displaySmall,
                         )
                     }
                     FilledTonalIconButton(

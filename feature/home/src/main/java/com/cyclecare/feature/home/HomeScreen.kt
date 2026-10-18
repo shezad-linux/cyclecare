@@ -5,7 +5,9 @@
 
 package com.cyclecare.feature.home
 
+import kotlin.math.roundToInt
 import com.cyclecare.core.designsystem.token.CycleCareSpace
+import com.cyclecare.core.designsystem.token.CycleCareTypography
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -952,6 +954,10 @@ internal fun HomeScreen(
             GradientHeaderCard(
                 title = heroTitle,
                 subtitle = heroSubtitle,
+                // headlineLarge rather than displayLarge: 44sp is the
+                // size of a standalone numeric readout, not of a
+                // sentence that has to reflow at 200% font scale.
+                titleStyle = MaterialTheme.typography.headlineLarge,
                 modifier = Modifier.testTag(HomeTags.HERO_CARD),
                 contentPadding = PaddingValues(horizontal = CycleCareSpace.space20, vertical = CycleCareSpace.space18),
                 gradientColors = heroGradientColors,
@@ -1685,7 +1691,9 @@ private fun CycleStatusHeroText(
         )
         Text(
             text = homeHeroTitle(uiState),
-            style = MaterialTheme.typography.headlineSmall,
+            // The cycle-status detail screen is its own headline, a step
+            // below the Today hero.
+            style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.onPrimary,
         )
         Text(
@@ -1697,6 +1705,14 @@ private fun CycleStatusHeroText(
             horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
             verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
         ) {
+            Text(
+                text = "${(progress * 100).roundToInt()}%",
+                // A standalone number, so the display ramp with tabular
+                // figures: without tnum the percentage jitters in width
+                // as it animates.
+                style = CycleCareTypography.numericLarge,
+                color = MaterialTheme.colorScheme.onPrimary,
+            )
             MetricPill(
                 text = uiState.cycleModeLabel,
                 tone = MetricPillTone.Inverse,
