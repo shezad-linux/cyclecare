@@ -2,9 +2,12 @@ package com.cyclecare.feature.export
 
 import com.cyclecare.core.designsystem.text.UiText
 import com.cyclecare.core.domain.ExportRepository
+import com.cyclecare.core.domain.ImportResult
 import com.cyclecare.core.model.ExportArtifact
 import com.cyclecare.core.model.ExportFormat
 import com.google.common.truth.Truth.assertThat
+import java.io.ByteArrayInputStream
+import java.io.InputStream
 import java.time.LocalDate
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +38,8 @@ class ExportViewModelTest {
 
     private class FakeExportRepository(
         private val onRequest: (ExportFormat) -> ExportArtifact = ::defaultArtifact,
+        private val onBackup: (CharArray) -> ExportArtifact = { defaultArtifact(ExportFormat.EncryptedBackup) },
+        private val onImport: (InputStream, CharArray) -> ImportResult = { _, _ -> ImportResult.Success(3, 5, true) },
     ) : ExportRepository {
         val requestedFormats = mutableListOf<ExportFormat>()
         var gate: CompletableDeferred<Unit>? = null
@@ -43,6 +48,16 @@ class ExportViewModelTest {
             requestedFormats += format
             gate?.await()
             return onRequest(format)
+        }
+
+        override suspend fun createEncryptedBackup(passphrase: CharArray): ExportArtifact {
+            gate?.await()
+            return onBackup(passphrase)
+        }
+
+        override suspend fun importEncryptedBackup(inputStream: InputStream, passphrase: CharArray): ImportResult {
+            gate?.await()
+            return onImport(inputStream, passphrase)
         }
     }
 
@@ -87,7 +102,7 @@ class ExportViewModelTest {
 
     @Test
     fun `createReport failure exposes error status and keeps lastArtifact`() = runTest(dispatcher) {
-        val repository = FakeExportRepository { throw IllegalStateException("boom") }
+        val repository = FakeExportRepository(onRequest = { throw IllegalStateException("boom") })
         val viewModel = ExportViewModel(repository)
 
         viewModel.createReport(ExportFormat.Markdown)
@@ -97,6 +112,63 @@ class ExportViewModelTest {
         assertThat(state.isWorking).isFalse()
         assertThat(state.lastArtifact).isNull()
         assertThat(state.status).isEqualTo(ExportStatus.Error)
+    }
+
+    @Test
+    fun `createEncryptedBackup success updates state to BackupSuccess`() = runTest(dispatcher) {
+        val repository = FakeExportRepository()
+        val viewModel = ExportViewModel(repository)
+
+        viewModel.createEncryptedBackup("correct-horse-battery-staple".toCharArray())
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertThat(state.isWorking).isFalse()
+        assertThat(state.lastArtifact?.format).isEqualTo(ExportFormat.EncryptedBackup)
+        assertThat(state.status).isInstanceOf(ExportStatus.BackupSuccess::class.java)
+    }
+
+    @Test
+    fun `createEncryptedBackup failure updates state to BackupFailure`() = runTest(dispatcher) {
+        val repository = FakeExportRepository(onBackup = { throw IllegalArgumentException("short") })
+        val viewModel = ExportViewModel(repository)
+
+        viewModel.createEncryptedBackup("short".toCharArray())
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertThat(state.isWorking).isFalse()
+        assertThat(state.status).isInstanceOf(ExportStatus.BackupFailure::class.java)
+    }
+
+    @Test
+    fun `importEncryptedBackup success updates state to ImportSuccess`() = runTest(dispatcher) {
+        val repository = FakeExportRepository(
+            onImport = { _, _ -> ImportResult.Success(cyclesImported = 4, symptomsImported = 10, profileImported = true) },
+        )
+        val viewModel = ExportViewModel(repository)
+
+        viewModel.importEncryptedBackup(ByteArrayInputStream(byteArrayOf(1, 2, 3)), "passphrase123".toCharArray())
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertThat(state.isWorking).isFalse()
+        assertThat(state.status).isEqualTo(ExportStatus.ImportSuccess(cycles = 4, symptoms = 10))
+    }
+
+    @Test
+    fun `importEncryptedBackup with invalid passphrase updates state to ImportFailure with invalid passphrase res`() = runTest(dispatcher) {
+        val repository = FakeExportRepository(
+            onImport = { _, _ -> ImportResult.Failure.InvalidPassphrase },
+        )
+        val viewModel = ExportViewModel(repository)
+
+        viewModel.importEncryptedBackup(ByteArrayInputStream(byteArrayOf(1, 2, 3)), "wrongpass".toCharArray())
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertThat(state.isWorking).isFalse()
+        assertThat(state.status).isEqualTo(ExportStatus.ImportFailure(R.string.import_invalid_passphrase))
     }
 
     @Test
@@ -111,17 +183,22 @@ class ExportViewModelTest {
             .isEqualTo(UiText.Resource(R.string.generating_markdown_report))
         assertThat(ExportStatus.Working(ExportFormat.Pdf).toUiText())
             .isEqualTo(UiText.Resource(R.string.generating_pdf_report))
+        assertThat(ExportStatus.Working(ExportFormat.EncryptedBackup).toUiText())
+            .isEqualTo(UiText.Resource(R.string.generating_encrypted_backup))
     }
 
     @Test
     fun `success status maps to per-format saved resources with filename as arg`() {
         val markdown = defaultArtifact(ExportFormat.Markdown)
         val pdf = defaultArtifact(ExportFormat.Pdf)
+        val backup = defaultArtifact(ExportFormat.EncryptedBackup)
 
         assertThat(ExportStatus.Success(markdown).toUiText())
             .isEqualTo(UiText.Resource(R.string.saved_markdown_report, listOf("cyclecare-report.md")))
         assertThat(ExportStatus.Success(pdf).toUiText())
             .isEqualTo(UiText.Resource(R.string.saved_pdf_report, listOf("cyclecare-report.pdf")))
+        assertThat(ExportStatus.Success(backup).toUiText())
+            .isEqualTo(UiText.Resource(R.string.saved_encrypted_backup, listOf("cyclecare-backup.ccvault")))
     }
 
     @Test
@@ -134,16 +211,30 @@ class ExportViewModelTest {
     fun `format labels map to localized resources rather than enum names`() {
         assertThat(ExportFormat.Markdown.labelRes()).isEqualTo(R.string.format_markdown)
         assertThat(ExportFormat.Pdf.labelRes()).isEqualTo(R.string.format_pdf)
+        assertThat(ExportFormat.EncryptedBackup.labelRes()).isEqualTo(R.string.format_encrypted_backup)
     }
 
     private companion object {
         fun defaultArtifact(format: ExportFormat): ExportArtifact {
-            val isPdf = format == ExportFormat.Pdf
+            val extension = when (format) {
+                ExportFormat.Pdf -> "pdf"
+                ExportFormat.Markdown -> "md"
+                ExportFormat.EncryptedBackup -> "ccvault"
+            }
+            val mime = when (format) {
+                ExportFormat.Pdf -> "application/pdf"
+                ExportFormat.Markdown -> "text/markdown"
+                ExportFormat.EncryptedBackup -> "application/octet-stream"
+            }
+            val name = when (format) {
+                ExportFormat.EncryptedBackup -> "cyclecare-backup.ccvault"
+                else -> "cyclecare-report.$extension"
+            }
             return ExportArtifact(
                 format = format,
-                displayName = if (isPdf) "cyclecare-report.pdf" else "cyclecare-report.md",
-                absolutePath = "/files/reports/cyclecare-report.${if (isPdf) "pdf" else "md"}",
-                mimeType = if (isPdf) "application/pdf" else "text/markdown",
+                displayName = name,
+                absolutePath = "/files/reports/$name",
+                mimeType = mime,
                 generatedAt = LocalDate.of(2026, 10, 18),
             )
         }

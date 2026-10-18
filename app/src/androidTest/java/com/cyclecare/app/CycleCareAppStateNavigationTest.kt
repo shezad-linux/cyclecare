@@ -1,7 +1,10 @@
 package com.cyclecare.app
 
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -29,6 +32,8 @@ import com.cyclecare.core.designsystem.CycleCareTheme
 import com.cyclecare.core.domain.AppResetRepository
 import com.cyclecare.core.domain.CycleRepository
 import com.cyclecare.core.domain.ExportRepository
+import com.cyclecare.core.domain.ImportResult
+import java.io.InputStream
 import com.cyclecare.core.domain.InsightRepository
 import com.cyclecare.core.domain.PredictionRepository
 import com.cyclecare.core.domain.PrivacyRules
@@ -319,7 +324,7 @@ class CycleCareAppStateNavigationTest {
         renderApp(env)
         composeRule.onNodeWithTag(navTag("calendar")).performClick()
         navigateCalendarTo("March 2026")
-        composeRule.onNodeWithTag("calendar_day_2026-03-23").performClick()
+        composeRule.onNodeWithTag("calendar_day_2026-03-23").performScrollTo().performClick()
         assertCalendarSelectionIsMarch23()
 
         composeRule.onNodeWithTag(navTag("home")).performClick()
@@ -349,6 +354,7 @@ class CycleCareAppStateNavigationTest {
         renderApp(env)
 
         composeRule.onNodeWithTag("onboarding_age_Teen").assertIsSelected()
+        composeRule.onNodeWithTag("onboarding_cycle_length_slider").performScrollTo()
         composeRule.onNodeWithText("32 days").assertIsDisplayed()
     }
 
@@ -612,11 +618,25 @@ class CycleCareAppStateNavigationTest {
 
     private fun renderApp(env: TestAppEnvironment) {
         composeRule.activityRule.scenario.onActivity { activity ->
+            val noOpInterstitialAdManager = InterstitialAdManager(
+                context = activity.applicationContext,
+                adLoader = object : InterstitialAdLoader {
+                    override fun load(
+                        context: Context,
+                        adUnitId: String,
+                        adRequest: AdRequest,
+                        callback: InterstitialAdLoadCallback,
+                    ) {
+                        // No-op for tests: prevents real network ad loading and AdActivity launch
+                    }
+                },
+            )
             activity.setContent {
                 CycleCareTheme {
                     CycleCareApp(
                         container = env.container,
                         secureAuthController = env.secureAuthController,
+                        interstitialAdManager = noOpInterstitialAdManager,
                     )
                 }
             }
@@ -1163,6 +1183,18 @@ private class FakeExportRepository : ExportRepository {
             mimeType = "text/plain",
             generatedAt = LocalDate.now(),
         )
+
+    override suspend fun createEncryptedBackup(passphrase: CharArray): ExportArtifact =
+        ExportArtifact(
+            format = ExportFormat.EncryptedBackup,
+            displayName = "test.ccvault",
+            absolutePath = "/tmp/test.ccvault",
+            mimeType = "application/octet-stream",
+            generatedAt = LocalDate.now(),
+        )
+
+    override suspend fun importEncryptedBackup(inputStream: InputStream, passphrase: CharArray): ImportResult =
+        ImportResult.Success(0, 0, false)
 }
 
 private class FakeReminderScheduler : ReminderScheduler {

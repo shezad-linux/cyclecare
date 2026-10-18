@@ -20,9 +20,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,6 +38,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -909,51 +907,43 @@ internal fun CalendarScreen(
                     }
                 }
 
-                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                    val daySpacing = 8.dp
-                    val dayCellSize = (maxWidth - (daySpacing * 6)) / 7
+                val daySpacing = 8.dp
 
-                    // A lazy grid inside this scrolling column has to be
-                    // given a fixed height. Deriving that height from the
-                    // row count actually present, rather than always
-                    // assuming six rows, is what makes every day
-                    // reachable: days in rows the grid had no room for
-                    // were laid out with zero bounds, so tapping them
-                    // silently did nothing.
-                    val gridRowCount = ((days.size + 6) / 7).coerceIn(1, 6)
-
-                    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(daySpacing),
-                        ) {
-                            orderedWeekdays(firstDayOfWeek).forEach { dayOfWeek ->
-                                Text(
-                                    dayOfWeek.getDisplayName(TextStyle.SHORT, locale),
-                                    modifier = Modifier.weight(1f),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                    fontWeight = FontWeight.Bold,
-                                    textAlign = TextAlign.Center,
-                                )
-                            }
+                Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(daySpacing),
+                    ) {
+                        orderedWeekdays(firstDayOfWeek).forEach { dayOfWeek ->
+                            Text(
+                                dayOfWeek.getDisplayName(TextStyle.SHORT, locale),
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                            )
                         }
+                    }
 
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(7),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height((dayCellSize * gridRowCount) + (daySpacing * (gridRowCount - 1))),
-                            userScrollEnabled = false,
-                            verticalArrangement = Arrangement.spacedBy(daySpacing),
-                            horizontalArrangement = Arrangement.spacedBy(daySpacing),
-                        ) {
-                            items(days, key = { it.date.toEpochDay() }) { day ->
-                                CalendarDayCell(
-                                    day = day,
-                                    modifier = Modifier.aspectRatio(1f),
-                                    onClick = { onSelectDate(day.date) },
-                                )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(daySpacing),
+                    ) {
+                        days.chunked(7).forEach { week ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(daySpacing),
+                            ) {
+                                week.forEach { day ->
+                                    CalendarDayCell(
+                                        day = day,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .aspectRatio(1f),
+                                        onClick = { onSelectDate(day.date) },
+                                    )
+                                }
                             }
                         }
                     }
@@ -1044,10 +1034,15 @@ internal fun CalendarScreen(
     }
 
     if (uiState.editor.isVisible) {
-        ModalBottomSheet(onDismissRequest = onDismissEditor) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = onDismissEditor,
+            sheetState = sheetState,
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = CycleCareSpace.space24, vertical = CycleCareSpace.space8),
                 verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
             ) {
@@ -1057,7 +1052,7 @@ internal fun CalendarScreen(
                     } else {
                         stringResource(R.string.edit_period)
                     },
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.headlineLarge,
                 )
                 Text(
                     stringResource(R.string.use_simple_date_entry_for_now_then_adjust_cycle_length_and_n),

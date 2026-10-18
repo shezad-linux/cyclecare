@@ -5,5 +5,25 @@
     <string name="nav_calendar">Calendar</string>
     <string name="nav_log">Log</string>
     <string name="nav_insights">Insights</string>
+    <string name="reset_local_data">Reset local data</string>
+    <string name="reset_local_data_title">Reset local data?</string>
+    <string name="reset_local_data_message">This clears your local profile, cycle data, reminders, exports, and privacy settings so you can start over.</string>
+    <string name="cancel">Cancel</string>
+    <string name="unlock_cyclecare">Unlock CycleCare</string>
+    <string name="unlock">Unlock</string>
+    <string name="wait_cooldown">Wait %1$ds</string>
+    <string name="lockout_message">Too many failed attempts. Wait %1$ds before trying again.</string>
+    <string name="biometric_unlock_prompt">Use biometrics now or enter your 4-digit PIN to reopen local cycle data.</string>
+    <string name="pin_unlock_prompt">Enter your 4-digit PIN to reopen local cycle data.</string>
+    <string name="reminder_action_open">Open</string>
+    <string name="reminder_action_dismiss">Dismiss</string>
+    <string name="mark_all_read">Mark all read</string>
+    <string name="reminder_linked_surface_hint">Open the linked surface to continue from this reminder.</string>
+    <string name="reminder_center_title">Reminder center</string>
+    <string name="all_caught_up">Everything is caught up.</string>
+    <plurals name="n_unread_reminders">
+        <item quantity="one">%1$d unread reminder</item>
+        <item quantity="other">%1$d unread reminders</item>
+    </plurals>
 </resources>
 

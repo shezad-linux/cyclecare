@@ -28,6 +28,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cyclecare.core.designsystem.DashboardPill
@@ -126,17 +127,17 @@ internal fun AppLockGate(
                     },
                     modifier = Modifier.testTag(AppLockTags.RESET_DIALOG_CONFIRM),
                 ) {
-                    Text("Reset local data")
+                    Text(stringResource(R.string.reset_local_data))
                 }
             },
             dismissButton = {
                 OutlinedButton(onClick = { showResetConfirmation = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             },
-            title = { Text("Reset local data?") },
+            title = { Text(stringResource(R.string.reset_local_data_title)) },
             text = {
-                Text("This clears your local profile, cycle data, reminders, exports, and privacy settings so you can start over.")
+                Text(stringResource(R.string.reset_local_data_message))
             },
         )
     }
@@ -183,7 +184,7 @@ internal fun AppLockGate(
                                 .fillMaxWidth()
                                 .testTag(PrivacyUiTags.RESET_LOCAL_DATA),
                         ) {
-                            Text("Reset local data")
+                            Text(stringResource(R.string.reset_local_data))
                         }
                     }
                 }
@@ -191,18 +192,22 @@ internal fun AppLockGate(
 
             item {
                 val subtitle = if (isLockedOut) {
-                    "Too many failed attempts. Wait ${cooldownSecondsLeft}s before trying again."
+                    stringResource(R.string.lockout_message, cooldownSecondsLeft)
                 } else if (canUseBiometric) {
-                    "Use biometrics now or enter your 4-digit PIN to reopen local cycle data."
+                    stringResource(R.string.biometric_unlock_prompt)
                 } else {
-                    "Enter your 4-digit PIN to reopen local cycle data."
+                    stringResource(R.string.pin_unlock_prompt)
                 }
                 PrivacyPinEntryCard(
-                    title = "Unlock CycleCare",
+                    title = stringResource(R.string.unlock_cyclecare),
                     subtitle = subtitle,
                     pinLength = pinEntry.length,
                     message = message,
-                    primaryActionLabel = if (isLockedOut) "Wait ${cooldownSecondsLeft}s" else "Unlock",
+                    primaryActionLabel = if (isLockedOut) {
+                        stringResource(R.string.wait_cooldown, cooldownSecondsLeft)
+                    } else {
+                        stringResource(R.string.unlock)
+                    },
                     primaryEnabled = !isLockedOut && pinEntry.length == 4,
                     onPrimaryAction = {
                         if (!isLockedOut) {

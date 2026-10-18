@@ -77,6 +77,7 @@ enum class ReminderDeepLinkTarget {
 enum class ExportFormat {
     Markdown,
     Pdf,
+    EncryptedBackup,
 }
 
 enum class CycleSource {

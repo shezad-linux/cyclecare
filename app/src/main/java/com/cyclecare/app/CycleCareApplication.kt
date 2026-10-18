@@ -106,6 +106,7 @@ class CycleCareApplication : Application() {
                 cycleRepository = cycleRepository,
                 symptomRepository = symptomRepository,
                 insightRepository = insightRepository,
+                database = database,
             ),
             appResetRepository = appResetRepository,
             reminderScheduler = reminderScheduler,

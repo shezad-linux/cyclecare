@@ -23,8 +23,10 @@ import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
 import com.cyclecare.core.model.DateRange
 import com.cyclecare.core.model.PredictionSnapshot
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.temporal.WeekFields
 import java.util.Locale
 import org.junit.Rule
 import org.junit.Test
@@ -66,13 +68,21 @@ class CalendarScreenUiTest {
     fun adjacentMonthDaySelection_updatesMonthAndMarksOutsideMonthStatesCorrectly() {
         setCalendarContent(initialState = previewCalendarState())
 
-        composeRule.onNodeWithTag(CalendarTags.day(LocalDate.of(2026, 2, 23))).assert(
+        val firstDayOfWeek = WeekFields.of(deviceLocale()).firstDayOfWeek
+        val outsideDate = if (firstDayOfWeek == DayOfWeek.MONDAY) {
+            LocalDate.of(2026, 2, 23)
+        } else {
+            LocalDate.of(2026, 4, 1)
+        }
+        val targetMonth = YearMonth.from(outsideDate)
+
+        composeRule.onNodeWithTag(CalendarTags.day(outsideDate)).assert(
             stateContains(localizedString(R.string.day_state_outside_month)),
         )
-        composeRule.onNodeWithTag(CalendarTags.day(LocalDate.of(2026, 2, 23))).performClick()
+        composeRule.onNodeWithTag(CalendarTags.day(outsideDate)).performClick()
 
-        composeRule.onNodeWithText(monthLabelText(YearMonth.of(2026, 2))).assertIsDisplayed()
-        composeRule.onNodeWithTag(CalendarTags.day(LocalDate.of(2026, 2, 23))).assert(
+        composeRule.onNodeWithText(monthLabelText(targetMonth)).assertIsDisplayed()
+        composeRule.onNodeWithTag(CalendarTags.day(outsideDate)).assert(
             stateContains(localizedString(R.string.day_state_selected)),
         )
     }

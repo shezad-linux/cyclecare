@@ -13,7 +13,9 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.cyclecare.core.designsystem.CycleCareTheme
+import com.cyclecare.core.model.AgeBand
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -29,14 +31,35 @@ class OnboardingScreenUiTest {
 
     @Test
     fun ageBandChipsRemainSelectable() {
+        var selectedAgeBand: AgeBand? = null
         var state by mutableStateOf(OnboardingUiState())
-        setOnboardingContent(
-            state = { state },
-            updateState = { state = it },
-        )
+        composeRule.setContent {
+            CycleCareTheme {
+                OnboardingScreen(
+                    uiState = state,
+                    onAgeBandSelected = {
+                        selectedAgeBand = it
+                        state = state.copy(ageBand = it)
+                    },
+                    onCycleLengthIncrement = {},
+                    onPeriodLengthChanged = {},
+                    onGoalSelected = {},
+                    onRemindersChanged = {},
+                    onPrivacyChanged = {},
+                    onOpenDatePicker = {},
+                    onDismissDatePicker = {},
+                    onDateSelected = {},
+                    onContinue = {},
+                )
+            }
+        }
 
+        composeRule.onNodeWithTag(OnboardingTags.CYCLE_LENGTH_SLIDER).performScrollTo()
         composeRule.onNodeWithTag("onboarding_age_Teen").performClick()
 
+        composeRule.runOnIdle {
+            assertEquals(AgeBand.Teen, selectedAgeBand)
+        }
         composeRule.onNodeWithTag("onboarding_age_Teen").assertIsSelected()
     }
 

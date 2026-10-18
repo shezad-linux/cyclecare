@@ -12,6 +12,7 @@ import com.cyclecare.core.model.ReminderRule
 import com.cyclecare.core.model.ScheduledReminder
 import com.cyclecare.core.model.SymptomLog
 import com.cyclecare.core.model.UserProfile
+import java.io.InputStream
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import kotlinx.coroutines.flow.Flow
@@ -78,8 +79,25 @@ interface PrivacyRepository {
     suspend fun markUnlocked(epochMillis: Long = System.currentTimeMillis())
 }
 
+sealed class ImportResult {
+    data class Success(
+        val cyclesImported: Int,
+        val symptomsImported: Int,
+        val profileImported: Boolean,
+    ) : ImportResult()
+
+    sealed class Failure : ImportResult() {
+        data object InvalidPassphrase : Failure()
+        data object CorruptedFile : Failure()
+        data class UnsupportedVersion(val version: Int) : Failure()
+        data class Error(val message: String) : Failure()
+    }
+}
+
 interface ExportRepository {
     suspend fun createReport(format: ExportFormat): ExportArtifact
+    suspend fun createEncryptedBackup(passphrase: CharArray): ExportArtifact
+    suspend fun importEncryptedBackup(inputStream: InputStream, passphrase: CharArray): ImportResult
 }
 
 interface AppResetRepository {

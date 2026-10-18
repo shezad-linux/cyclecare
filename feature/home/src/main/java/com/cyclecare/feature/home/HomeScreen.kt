@@ -53,7 +53,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -65,6 +68,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -1075,7 +1079,7 @@ internal fun HomeScreen(
                             contentColor = MaterialTheme.colorScheme.primary,
                         ),
                     ) {
-                        Text("View cycle details")
+                        Text(stringResource(R.string.view_cycle_details))
                     }
                 },
                 trailing = {
@@ -1090,7 +1094,7 @@ internal fun HomeScreen(
                     ) {
                         Icon(Icons.Rounded.Edit, contentDescription = null)
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Edit")
+                        Text(stringResource(R.string.edit))
                     }
                 },
             )
@@ -1393,7 +1397,7 @@ private fun FertilityTeaserCard(
                     .fillMaxWidth()
                     .testTag(HomeTags.FERTILITY_DETAIL_CTA),
             ) {
-                Text("View fertility details")
+                Text(stringResource(R.string.view_fertility_details))
             }
         }
     }
@@ -1419,7 +1423,7 @@ private fun ReminderTeaserCard(
             ) {
                 if (unreadCount > 0) {
                     DashboardPill(
-                        text = "$unreadCount unread",
+                        text = pluralStringResource(R.plurals.n_unread, unreadCount, unreadCount),
                         emphasized = true,
                     )
                 }
@@ -1430,7 +1434,7 @@ private fun ReminderTeaserCard(
                     onClick = onTrackToday,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Check in now")
+                    Text(stringResource(R.string.check_in_now))
                 }
             } else {
                 FilledTonalButton(
@@ -1439,7 +1443,7 @@ private fun ReminderTeaserCard(
                         .fillMaxWidth()
                         .testTag(HomeTags.REMINDER_DETAIL_CTA),
                 ) {
-                    Text("View details")
+                    Text(stringResource(R.string.view_details))
                 }
             }
         }
@@ -1468,7 +1472,7 @@ private fun InsightTeaserCard(
                 onClick = onOpenInsights,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("View insights")
+                Text(stringResource(R.string.view_insights))
             }
         }
     }
@@ -1532,7 +1536,7 @@ private fun HomeDetailShell(
             TextButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Back to dashboard")
+                Text(stringResource(R.string.back_to_dashboard))
             }
         }
         item {
@@ -1563,7 +1567,11 @@ internal fun HomeCycleStatusScreen(
     val progressStateDescriptionText = progressStateDescription(uiState.cycleDay, uiState.cycleLength).resolve()
     HomeDetailShell(
         title = formatNextPeriodTitle(uiState.daysUntilNextPeriod).resolve(),
-        subtitle = "Expected ${uiState.nextPeriodDateText.resolve()} • ${formatCycleProgressLabel(uiState.cycleDay, uiState.cycleLength, uiState.confidenceLabel).resolve()}",
+        subtitle = stringResource(
+            R.string.expected_date_with_overdue,
+            uiState.nextPeriodDateText.resolve(),
+            formatCycleProgressLabel(uiState.cycleDay, uiState.cycleLength, uiState.confidenceLabel).resolve(),
+        ),
         modifier = Modifier.testTag(HomeTags.CYCLE_STATUS_SCREEN),
         onBack = onBack,
         headerContent = {
@@ -1575,6 +1583,23 @@ internal fun HomeCycleStatusScreen(
         },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
+            ) {
+                Button(
+                    onClick = onOpenEditCycle,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(R.string.edit_cycle))
+                }
+                OutlinedButton(
+                    onClick = onOpenCalendar,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(R.string.open_calendar))
+                }
+            }
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
@@ -1584,13 +1609,13 @@ internal fun HomeCycleStatusScreen(
                     horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
                     MetricCard(
-                        label = "Avg cycle",
-                        value = "${uiState.cycleLength} days",
+                        label = stringResource(R.string.avg_cycle),
+                        value = stringResource(R.string.n_days, uiState.cycleLength),
                         modifier = Modifier.weight(1f),
                     )
                     MetricCard(
-                        label = "Avg period",
-                        value = "${uiState.averagePeriodLength} days",
+                        label = stringResource(R.string.avg_period),
+                        value = stringResource(R.string.n_days, uiState.averagePeriodLength),
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.86f),
                     )
@@ -1600,13 +1625,13 @@ internal fun HomeCycleStatusScreen(
                     horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
                     MetricCard(
-                        label = "Variability",
+                        label = stringResource(R.string.variability),
                         value = uiState.variabilityText.resolve(),
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.18f),
                     )
                     MetricCard(
-                        label = "Next period",
+                        label = stringResource(R.string.next_period),
                         value = uiState.nextPeriodDateText.resolve(),
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
@@ -1614,7 +1639,7 @@ internal fun HomeCycleStatusScreen(
                 }
             }
             DashboardSectionCard(
-                title = "Current status",
+                title = stringResource(R.string.current_status),
                 subtitle = uiState.latestCycleSummary.resolve(),
                 eyebrow = uiState.cycleModeLabel.resolve(),
             ) {
@@ -1636,37 +1661,27 @@ internal fun HomeCycleStatusScreen(
                 }
             }
             DashboardSectionCard(
-                title = "Logged vs predicted",
-                subtitle = "Logged cycle records refresh the dashboard immediately. Future timing still remains an estimate until you log the next start date.",
-                eyebrow = "Interpretation",
+                title = stringResource(R.string.logged_vs_predicted),
+                subtitle = stringResource(R.string.logged_vs_predicted_subtitle),
+                eyebrow = stringResource(R.string.interpretation),
                 accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10)) {
                     DashboardKeyValueRow(
-                        label = "Fertile window",
+                        label = stringResource(R.string.fertile_window),
                         value = uiState.fertileWindowText.resolve(),
                     )
                     DashboardKeyValueRow(
-                        label = "Ovulation estimate",
+                        label = stringResource(R.string.ovulation_estimate),
                         value = uiState.ovulationEstimateText.resolve(),
                     )
                 }
             }
-            // Body copy, not a glanceable figure. It used to live in the
-            // hero card, where on a 320x536 screen the explanation
-            // pushed the hero to fill the entire viewport and the
-            // actions below it were never composed at all.
             Text(
                 text = uiState.cycleSourceSummary.resolve(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Button(onClick = onOpenEditCycle, modifier = Modifier.fillMaxWidth()) {
-                Text("Edit cycle")
-            }
-            OutlinedButton(onClick = onOpenCalendar, modifier = Modifier.fillMaxWidth()) {
-                Text("Open calendar")
-            }
         }
     }
 }
@@ -1690,7 +1705,7 @@ private fun CycleStatusHeroCard(
             )
         }
         Card(
-            shape = RoundedCornerShape(32.dp),
+            shape = RoundedCornerShape(28.dp),
             colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         ) {
@@ -1700,12 +1715,12 @@ private fun CycleStatusHeroCard(
                         heroGradientColors,
                     ),
                 )
-                .padding(CycleCareSpace.space20)
+                .padding(CycleCareSpace.space16)
 
             if (useStackedLayout) {
                 Column(
                     modifier = containerModifier,
-                    verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
+                    verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
                     CycleStatusHeroText(
                         uiState = uiState,
@@ -1714,20 +1729,21 @@ private fun CycleStatusHeroCard(
                     PeriodHeroScene(
                         mode = heroMode,
                         progress = progress,
+                        compact = true,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(188.dp),
+                            .height(112.dp),
                     )
                 }
             } else {
                 Row(
                     modifier = containerModifier,
-                    horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space18),
+                    horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space14),
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                     ) {
                         CycleStatusHeroText(
                             uiState = uiState,
@@ -1737,7 +1753,8 @@ private fun CycleStatusHeroCard(
                     PeriodHeroScene(
                         mode = heroMode,
                         progress = progress,
-                        modifier = Modifier.size(176.dp),
+                        compact = true,
+                        modifier = Modifier.size(136.dp),
                     )
                 }
             }
@@ -1751,27 +1768,25 @@ private fun CycleStatusHeroText(
     progress: Float,
 ) {
     val progressStateDescriptionText = progressStateDescription(uiState.cycleDay, uiState.cycleLength).resolve()
-    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space14)) {
+    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
         Text(
             stringResource(R.string.cycle_detail),
-            style = MaterialTheme.typography.labelLarge,
+            style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.84f),
         )
         Text(
             text = homeHeroTitle(uiState).resolve(),
-            // The cycle-status detail screen is its own headline, a step
-            // below the Today hero.
-            style = MaterialTheme.typography.headlineLarge,
+            style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onPrimary,
         )
         Text(
             text = homeHeroSubtitle(uiState).resolve(),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
         )
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
-            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
+            horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space6),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space6),
         ) {
             MetricPill(
                 text = uiState.cycleModeLabel.resolve(),
@@ -1784,17 +1799,17 @@ private fun CycleStatusHeroText(
                 )
             }
         }
-        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space6)) {
             Text(
                 stringResource(R.string.cycle_progress),
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.82f),
             )
             LinearProgressIndicator(
                 progress = { progress },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(7.dp)
+                    .height(6.dp)
                     .semantics {
                         stateDescription = progressStateDescriptionText
                     },
@@ -1802,7 +1817,6 @@ private fun CycleStatusHeroText(
                 trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.24f),
             )
         }
-
     }
 }
 
@@ -1831,16 +1845,16 @@ internal fun HomeFertilityDetailScreen(
                     accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.86f),
                 )
                 MetricCard(
-                    label = "Ovulation",
+                    label = stringResource(R.string.ovulation),
                     value = uiState.ovulationEstimateText.resolve(),
                     modifier = Modifier.weight(1f),
                     accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.86f),
                 )
             }
             DashboardSectionCard(
-                title = "How this estimate is built",
+                title = stringResource(R.string.how_this_estimate_is_built),
                 subtitle = uiState.cycleSourceSummary.resolve(),
-                eyebrow = "From your cycle history",
+                eyebrow = stringResource(R.string.from_your_cycle_history),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10)) {
                     Text(
@@ -1849,20 +1863,20 @@ internal fun HomeFertilityDetailScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     DashboardKeyValueRow(
-                        label = "Current window",
+                        label = stringResource(R.string.current_window),
                         value = uiState.fertileWindowText.resolve(),
                     )
                     DashboardKeyValueRow(
-                        label = "Ovulation date",
+                        label = stringResource(R.string.ovulation_date),
                         value = uiState.ovulationEstimateText.resolve(),
                     )
                 }
             }
             Button(onClick = onOpenCalendar, modifier = Modifier.fillMaxWidth()) {
-                Text("Open calendar")
+                Text(stringResource(R.string.open_calendar))
             }
             OutlinedButton(onClick = onOpenInsights, modifier = Modifier.fillMaxWidth()) {
-                Text("Open insights")
+                Text(stringResource(R.string.open_insights))
             }
         }
     }
@@ -1907,16 +1921,25 @@ private fun EditCycleSheet(
     onNotesChanged: (String) -> Unit,
     onSaveCycle: () -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = CycleCareSpace.space24, vertical = CycleCareSpace.space8),
-            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
         ) {
             Text(
-                text = if (editor.editingId == null) "Edit cycle" else "Edit current cycle",
-                style = MaterialTheme.typography.headlineSmall,
+                text = if (editor.editingId == null) {
+                    stringResource(R.string.edit_cycle)
+                } else {
+                    stringResource(R.string.edit_current_cycle)
+                },
+                style = MaterialTheme.typography.headlineLarge,
             )
 
             if (!editor.isExpanded && editor.editingId == null) {
@@ -1934,7 +1957,10 @@ private fun EditCycleSheet(
                         modifier = Modifier.padding(CycleCareSpace.space16),
                         verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                     ) {
-                        Text("Period started today", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.period_started_today),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
                         Text(
                             stringResource(R.string.use_your_saved_baseline_and_period_length_for_a_quick_local_),
                             style = MaterialTheme.typography.bodyMedium,
@@ -1946,13 +1972,13 @@ private fun EditCycleSheet(
                     onClick = onQuickStartPeriod,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Period started today")
+                    Text(stringResource(R.string.period_started_today))
                 }
                 OutlinedButton(
                     onClick = onExpand,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Edit details")
+                    Text(stringResource(R.string.edit_details))
                 }
             } else {
                 Text(
@@ -1968,7 +1994,7 @@ private fun EditCycleSheet(
                     value = editor.startDateText,
                     onValueChange = onStartDateChanged,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Start date (YYYY-MM-DD)") },
+                    label = { Text(stringResource(R.string.start_date_label)) },
                     singleLine = true,
                     isError = editor.startDateError != null,
                     supportingText = {
@@ -1981,7 +2007,7 @@ private fun EditCycleSheet(
                     value = editor.endDateText,
                     onValueChange = onEndDateChanged,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("End date (YYYY-MM-DD)") },
+                    label = { Text(stringResource(R.string.end_date_label)) },
                     singleLine = true,
                     isError = editor.endDateError != null,
                     supportingText = {
@@ -1994,7 +2020,7 @@ private fun EditCycleSheet(
                     value = editor.cycleLengthText,
                     onValueChange = onCycleLengthChanged,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Cycle length") },
+                    label = { Text(stringResource(R.string.cycle_length_label)) },
                     singleLine = true,
                     isError = editor.cycleLengthError != null,
                     supportingText = {
@@ -2008,7 +2034,7 @@ private fun EditCycleSheet(
                     onValueChange = onNotesChanged,
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
-                    label = { Text("Notes") },
+                    label = { Text(stringResource(R.string.notes_label)) },
                 )
                 editor.error?.let { error ->
                     Text(
@@ -2038,7 +2064,7 @@ private fun EditCycleSheet(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         }
     }

@@ -48,7 +48,7 @@ class HomeScreenUiTest {
     fun heroShowsPredictionSourceContext() {
         setHomeContent()
 
-        composeRule.onNodeWithText("Predictions combine your saved baseline and recent local history.")
+        composeRule.onNodeWithText(localizedString(R.string.predictions_combine_latest_cycle_with_baseline))
             .assertIsDisplayed()
     }
 
@@ -194,6 +194,9 @@ class HomeScreenUiTest {
             }
         }
     }
+
+    private fun localizedString(resId: Int, vararg args: Any): String =
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.getString(resId, *args)
 
     private fun previewHomeState() = com.cyclecare.feature.home.previewHomeState()
 }

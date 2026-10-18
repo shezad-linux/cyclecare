@@ -1,6 +1,7 @@
 package com.cyclecare.feature.insights
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -42,9 +43,11 @@ class InsightsScreenUiTest {
             .performScrollToNode(hasText("Symptom patterns"))
         composeRule.onNodeWithText("Symptom patterns").assertIsDisplayed()
 
+        composeRule.onNodeWithTag(InsightsTags.OverviewScreen)
+            .performScrollToNode(hasTestTag(InsightsTags.CycleTrendsCta))
         composeRule.onNodeWithTag(InsightsTags.CycleTrendsCta).performClick()
         composeRule.onNodeWithTag(InsightsTags.OverviewScreen)
-            .performScrollToNode(hasText("View symptom patterns"))
+            .performScrollToNode(hasTestTag(InsightsTags.SymptomPatternsCta))
         composeRule.onNodeWithTag(InsightsTags.SymptomPatternsCta).performClick()
 
         assertTrue(openedCycleTrends)

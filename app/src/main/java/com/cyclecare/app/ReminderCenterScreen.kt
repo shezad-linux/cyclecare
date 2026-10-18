@@ -22,6 +22,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -133,16 +135,20 @@ private fun ReminderCenterScreen(
     ) {
         item {
             GradientHeaderCard(
-                title = "Reminder center",
+                title = stringResource(R.string.reminder_center_title),
                 subtitle = if (uiState.unreadCount == 0) {
-                    "Everything is caught up."
+                    stringResource(R.string.all_caught_up)
                 } else {
-                    "${uiState.unreadCount} unread reminder${if (uiState.unreadCount == 1) "" else "s"}"
+                    pluralStringResource(
+                        R.plurals.n_unread_reminders,
+                        uiState.unreadCount,
+                        uiState.unreadCount,
+                    )
                 },
                 supportingContent = {
                     if (uiState.unreadCount > 0) {
                         FilledTonalButton(onClick = onMarkAllRead) {
-                            Text("Mark all read")
+                            Text(stringResource(R.string.mark_all_read))
                         }
                     }
                 },
@@ -257,17 +263,17 @@ private fun ReminderEventCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                "Open the linked surface to continue from this reminder.",
+                stringResource(R.string.reminder_linked_surface_hint),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
             FilledTonalButton(onClick = onOpen) {
-                Text("Open")
+                Text(stringResource(R.string.reminder_action_open))
             }
             OutlinedButton(onClick = onDismiss) {
-                Text("Dismiss")
+                Text(stringResource(R.string.reminder_action_dismiss))
             }
         }
     }

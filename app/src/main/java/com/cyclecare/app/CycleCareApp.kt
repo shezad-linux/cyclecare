@@ -146,6 +146,7 @@ private fun NotificationPermissionStatus.recoveryLabel(): String? = when (recove
 fun CycleCareApp(
     container: AppContainer,
     secureAuthController: SecureAuthController? = null,
+    interstitialAdManager: InterstitialAdManager? = null,
 ) {
     val authController = secureAuthController ?: rememberPlatformSecureAuthController()
     val context = LocalContext.current
@@ -170,13 +171,13 @@ fun CycleCareApp(
     val lastUnlockEpochMillis by container.privacyRepository.observeLastUnlockEpochMillis().collectAsStateWithLifecycle(initialValue = null)
     val canRequestAds by adsConsentManager.canRequestAds.collectAsStateWithLifecycle()
     val isAdPrivacyOptionsRequired by adsConsentManager.isPrivacyOptionsRequired.collectAsStateWithLifecycle()
-    val interstitialAdManager = remember(context.applicationContext) {
+    val activeInterstitialAdManager = interstitialAdManager ?: remember(context.applicationContext) {
         InterstitialAdManager(context = context.applicationContext)
     }
 
-    LaunchedEffect(canRequestAds) {
+    LaunchedEffect(canRequestAds, activeInterstitialAdManager) {
         if (canRequestAds) {
-            interstitialAdManager.loadAd()
+            activeInterstitialAdManager.loadAd()
         }
     }
 
@@ -300,7 +301,7 @@ fun CycleCareApp(
             notificationRecoveryActionLabel = notificationPermissionStatus.recoveryLabel(),
             secureAuthController = authController,
             canRequestAds = canRequestAds,
-            interstitialAdManager = interstitialAdManager,
+            interstitialAdManager = activeInterstitialAdManager,
             isAdPrivacyOptionsRequired = isAdPrivacyOptionsRequired,
             onOpenAdPrivacyOptions = {
                 activity?.let(adsConsentManager::showPrivacyOptionsForm)

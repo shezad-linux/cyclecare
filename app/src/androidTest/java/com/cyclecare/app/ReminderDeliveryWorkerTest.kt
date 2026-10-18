@@ -9,6 +9,8 @@ import androidx.work.testing.TestListenableWorkerBuilder
 import com.cyclecare.core.domain.AppResetRepository
 import com.cyclecare.core.domain.CycleRepository
 import com.cyclecare.core.domain.ExportRepository
+import com.cyclecare.core.domain.ImportResult
+import java.io.InputStream
 import com.cyclecare.core.domain.InsightRepository
 import com.cyclecare.core.domain.NoOpAppLogger
 import com.cyclecare.core.domain.PredictionRepository
@@ -471,6 +473,18 @@ private class NoOpExportRepository : ExportRepository {
             mimeType = "text/plain",
             generatedAt = LocalDate.of(2026, 3, 17),
         )
+
+    override suspend fun createEncryptedBackup(passphrase: CharArray): ExportArtifact =
+        ExportArtifact(
+            format = ExportFormat.EncryptedBackup,
+            displayName = "noop.ccvault",
+            absolutePath = "/tmp/noop.ccvault",
+            mimeType = "application/octet-stream",
+            generatedAt = LocalDate.of(2026, 3, 17),
+        )
+
+    override suspend fun importEncryptedBackup(inputStream: InputStream, passphrase: CharArray): ImportResult =
+        ImportResult.Success(0, 0, false)
 }
 
 private class NoOpAppResetRepository : AppResetRepository {

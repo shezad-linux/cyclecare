@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.cyclecare.core.model.ReminderEvent
 import kotlinx.coroutines.delay
@@ -76,7 +77,7 @@ fun ReminderBannerHost(
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                         FilledTonalButton(onClick = { onOpen(reminder) }) {
-                            Text("Open")
+                            Text(stringResource(R.string.reminder_action_open))
                         }
                         TextButton(
                             onClick = {
@@ -84,7 +85,7 @@ fun ReminderBannerHost(
                                 onDismiss(reminder)
                             },
                         ) {
-                            Text("Dismiss")
+                            Text(stringResource(R.string.reminder_action_dismiss))
                         }
                     }
                 }

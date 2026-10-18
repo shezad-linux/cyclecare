@@ -23,5 +23,24 @@
     <string name="export_failed_locally">Export failed locally. Please try again.</string>
     <string name="format_markdown">Markdown</string>
     <string name="format_pdf">PDF</string>
+    <string name="format_encrypted_backup">Encrypted Backup</string>
+    <string name="generating_encrypted_backup">Creating encrypted backup...</string>
+    <string name="saved_encrypted_backup">Saved encrypted backup to %1$s.</string>
+    <string name="encrypted_backup_and_restore">Encrypted Backup &amp; Restore</string>
+    <string name="backup_restore_description">Create an encrypted local backup protected by a passphrase, or restore an existing backup file.</string>
+    <string name="create_encrypted_backup">Create encrypted backup</string>
+    <string name="restore_encrypted_backup">Restore from backup</string>
+    <string name="enter_passphrase_title">Enter Passphrase</string>
+    <string name="create_passphrase_message">Enter a passphrase (at least 12 characters) to encrypt your backup. If you lose this passphrase, your backup cannot be restored.</string>
+    <string name="restore_passphrase_message">Enter the passphrase used to encrypt this backup file.</string>
+    <string name="passphrase_hint">Passphrase (min 12 characters)</string>
+    <string name="passphrase_too_short">Passphrase must be at least 12 characters.</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="import_success_message">Restored %1$d cycles and %2$d symptom logs.</string>
+    <string name="import_invalid_passphrase">Invalid passphrase or tampered backup file.</string>
+    <string name="import_corrupted_file">The selected file is corrupted or not a valid CycleCare backup.</string>
+    <string name="import_unsupported_version">The backup was created by a newer version of CycleCare and cannot be read.</string>
+    <string name="import_failed">Import failed. No changes were made.</string>
     <string name="share_report_chooser_title">Share CycleCare report</string>
 </resources>

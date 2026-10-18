@@ -222,6 +222,12 @@ interface CycleRecordDao {
 
     @Query("SELECT COUNT(*) FROM cycle_records WHERE startEpochDay = :epochDay AND deletedAtEpochMillis IS NULL")
     suspend fun countLiveForStart(epochDay: Long): Int
+
+    @Query("SELECT * FROM cycle_records WHERE id = :id")
+    suspend fun findById(id: String): CycleRecordEntity?
+
+    @Query("SELECT * FROM cycle_records")
+    suspend fun getAllForBackup(): List<CycleRecordEntity>
 }
 
 @Dao
@@ -250,6 +256,12 @@ interface SymptomLogDao {
 
     @Query("SELECT COUNT(*) FROM symptom_logs WHERE dateEpochDay = :epochDay AND deletedAtEpochMillis IS NULL")
     suspend fun countLiveForDate(epochDay: Long): Int
+
+    @Query("SELECT * FROM symptom_logs WHERE id = :id")
+    suspend fun findById(id: String): SymptomLogEntity?
+
+    @Query("SELECT * FROM symptom_logs")
+    suspend fun getAllForBackup(): List<SymptomLogEntity>
 }
 
 @Dao
@@ -262,6 +274,9 @@ interface DailySymptomDao {
 
     @Query("DELETE FROM daily_symptoms WHERE dailyLogId = :dailyLogId")
     suspend fun deleteForLog(dailyLogId: String): Int
+
+    @Query("SELECT * FROM daily_symptoms")
+    suspend fun getAllForBackup(): List<DailySymptomEntity>
 }
 
 @Dao
@@ -274,6 +289,9 @@ interface ReminderRuleDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(rule: ReminderRuleEntity)
+
+    @Query("SELECT * FROM reminder_rules")
+    suspend fun getAllForBackup(): List<ReminderRuleEntity>
 }
 
 @Dao

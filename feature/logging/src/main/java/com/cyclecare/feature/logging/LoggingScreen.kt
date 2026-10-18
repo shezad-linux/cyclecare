@@ -946,7 +946,7 @@ private fun LoggingHeroText(
                 )
                 Text(
                     text = stringResource(R.string.log_today),
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.headlineLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
