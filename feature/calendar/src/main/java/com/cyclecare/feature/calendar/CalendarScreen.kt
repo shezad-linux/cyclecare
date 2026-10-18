@@ -58,6 +58,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -798,8 +799,8 @@ internal fun CalendarScreen(
         verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
     ) {
         GradientHeaderCard(
-            title = "Calendar",
-            subtitle = "Review logged periods, fertile windows, and upcoming estimates.",
+            title = stringResource(R.string.calendar),
+            subtitle = stringResource(R.string.review_logged_periods_fertile_windows_and_upcoming_estimates),
             supportingContent = {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
@@ -827,11 +828,11 @@ internal fun CalendarScreen(
                         onClick = onPreviousMonth,
                         modifier = Modifier.testTag(CalendarTags.PREVIOUS_MONTH),
                     ) {
-                        Icon(Icons.Rounded.ChevronLeft, contentDescription = "Previous month")
+                        Icon(Icons.Rounded.ChevronLeft, contentDescription = stringResource(R.string.previous_month))
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            "Cycle calendar",
+                            stringResource(R.string.cycle_calendar),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -848,7 +849,7 @@ internal fun CalendarScreen(
                         onClick = onNextMonth,
                         modifier = Modifier.testTag(CalendarTags.NEXT_MONTH),
                     ) {
-                        Icon(Icons.Rounded.ChevronRight, contentDescription = "Next month")
+                        Icon(Icons.Rounded.ChevronRight, contentDescription = stringResource(R.string.next_month))
                     }
                 }
 
@@ -912,7 +913,7 @@ internal fun CalendarScreen(
                 verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             ) {
                 Text(
-                    "Selected day",
+                    stringResource(R.string.selected_day),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.SemiBold,
@@ -941,10 +942,10 @@ internal fun CalendarScreen(
                 } else {
                     if (uiState.selectedCycle != null) {
                         Button(onClick = onOpenEdit, modifier = Modifier.fillMaxWidth()) {
-                            Text(uiState.selectedDaySummary.primaryActionLabel ?: "Update entry")
+                            Text(uiState.selectedDaySummary.primaryActionLabel ?: stringResource(R.string.update_entry))
                         }
                         TextButton(onClick = onShowDeleteConfirmation, modifier = Modifier.fillMaxWidth()) {
-                            Text("Delete cycle entry")
+                            Text(stringResource(R.string.delete_cycle_entry))
                         }
                     }
                 }
@@ -960,9 +961,9 @@ internal fun CalendarScreen(
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
-            Text("Recent cycle history", style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.recent_cycle_history), style = MaterialTheme.typography.titleLarge)
             Text(
-                "Edit previous entries without leaving the calendar.",
+                stringResource(R.string.edit_previous_entries_without_leaving_the_calendar),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -995,11 +996,15 @@ internal fun CalendarScreen(
                 verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
             ) {
                 Text(
-                    if (uiState.editor.editingId == null) "Log period" else "Edit period",
+                    if (uiState.editor.editingId == null) {
+                        stringResource(R.string.log_period)
+                    } else {
+                        stringResource(R.string.edit_period)
+                    },
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    "Use simple date entry for now, then adjust cycle length and notes before saving locally.",
+                    stringResource(R.string.use_simple_date_entry_for_now_then_adjust_cycle_length_and_n),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -1007,7 +1012,7 @@ internal fun CalendarScreen(
                     value = uiState.editor.startDateText,
                     onValueChange = onStartDateChanged,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Start date (YYYY-MM-DD)") },
+                    label = { Text(stringResource(R.string.start_date_yyyy_mm_dd)) },
                     singleLine = true,
                     isError = uiState.editor.startDateError != null,
                     supportingText = {
@@ -1020,7 +1025,7 @@ internal fun CalendarScreen(
                     value = uiState.editor.endDateText,
                     onValueChange = onEndDateChanged,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("End date (YYYY-MM-DD)") },
+                    label = { Text(stringResource(R.string.end_date_yyyy_mm_dd)) },
                     singleLine = true,
                     isError = uiState.editor.endDateError != null,
                     supportingText = {
@@ -1033,7 +1038,7 @@ internal fun CalendarScreen(
                     value = uiState.editor.cycleLengthText,
                     onValueChange = onCycleLengthChanged,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Cycle length") },
+                    label = { Text(stringResource(R.string.cycle_length)) },
                     singleLine = true,
                     isError = uiState.editor.cycleLengthError != null,
                     supportingText = {
@@ -1046,7 +1051,7 @@ internal fun CalendarScreen(
                     value = uiState.editor.notes,
                     onValueChange = onNotesChanged,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Notes") },
+                    label = { Text(stringResource(R.string.notes)) },
                     minLines = 3,
                 )
                 uiState.editor.error?.let { error ->
@@ -1061,10 +1066,16 @@ internal fun CalendarScreen(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = uiState.editor.isSaveEnabled,
                 ) {
-                    Text(if (uiState.editor.isSaving) "Saving..." else "Save locally")
+                    Text(
+                        if (uiState.editor.isSaving) {
+                            stringResource(R.string.saving)
+                        } else {
+                            stringResource(R.string.save_locally)
+                        },
+                    )
                 }
                 TextButton(onClick = onDismissEditor, modifier = Modifier.fillMaxWidth()) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         }
@@ -1074,13 +1085,13 @@ internal fun CalendarScreen(
         AlertDialog(
             onDismissRequest = onDismissDeleteConfirmation,
             confirmButton = {
-                Button(onClick = onDeleteCycle) { Text("Delete") }
+                Button(onClick = onDeleteCycle) { Text(stringResource(R.string.delete)) }
             },
             dismissButton = {
-                TextButton(onClick = onDismissDeleteConfirmation) { Text("Cancel") }
+                TextButton(onClick = onDismissDeleteConfirmation) { Text(stringResource(R.string.cancel)) }
             },
-            title = { Text("Delete cycle entry?") },
-            text = { Text("This removes the selected period entry and recalculates local predictions.") },
+            title = { Text(stringResource(R.string.delete_cycle_entry_2)) },
+            text = { Text(stringResource(R.string.this_removes_the_selected_period_entry_and_recalculates_loca)) },
         )
     }
 }
@@ -1140,7 +1151,7 @@ private fun CalendarDayCell(
                 if (day.isOvulationDay) {
                     Icon(
                         imageVector = Icons.Rounded.Star,
-                        contentDescription = "Ovulation",
+                        contentDescription = stringResource(R.string.ovulation),
                         modifier = Modifier.size(10.dp),
                         tint = if (day.isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
                     )
@@ -1245,7 +1256,7 @@ private fun HistoryCard(
                 Text(notes, style = MaterialTheme.typography.bodyMedium)
             }
             OutlinedButton(onClick = onEdit, modifier = Modifier.fillMaxWidth()) {
-                Text("Edit entry")
+                Text(stringResource(R.string.edit_entry))
             }
         }
     }
