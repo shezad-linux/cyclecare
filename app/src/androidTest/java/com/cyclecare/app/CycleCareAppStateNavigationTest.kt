@@ -101,15 +101,22 @@ class CycleCareAppStateNavigationTest {
         val env = TestAppEnvironment.empty()
 
         renderApp(env)
+        // Onboarding spans two steps: the first press of this button
+        // advances to step 2, the second completes. No performScrollTo
+        // on the first press because on the opening step the button has
+        // no scrollable ancestor, so asking for one is itself an error.
         composeRule
             .onNodeWithTag("onboarding_start_tracking", useUnmergedTree = true)
-            .performScrollTo()
+            .performClick()
+        composeRule.waitForIdle()
+        composeRule
+            .onNodeWithTag("onboarding_start_tracking", useUnmergedTree = true)
             .performClick()
 
         composeRule.waitUntil(5_000) { env.profileRepository.current != null }
 
         assertEquals(1, env.cycleRepository.current.size)
-        composeRule.onNodeWithText("Cycle progress").assertIsDisplayed()
+        assertTodayDashboardVisible()
     }
 
     @Test
@@ -284,9 +291,16 @@ class CycleCareAppStateNavigationTest {
         }
 
         renderApp(env)
+        // Onboarding spans two steps: the first press of this button
+        // advances to step 2, the second completes. No performScrollTo
+        // on the first press because on the opening step the button has
+        // no scrollable ancestor, so asking for one is itself an error.
         composeRule
             .onNodeWithTag("onboarding_start_tracking", useUnmergedTree = true)
-            .performScrollTo()
+            .performClick()
+        composeRule.waitForIdle()
+        composeRule
+            .onNodeWithTag("onboarding_start_tracking", useUnmergedTree = true)
             .performClick()
 
         composeRule.waitUntil(5_000) { env.profileRepository.current != null }
