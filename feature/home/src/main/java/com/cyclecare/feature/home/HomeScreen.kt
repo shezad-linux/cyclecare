@@ -7,6 +7,10 @@ package com.cyclecare.feature.home
 
 import kotlin.math.roundToInt
 import com.cyclecare.core.designsystem.token.CycleCareSpace
+import com.cyclecare.core.designsystem.text.UiText
+import com.cyclecare.core.designsystem.text.resolve
+import com.cyclecare.core.designsystem.text.uiText
+import com.cyclecare.core.designsystem.text.pluralUiText
 import com.cyclecare.core.designsystem.token.CycleCareTypography
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -122,40 +126,41 @@ import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val daysUntilNextPeriod: Int? = null,
-    val nextPeriodDateText: String = "Prediction unavailable",
+    val nextPeriodDateText: UiText = uiText(R.string.prediction_unavailable),
     val cycleDay: Int? = null,
     val cycleLength: Int = 28,
     val averagePeriodLength: Int = 5,
-    val variabilityText: String = "From your setup",
-    val fertileWindowText: String = "Fertile window unavailable",
-    val ovulationEstimateText: String = "Unavailable",
+    val variabilityText: UiText = uiText(R.string.from_your_setup),
+    val fertileWindowText: UiText = uiText(R.string.fertile_window_unavailable),
+    val ovulationEstimateText: UiText = uiText(R.string.unavailable),
     val confidenceLabel: String = "",
     /**
      * Human-readable spread, or null when the engine declined to emit a
      * range. Null must never be rendered as if it were zero.
      */
-    val nextPeriodRangeText: String? = null,
+    val nextPeriodRangeText: UiText? = null,
     /** False when history is too thin for any range to be meaningful. */
     val supportsRange: Boolean = false,
     val overdueDays: Int = 0,
     val hasCurrentCycle: Boolean = false,
-    val cycleModeLabel: String = "Based on your history",
-    val cyclePhaseLabel: String = "",
-    val cycleSourceSummary: String = "Predictions use your saved baseline until more cycle history is logged.",
-    val latestCycleSummary: String = "No logged period yet.",
+    val cycleModeLabel: UiText = uiText(R.string.based_on_your_history),
+    val cyclePhaseLabel: UiText = uiText(R.string.empty_label),
+    val cycleSourceSummary: UiText =
+        uiText(R.string.predictions_use_saved_baseline_until_more_history),
+    val latestCycleSummary: UiText = uiText(R.string.no_logged_period_yet),
     val reminderTeaser: HomeReminderTeaser = HomeReminderTeaser(),
     val insightTeaser: HomeInsightTeaser = HomeInsightTeaser(),
     val editorState: HomeEditorState = HomeEditorState(),
     val quickActions: List<HomeQuickAction> = defaultHomeQuickActions(),
-    val message: String? = null,
+    val message: UiText? = null,
     val cyclesLoggedCount: Int = 0,
     val cyclesNeededForInsights: Int = 3,
 )
 
 data class HomeReminderTeaser(
-    val title: String = "No future reminder queued",
-    val detail: String = "Enable reminder rules in Settings to surface the next alert here.",
-    val supporting: String = "Delivered reminders still appear in your local reminder center.",
+    val title: UiText = uiText(R.string.no_future_reminder_queued),
+    val detail: UiText = uiText(R.string.enable_reminder_rules_in_settings_hint),
+    val supporting: UiText = uiText(R.string.delivered_reminders_stay_in_center),
     /**
      * Whether this reminder can be actioned from the card, rather than
      * only inspected.
@@ -170,14 +175,14 @@ data class HomeReminderTeaser(
 )
 
 data class HomeInsightTeaser(
-    val title: String = "Insights are building",
-    val detail: String = "Keep logging cycles and symptoms to unlock stronger trends and pattern summaries.",
-    val supporting: String = "Local insights never leave this device by default.",
+    val title: UiText = uiText(R.string.insights_are_building),
+    val detail: UiText = uiText(R.string.keep_logging_for_stronger_trends),
+    val supporting: UiText = uiText(R.string.local_insights_stay_on_device),
     val trendPoints: List<HomeTrendPoint> = emptyList(),
 )
 
 data class HomeTrendPoint(
-    val label: String,
+    val label: UiText,
     val value: Int,
 )
 
@@ -192,12 +197,12 @@ data class HomeEditorState(
     val parsedStartDate: LocalDate? = null,
     val parsedEndDate: LocalDate? = null,
     val parsedCycleLength: Int? = null,
-    val startDateError: String? = null,
-    val endDateError: String? = null,
-    val cycleLengthError: String? = null,
+    val startDateError: UiText? = null,
+    val endDateError: UiText? = null,
+    val cycleLengthError: UiText? = null,
     val isSaveEnabled: Boolean = false,
     val isSaving: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
 )
 
 enum class HomeQuickActionType {
@@ -208,8 +213,8 @@ enum class HomeQuickActionType {
 
 data class HomeQuickAction(
     val type: HomeQuickActionType,
-    val label: String,
-    val description: String,
+    val label: UiText,
+    val description: UiText,
 )
 
 private data class HomeBaseState(
@@ -258,48 +263,56 @@ internal object HomeTags {
 internal fun defaultHomeQuickActions(): List<HomeQuickAction> = listOf(
     HomeQuickAction(
         type = HomeQuickActionType.LogSymptoms,
-        label = "Track today",
-        description = "Log mood, pain, energy, and more.",
+        label = uiText(R.string.track_today),
+        description = uiText(R.string.log_mood_pain_energy_hint),
     ),
     HomeQuickAction(
         type = HomeQuickActionType.OpenCalendar,
-        label = "Calendar",
-        description = "View history and upcoming dates.",
+        label = uiText(R.string.calendar),
+        description = uiText(R.string.view_history_and_upcoming_dates),
     ),
     HomeQuickAction(
         type = HomeQuickActionType.ViewInsights,
-        label = "Insights",
-        description = "See patterns from your logged data.",
+        label = uiText(R.string.insights),
+        description = uiText(R.string.see_patterns_from_logged_data),
     ),
 )
 
-internal fun formatNextPeriodTitle(daysUntilNextPeriod: Int?): String = when {
-    daysUntilNextPeriod == null -> "Prediction will appear after setup"
-    daysUntilNextPeriod > 1 -> "Next period in $daysUntilNextPeriod days"
-    daysUntilNextPeriod == 1 -> "Next period in 1 day"
-    daysUntilNextPeriod == 0 -> "Next period due today"
-    else -> "Next period timing needs review"
+internal fun formatNextPeriodTitle(daysUntilNextPeriod: Int?): UiText = when {
+    daysUntilNextPeriod == null -> uiText(R.string.prediction_will_appear_after_setup)
+    daysUntilNextPeriod > 1 -> pluralUiText(R.plurals.next_period_in_n_days, daysUntilNextPeriod, daysUntilNextPeriod)
+    daysUntilNextPeriod == 1 -> uiText(R.string.next_period_in_one_day)
+    daysUntilNextPeriod == 0 -> uiText(R.string.next_period_due_today)
+    else -> uiText(R.string.next_period_timing_needs_review)
 }
 
-internal fun homeHeroTitle(uiState: HomeUiState): String =
-    if (uiState.hasCurrentCycle) "Period started" else formatNextPeriodTitle(uiState.daysUntilNextPeriod)
+internal fun homeHeroTitle(uiState: HomeUiState): UiText =
+    if (uiState.hasCurrentCycle) uiText(R.string.period_started) else formatNextPeriodTitle(uiState.daysUntilNextPeriod)
 
-internal fun homeHeroSubtitle(uiState: HomeUiState): String = when {
-    uiState.hasCurrentCycle -> "Log how today feels"
-    uiState.overdueDays > 0 -> "Expected ${uiState.nextPeriodDateText} \u00b7 ${formatOverdue(uiState.overdueDays)}"
-    uiState.supportsRange -> "Expected ${uiState.nextPeriodDateText}"
+internal fun homeHeroSubtitle(uiState: HomeUiState): UiText = when {
+    uiState.hasCurrentCycle -> uiText(R.string.log_how_today_feels)
+    uiState.overdueDays > 0 ->
+        uiText(R.string.expected_date_with_overdue, uiState.nextPeriodDateText, formatOverdue(uiState.overdueDays))
+    uiState.supportsRange -> uiText(R.string.expected_date, uiState.nextPeriodDateText)
     // No range is supportable, so the point estimate is not presented as
     // the expected date at all.
-    else -> "${uiState.nextPeriodDateText} \u00b7 not enough history for a range"
+    else -> uiText(R.string.date_not_enough_history_for_a_range, uiState.nextPeriodDateText)
 }
 
 internal fun formatCycleProgressLabel(
     cycleDay: Int?,
     cycleLength: Int,
     confidenceLabel: String,
-): String {
-    val dayLabel = if (cycleDay == null) "Day -- / $cycleLength" else "Day $cycleDay / $cycleLength"
-    return if (confidenceLabel.isBlank()) dayLabel else "$dayLabel • $confidenceLabel"
+): UiText {
+    val dayText = cycleDay?.toString() ?: "--"
+    return if (confidenceLabel.isBlank()) {
+        uiText(R.string.day_slash_total, dayText, cycleLength)
+    } else {
+        // Sentence shape in one resource: the day label and the
+        // confidence suffix are parts of a single statement, not
+        // separately translatable fragments.
+        uiText(R.string.day_slash_total_with_confidence, dayText, cycleLength, confidenceLabel)
+    }
 }
 
 /**
@@ -314,71 +327,75 @@ internal fun formatNextPeriodRange(
     range: DateRange?,
     supportsRange: Boolean,
     halfWidthDays: Int?,
-): String? = when {
+): UiText? = when {
     range != null -> {
         val start = range.start.format(dashboardDateFormatter)
         val end = range.endInclusive.format(dashboardDateFormatter)
         if (halfWidthDays != null && halfWidthDays > 0) {
-            "$start \u2013 $end (\u00b1$halfWidthDays days)"
+            uiText(R.string.date_range_with_halfwidth, start, end, halfWidthDays)
         } else {
-            "$start \u2013 $end"
+            uiText(R.string.date_range, start, end)
         }
     }
 
     supportsRange -> null
-    else -> "Not enough history yet to give a range"
+    else -> uiText(R.string.not_enough_history_yet_for_a_range)
 }
 
-internal fun formatOverdue(days: Int): String = when {
-    days <= 0 -> ""
-    days == 1 -> "1 day past the expected date"
-    else -> "$days days past the expected date"
+internal fun formatOverdue(days: Int): UiText = when {
+    days <= 0 -> UiText.Raw("")
+    days == 1 -> uiText(R.string.one_day_past_the_expected_date)
+    else -> pluralUiText(R.plurals.n_days_past_the_expected_date, days, days)
 }
 
-internal fun formatFertileWindow(range: DateRange?): String =
-    range?.let { "${it.start.format(dashboardDateFormatter)} - ${it.endInclusive.format(dashboardDateFormatter)}" }
-        ?: "Fertile window unavailable"
+internal fun formatFertileWindow(range: DateRange?): UiText =
+    range?.let { uiText(R.string.date_range, it.start.format(dashboardDateFormatter), it.endInclusive.format(dashboardDateFormatter)) }
+        ?: uiText(R.string.fertile_window_unavailable)
 
-internal fun formatDashboardDate(date: LocalDate?): String =
-    date?.format(dashboardDateFormatter) ?: "Unavailable"
+internal fun formatDashboardDate(date: LocalDate?): UiText =
+    date?.let { UiText.Raw(it.format(dashboardDateFormatter)) } ?: uiText(R.string.unavailable)
 
-internal fun progressStateDescription(cycleDay: Int?, cycleLength: Int): String =
+internal fun progressStateDescription(cycleDay: Int?, cycleLength: Int): UiText =
     if (cycleDay == null) {
-        "Cycle progress unavailable"
+        uiText(R.string.cycle_progress_unavailable)
     } else {
-        "Day $cycleDay of $cycleLength"
+        uiText(R.string.day_x_of_y, cycleDay, cycleLength)
     }
 
-internal fun formatCycleRange(record: CycleRecord?): String = when {
-    record == null -> "No logged period yet."
+internal fun formatCycleRange(record: CycleRecord?): UiText = when {
+    record == null -> uiText(R.string.no_logged_period_yet)
     // A null end means the period has not finished yet.
     record.endDate == null ->
-        "${record.startDate.format(dashboardDateFormatter)} - ongoing"
+        uiText(R.string.date_ongoing, record.startDate.format(dashboardDateFormatter))
     else ->
-        "${record.startDate.format(dashboardDateFormatter)} - ${record.endDate!!.format(dashboardDateFormatter)}"
+        uiText(
+            R.string.date_range,
+            record.startDate.format(dashboardDateFormatter),
+            record.endDate!!.format(dashboardDateFormatter),
+        )
 }
 
 private fun buildCycleModeLabel(
     currentCycle: CycleRecord?,
     prediction: PredictionSnapshot?,
-): String = when {
-    currentCycle != null -> "Currently logged"
-    prediction != null -> "Based on your history"
-    else -> "Waiting for prediction"
+): UiText = when {
+    currentCycle != null -> uiText(R.string.currently_logged)
+    prediction != null -> uiText(R.string.based_on_your_history)
+    else -> uiText(R.string.waiting_for_prediction)
 }
 
 private fun buildCyclePhaseLabel(
     cycleDay: Int?,
     cycleLength: Int,
-): String {
-    if (cycleDay == null) return ""
+): UiText {
+    if (cycleDay == null) return uiText(R.string.empty_label)
     val cycleProgress = cycleDay.toFloat() / cycleLength.toFloat()
     return when {
-        cycleProgress < 0.15f -> "Early cycle"
-        cycleProgress < 0.40f -> "Mid cycle"
-        cycleProgress < 0.60f -> "Fertile window"
-        cycleProgress < 0.85f -> "Late cycle"
-        else -> "Approaching next period"
+        cycleProgress < 0.15f -> uiText(R.string.early_cycle)
+        cycleProgress < 0.40f -> uiText(R.string.mid_cycle)
+        cycleProgress < 0.60f -> uiText(R.string.fertile_window)
+        cycleProgress < 0.85f -> uiText(R.string.late_cycle)
+        else -> uiText(R.string.approaching_next_period)
     }
 }
 
@@ -386,8 +403,8 @@ internal fun buildHomeCyclePhaseLabel(
     currentCycle: CycleRecord?,
     prediction: PredictionSnapshot?,
     cycleLength: Int,
-): String = if (currentCycle != null) {
-    "Period days"
+): UiText = if (currentCycle != null) {
+    uiText(R.string.period_days)
 } else {
     buildCyclePhaseLabel(prediction?.cycleDay, cycleLength)
 }
@@ -396,33 +413,36 @@ private fun buildCycleSourceSummary(
     profile: UserProfile?,
     currentCycle: CycleRecord?,
     latestCycle: CycleRecord?,
-): String = when {
+): UiText = when {
     currentCycle != null ->
-        "Your current view is anchored by a logged period that runs ${formatCycleRange(currentCycle)}."
+        uiText(R.string.view_anchored_by_logged_period, formatCycleRange(currentCycle))
     latestCycle != null ->
-        "Predictions combine your latest logged cycle with the saved baseline from setup."
+        uiText(R.string.predictions_combine_latest_cycle_with_baseline)
     profile != null ->
-        "Predictions are using your onboarding baseline until you log more local cycle history."
+        uiText(R.string.predictions_use_onboarding_baseline)
     else ->
-        "Complete setup to start generating local cycle forecasts."
+        uiText(R.string.complete_setup_for_forecasts)
 }
 
 private fun buildLatestCycleSummary(
     currentCycle: CycleRecord?,
     latestCycle: CycleRecord?,
-): String = when {
-    currentCycle != null -> "Current logged period • ${formatCycleRange(currentCycle)}"
-    latestCycle != null -> "Most recent logged period • ${formatCycleRange(latestCycle)}"
-    else -> "No logged period yet. Predictions are based on your setup."
+): UiText = when {
+    currentCycle != null -> uiText(R.string.current_logged_period, formatCycleRange(currentCycle))
+    latestCycle != null -> uiText(R.string.most_recent_logged_period, formatCycleRange(latestCycle))
+    else -> uiText(R.string.no_logged_period_predictions_from_setup)
 }
 
 private fun buildVariabilityText(
     insights: InsightSnapshot?,
     confidenceLabel: String,
-): String = when {
-    insights == null || !insights.hasEnoughCycleData -> confidenceLabel.ifBlank { "From your setup" }
-    insights.minCycleLength == insights.maxCycleLength -> "${insights.averageCycleLength}d steady"
-    else -> "${insights.minCycleLength}-${insights.maxCycleLength}d range"
+): UiText = when {
+    insights == null || !insights.hasEnoughCycleData ->
+        confidenceLabel.ifBlank { "From your setup" }.let { UiText.Raw(it) }
+    insights.minCycleLength == insights.maxCycleLength ->
+        uiText(R.string.n_d_steady, insights.averageCycleLength)
+    else ->
+        uiText(R.string.min_max_d_range, insights.minCycleLength, insights.maxCycleLength)
 }
 
 private fun buildReminderTeaser(
@@ -435,16 +455,16 @@ private fun buildReminderTeaser(
 ): HomeReminderTeaser {
     if (profile == null) {
         return HomeReminderTeaser(
-            title = "Reminders pending setup",
-            detail = "Finish onboarding to activate local reminder scheduling.",
-            supporting = "Reminder timing stays on this device.",
+            title = uiText(R.string.reminders_pending_setup),
+            detail = uiText(R.string.finish_onboarding_for_reminders),
+            supporting = uiText(R.string.reminder_timing_stays_on_device),
         )
     }
     if (!profile.remindersEnabled) {
         return HomeReminderTeaser(
-            title = "Reminders paused",
-            detail = "Turn reminders back on in Settings when you want period, fertility, or daily alerts again.",
-            supporting = "Delivered reminders still remain in your local reminder center.",
+            title = uiText(R.string.reminders_paused),
+            detail = uiText(R.string.turn_reminders_back_on_hint),
+            supporting = uiText(R.string.delivered_reminders_remain_in_center),
         )
     }
     val nextReminder = planner.buildSchedules(
@@ -458,8 +478,13 @@ private fun buildReminderTeaser(
     } else {
         HomeReminderTeaser(
             title = nextReminder.type.dashboardLabel(),
-            detail = nextReminder.body,
-            supporting = "Next up ${nextReminder.scheduledAt.format(reminderDateTimeFormatter)}",
+            // Planner copy lives in core:domain as plain English; carried
+            // as Raw pending the domain localization follow-up.
+            detail = UiText.Raw(nextReminder.body),
+            supporting = uiText(
+                R.string.next_up_at_time,
+                nextReminder.scheduledAt.format(reminderDateTimeFormatter),
+            ),
             // The producer knows the type; the renderer must not infer it
             // from translated copy.
             isActionable = nextReminder.type == ReminderType.DailyLog,
@@ -473,16 +498,23 @@ private fun buildInsightTeaser(
     cyclesNeeded: Int = 3,
 ): HomeInsightTeaser = when {
     insights == null || (!insights.hasEnoughCycleData && !insights.hasEnoughSymptomData) -> HomeInsightTeaser(
-        title = "Insights are building",
-        detail = "Keep logging to unlock patterns and trends.",
-        supporting = "$cyclesLoggedCount/$cyclesNeeded cycles logged",
+        title = uiText(R.string.insights_are_building),
+        detail = uiText(R.string.keep_logging_to_unlock_patterns),
+        supporting = uiText(R.string.n_of_m_cycles_logged, cyclesLoggedCount, cyclesNeeded),
     )
     else -> HomeInsightTeaser(
-        title = if (insights.irregularCycles) "Cycle variability picked up" else "Recent rhythm snapshot",
-        detail = insights.narrativeSummary,
-        supporting = insights.cycleWindowLabel,
+        title = if (insights.irregularCycles) {
+            uiText(R.string.cycle_variability_picked_up)
+        } else {
+            uiText(R.string.recent_rhythm_snapshot)
+        },
+        // Domain prose, not yet localized in core:domain — Raw pending
+        // the follow-up.
+        detail = UiText.Raw(insights.narrativeSummary),
+        supporting = UiText.Raw(insights.cycleWindowLabel),
         trendPoints = insights.recentCycleLengths.mapIndexed { index, value ->
-            HomeTrendPoint(label = "C${index + 1}", value = value)
+            // Chart tick label; raw is the justified carrier.
+            HomeTrendPoint(label = UiText.Raw("C${index + 1}"), value = value)
         },
     )
 }
@@ -513,21 +545,21 @@ internal fun validateHomeEditorState(
     val cycleLength = editor.cycleLengthText.toIntOrNull()
 
     val startDateError = when {
-        editor.startDateText.isBlank() -> "Start date is required."
-        startDate == null -> "Use YYYY-MM-DD for the start date."
-        startDate.isAfter(today) -> "Start date cannot be in the future."
+        editor.startDateText.isBlank() -> uiText(R.string.start_date_required)
+        startDate == null -> uiText(R.string.use_iso_for_start_date)
+        startDate.isAfter(today) -> uiText(R.string.start_date_cannot_be_future)
         else -> null
     }
     val endDateError = when {
-        editor.endDateText.isBlank() -> "End date is required."
-        endDate == null -> "Use YYYY-MM-DD for the end date."
-        endDate.isAfter(today) -> "End date cannot be in the future."
+        editor.endDateText.isBlank() -> uiText(R.string.end_date_required)
+        endDate == null -> uiText(R.string.use_iso_for_end_date)
+        endDate.isAfter(today) -> uiText(R.string.end_date_cannot_be_future)
         else -> null
     }
     val cycleLengthError = when {
-        editor.cycleLengthText.isBlank() -> "Cycle length is required."
-        cycleLength == null -> "Cycle length must be a whole number."
-        cycleLength !in 20..45 -> "Cycle length must stay between 20 and 45 days."
+        editor.cycleLengthText.isBlank() -> uiText(R.string.cycle_length_required)
+        cycleLength == null -> uiText(R.string.cycle_length_whole_number)
+        cycleLength !in 20..45 -> uiText(R.string.cycle_length_range_error)
         else -> null
     }
 
@@ -554,7 +586,7 @@ internal fun validateHomeEditorState(
         startDateError = startDateError,
         endDateError = endDateError,
         cycleLengthError = cycleLengthError,
-        error = summaryError,
+        error = summaryError?.let { UiText.Raw(it) },
         isSaveEnabled = !editor.isSaving &&
             startDateError == null &&
             endDateError == null &&
@@ -575,7 +607,7 @@ class HomeViewModel(
     private val reminderSchedulePlanner: ReminderSchedulePlanner = ReminderSchedulePlanner(),
 ) : ViewModel() {
     private val editorFlow = MutableStateFlow(savedStateHandle.toHomeEditorState())
-    private val messageFlow = MutableStateFlow<String?>(null)
+    private val messageFlow = MutableStateFlow<UiText?>(null)
 
     private val baseState: StateFlow<HomeBaseState> = combine(
         profileRepository.observeProfile(),
@@ -714,7 +746,7 @@ class HomeViewModel(
         saveCandidate(
             candidate = candidate,
             cycles = base.cycles,
-            successMessage = "Period started locally.",
+            successMessage = uiText(R.string.period_started_locally),
             onValidationError = { error ->
                 editorFlow.update {
                     defaultEditorState(profile, today).copy(
@@ -759,7 +791,11 @@ class HomeViewModel(
         saveCandidate(
             candidate = candidate,
             cycles = baseState.value.cycles,
-            successMessage = if (editor.editingId == null) "Cycle saved locally." else "Cycle updated locally.",
+            successMessage = if (editor.editingId == null) {
+                uiText(R.string.cycle_saved_locally)
+            } else {
+                uiText(R.string.cycle_updated_locally)
+            },
             onValidationError = { error ->
                 editorFlow.update {
                     it.copy(isSaving = false, error = error).also(savedStateHandle::persistHomeEditorState)
@@ -776,13 +812,15 @@ class HomeViewModel(
     private fun saveCandidate(
         candidate: CycleRecord,
         cycles: List<CycleRecord>,
-        successMessage: String,
-        onValidationError: (String) -> Unit,
+        successMessage: UiText,
+        // Core:domain validator messages are plain English until the
+        // deferred domain localization follow-up; carried as Raw.
+        onValidationError: (UiText) -> Unit,
         onBeforeSave: () -> Unit,
     ) {
         val validation = validator.validate(candidate, cycles)
         if (!validation.isValid) {
-            onValidationError(validation.message.orEmpty())
+            onValidationError(UiText.Raw(validation.message.orEmpty()))
             return
         }
 
@@ -935,17 +973,12 @@ internal fun HomeScreen(
             ?.let { cycleDay -> (cycleDay.toFloat() / uiState.cycleLength.toFloat()).coerceIn(0f, 1f) }
             ?: 0f
     }
-    val heroTitle = remember(uiState.hasCurrentCycle, uiState.daysUntilNextPeriod) {
-        homeHeroTitle(uiState)
-    }
-    val heroSubtitle = remember(
-        uiState.hasCurrentCycle,
-        uiState.nextPeriodDateText,
-        uiState.supportsRange,
-        uiState.overdueDays,
-    ) {
-        homeHeroSubtitle(uiState)
-    }
+    // Resolved once at the composable boundary so the progress bar's
+    // accessibility state description stays locale-correct without
+    // calling stringResource inside the modifier lambda.
+    val progressStateDescriptionText = progressStateDescription(uiState.cycleDay, uiState.cycleLength).resolve()
+    val heroTitle = homeHeroTitle(uiState).resolve()
+    val heroSubtitle = homeHeroSubtitle(uiState).resolve()
     val heroGradientColors = if (uiState.hasCurrentCycle) PeriodActiveGradientColors() else null
     val cycleProgressLabel = remember(uiState.cycleDay, uiState.cycleLength, uiState.confidenceLabel) {
         formatCycleProgressLabel(
@@ -972,10 +1005,6 @@ internal fun HomeScreen(
             GradientHeaderCard(
                 title = heroTitle,
                 subtitle = heroSubtitle,
-                // headlineLarge rather than displayLarge: 44sp is the
-                // size of a standalone numeric readout, not of a
-                // sentence that has to reflow at 200% font scale.
-                titleStyle = MaterialTheme.typography.headlineLarge,
                 modifier = Modifier.testTag(HomeTags.HERO_CARD),
                 contentPadding = PaddingValues(horizontal = CycleCareSpace.space20, vertical = CycleCareSpace.space18),
                 gradientColors = heroGradientColors,
@@ -991,12 +1020,12 @@ internal fun HomeScreen(
                             tone = MetricPillTone.Inverse,
                         )
                         MetricPill(
-                            text = uiState.cycleModeLabel,
+                            text = uiState.cycleModeLabel.resolve(),
                             tone = MetricPillTone.Inverse,
                         )
-                        if (uiState.cyclePhaseLabel.isNotBlank()) {
+                        if (uiState.cyclePhaseLabel.resolve().isNotBlank()) {
                             MetricPill(
-                                text = uiState.cyclePhaseLabel,
+                                text = uiState.cyclePhaseLabel.resolve(),
                                 tone = MetricPillTone.Inverse,
                             )
                         }
@@ -1008,14 +1037,14 @@ internal fun HomeScreen(
                             uiState.nextPeriodRangeText != null
                         ) {
                             MetricPill(
-                                text = uiState.nextPeriodRangeText,
+                                text = uiState.nextPeriodRangeText.resolve(),
                                 tone = MetricPillTone.Inverse,
                                 modifier = Modifier.testTag(HomeTags.NEXT_PERIOD_RANGE),
                             )
                         }
                     }
                     Text(
-                        text = uiState.cycleSourceSummary,
+                        text = uiState.cycleSourceSummary.resolve(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.88f),
                         maxLines = 3,
@@ -1074,8 +1103,8 @@ internal fun HomeScreen(
         }
         item {
             FertilityTeaserCard(
-                fertileWindowText = uiState.fertileWindowText,
-                ovulationEstimateText = uiState.ovulationEstimateText,
+                fertileWindowText = uiState.fertileWindowText.resolve(),
+                ovulationEstimateText = uiState.ovulationEstimateText.resolve(),
                 confidenceLabel = uiState.confidenceLabel,
                 onOpenFertilityDetail = onOpenFertilityDetail,
             )
@@ -1124,7 +1153,7 @@ internal fun HomeScreen(
                     )
                     uiState.message?.let { message ->
                         Text(
-                            text = message,
+                            text = message.resolve(),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary,
                         )
@@ -1270,7 +1299,7 @@ private fun HomeMetricGrid(
                 )
                 MetricCard(
                     label = "Variability",
-                    value = uiState.variabilityText,
+                    value = uiState.variabilityText.resolve(),
                     modifier = Modifier.fillMaxWidth(),
                     accent = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.18f),
                 )
@@ -1309,7 +1338,7 @@ private fun HomeMetricGrid(
                 ) {
                     MetricCard(
                         label = "Variability",
-                        value = uiState.variabilityText,
+                        value = uiState.variabilityText.resolve(),
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.18f),
                     )
@@ -1379,8 +1408,8 @@ private fun ReminderTeaserCard(
 ) {
     val isDailyCheckIn = teaser.isActionable
     DashboardSectionCard(
-        title = teaser.title,
-        subtitle = teaser.detail,
+        title = teaser.title.resolve(),
+        subtitle = teaser.detail.resolve(),
         modifier = Modifier.testTag(HomeTags.REMINDER_CARD),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
@@ -1394,7 +1423,7 @@ private fun ReminderTeaserCard(
                         emphasized = true,
                     )
                 }
-                DashboardPill(text = teaser.supporting)
+                DashboardPill(text = teaser.supporting.resolve())
             }
             if (isDailyCheckIn) {
                 Button(
@@ -1423,8 +1452,8 @@ private fun InsightTeaserCard(
     onOpenInsights: () -> Unit,
 ) {
     DashboardSectionCard(
-        title = teaser.title,
-        subtitle = teaser.detail,
+        title = teaser.title.resolve(),
+        subtitle = teaser.detail.resolve(),
         modifier = Modifier.testTag(HomeTags.INSIGHTS_CARD),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
@@ -1432,7 +1461,7 @@ private fun InsightTeaserCard(
                 HomeMiniTrendStrip(points = teaser.trendPoints)
             }
             DashboardPill(
-                text = teaser.supporting,
+                text = teaser.supporting.resolve(),
                 emphasized = teaser.trendPoints.isEmpty(),
             )
             OutlinedButton(
@@ -1476,7 +1505,7 @@ private fun HomeMiniTrendStrip(
                     )
                 }
                 Text(
-                    point.label,
+                    point.label.resolve(),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -1528,9 +1557,13 @@ internal fun HomeCycleStatusScreen(
             ?.let { cycleDay -> (cycleDay.toFloat() / uiState.cycleLength.toFloat()).coerceIn(0f, 1f) }
             ?: 0f
     }
+    // Resolved once at the composable boundary so the progress bar's
+    // accessibility state description stays locale-correct without
+    // calling stringResource inside the modifier lambda.
+    val progressStateDescriptionText = progressStateDescription(uiState.cycleDay, uiState.cycleLength).resolve()
     HomeDetailShell(
-        title = formatNextPeriodTitle(uiState.daysUntilNextPeriod),
-        subtitle = "Expected ${uiState.nextPeriodDateText} • ${formatCycleProgressLabel(uiState.cycleDay, uiState.cycleLength, uiState.confidenceLabel)}",
+        title = formatNextPeriodTitle(uiState.daysUntilNextPeriod).resolve(),
+        subtitle = "Expected ${uiState.nextPeriodDateText.resolve()} • ${formatCycleProgressLabel(uiState.cycleDay, uiState.cycleLength, uiState.confidenceLabel).resolve()}",
         modifier = Modifier.testTag(HomeTags.CYCLE_STATUS_SCREEN),
         onBack = onBack,
         headerContent = {
@@ -1568,13 +1601,13 @@ internal fun HomeCycleStatusScreen(
                 ) {
                     MetricCard(
                         label = "Variability",
-                        value = uiState.variabilityText,
+                        value = uiState.variabilityText.resolve(),
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.18f),
                     )
                     MetricCard(
                         label = "Next period",
-                        value = uiState.nextPeriodDateText,
+                        value = uiState.nextPeriodDateText.resolve(),
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
                     )
@@ -1582,8 +1615,8 @@ internal fun HomeCycleStatusScreen(
             }
             DashboardSectionCard(
                 title = "Current status",
-                subtitle = uiState.latestCycleSummary,
-                eyebrow = uiState.cycleModeLabel,
+                subtitle = uiState.latestCycleSummary.resolve(),
+                eyebrow = uiState.cycleModeLabel.resolve(),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                     LinearProgressIndicator(
@@ -1592,11 +1625,11 @@ internal fun HomeCycleStatusScreen(
                             .fillMaxWidth()
                             .height(6.dp)
                             .semantics {
-                                stateDescription = progressStateDescription(uiState.cycleDay, uiState.cycleLength)
+                                stateDescription = progressStateDescriptionText
                             },
                     )
                     Text(
-                        uiState.cycleSourceSummary,
+                        uiState.cycleSourceSummary.resolve(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -1611,11 +1644,11 @@ internal fun HomeCycleStatusScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10)) {
                     DashboardKeyValueRow(
                         label = "Fertile window",
-                        value = uiState.fertileWindowText,
+                        value = uiState.fertileWindowText.resolve(),
                     )
                     DashboardKeyValueRow(
                         label = "Ovulation estimate",
-                        value = uiState.ovulationEstimateText,
+                        value = uiState.ovulationEstimateText.resolve(),
                     )
                 }
             }
@@ -1624,7 +1657,7 @@ internal fun HomeCycleStatusScreen(
             // pushed the hero to fill the entire viewport and the
             // actions below it were never composed at all.
             Text(
-                text = uiState.cycleSourceSummary,
+                text = uiState.cycleSourceSummary.resolve(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1717,6 +1750,7 @@ private fun CycleStatusHeroText(
     uiState: HomeUiState,
     progress: Float,
 ) {
+    val progressStateDescriptionText = progressStateDescription(uiState.cycleDay, uiState.cycleLength).resolve()
     Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space14)) {
         Text(
             stringResource(R.string.cycle_detail),
@@ -1724,14 +1758,14 @@ private fun CycleStatusHeroText(
             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.84f),
         )
         Text(
-            text = homeHeroTitle(uiState),
+            text = homeHeroTitle(uiState).resolve(),
             // The cycle-status detail screen is its own headline, a step
             // below the Today hero.
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.onPrimary,
         )
         Text(
-            text = homeHeroSubtitle(uiState),
+            text = homeHeroSubtitle(uiState).resolve(),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
         )
@@ -1740,7 +1774,7 @@ private fun CycleStatusHeroText(
             verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
         ) {
             MetricPill(
-                text = uiState.cycleModeLabel,
+                text = uiState.cycleModeLabel.resolve(),
                 tone = MetricPillTone.Inverse,
             )
             if (uiState.confidenceLabel.isNotBlank()) {
@@ -1762,7 +1796,7 @@ private fun CycleStatusHeroText(
                     .fillMaxWidth()
                     .height(7.dp)
                     .semantics {
-                        stateDescription = progressStateDescription(uiState.cycleDay, uiState.cycleLength)
+                        stateDescription = progressStateDescriptionText
                     },
                 color = MaterialTheme.colorScheme.onPrimary,
                 trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.24f),
@@ -1792,20 +1826,20 @@ internal fun HomeFertilityDetailScreen(
             ) {
                 MetricCard(
                     label = "Fertile window",
-                    value = uiState.fertileWindowText,
+                    value = uiState.fertileWindowText.resolve(),
                     modifier = Modifier.weight(1f),
                     accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.86f),
                 )
                 MetricCard(
                     label = "Ovulation",
-                    value = uiState.ovulationEstimateText,
+                    value = uiState.ovulationEstimateText.resolve(),
                     modifier = Modifier.weight(1f),
                     accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.86f),
                 )
             }
             DashboardSectionCard(
                 title = "How this estimate is built",
-                subtitle = uiState.cycleSourceSummary,
+                subtitle = uiState.cycleSourceSummary.resolve(),
                 eyebrow = "From your cycle history",
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space10)) {
@@ -1816,11 +1850,11 @@ internal fun HomeFertilityDetailScreen(
                     )
                     DashboardKeyValueRow(
                         label = "Current window",
-                        value = uiState.fertileWindowText,
+                        value = uiState.fertileWindowText.resolve(),
                     )
                     DashboardKeyValueRow(
                         label = "Ovulation date",
-                        value = uiState.ovulationEstimateText,
+                        value = uiState.ovulationEstimateText.resolve(),
                     )
                 }
             }
@@ -1854,8 +1888,8 @@ private fun QuickActionButton(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space2),
         ) {
-            Text(action.label, style = MaterialTheme.typography.titleMedium)
-            Text(action.description, style = MaterialTheme.typography.bodySmall)
+            Text(action.label.resolve(), style = MaterialTheme.typography.titleMedium)
+            Text(action.description.resolve(), style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -1939,7 +1973,7 @@ private fun EditCycleSheet(
                     isError = editor.startDateError != null,
                     supportingText = {
                         editor.startDateError?.let { error ->
-                            Text(error, color = MaterialTheme.colorScheme.error)
+                            Text(error.resolve(), color = MaterialTheme.colorScheme.error)
                         }
                     },
                 )
@@ -1952,7 +1986,7 @@ private fun EditCycleSheet(
                     isError = editor.endDateError != null,
                     supportingText = {
                         editor.endDateError?.let { error ->
-                            Text(error, color = MaterialTheme.colorScheme.error)
+                            Text(error.resolve(), color = MaterialTheme.colorScheme.error)
                         }
                     },
                 )
@@ -1965,7 +1999,7 @@ private fun EditCycleSheet(
                     isError = editor.cycleLengthError != null,
                     supportingText = {
                         editor.cycleLengthError?.let { error ->
-                            Text(error, color = MaterialTheme.colorScheme.error)
+                            Text(error.resolve(), color = MaterialTheme.colorScheme.error)
                         }
                     },
                 )
@@ -1978,7 +2012,7 @@ private fun EditCycleSheet(
                 )
                 editor.error?.let { error ->
                     Text(
-                        text = error,
+                        text = error.resolve(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -2016,14 +2050,14 @@ private fun HomeQuickAction.icon(): ImageVector = when (type) {
     HomeQuickActionType.ViewInsights -> Icons.Rounded.LocalFlorist
 }
 
-private fun ReminderType.dashboardLabel(): String = when (this) {
-    ReminderType.PeriodPrep -> "Period reminder"
-    ReminderType.FertileWindowStart -> "Fertile window reminder"
-    ReminderType.OvulationEstimate -> "Ovulation reminder"
-    ReminderType.DailyLog -> "Daily check-in"
-    ReminderType.LatePeriod -> "Late-period check"
-    ReminderType.Hydration -> "Hydration reminder"
-    ReminderType.Pill -> "Pill reminder"
+private fun ReminderType.dashboardLabel(): UiText = when (this) {
+    ReminderType.PeriodPrep -> uiText(R.string.period_reminder)
+    ReminderType.FertileWindowStart -> uiText(R.string.fertile_window_reminder)
+    ReminderType.OvulationEstimate -> uiText(R.string.ovulation_reminder)
+    ReminderType.DailyLog -> uiText(R.string.daily_check_in)
+    ReminderType.LatePeriod -> uiText(R.string.late_period_check)
+    ReminderType.Hydration -> uiText(R.string.hydration_reminder)
+    ReminderType.Pill -> uiText(R.string.pill_reminder)
 }
 
 private fun HomeBaseState.currentUserCycle(today: LocalDate = LocalDate.now()): CycleRecord? =
@@ -2137,33 +2171,33 @@ private fun HomeFertilityDetailPreview() {
 
 internal fun previewHomeState() = HomeUiState(
     daysUntilNextPeriod = 23,
-    nextPeriodDateText = "Apr 9",
+    nextPeriodDateText = UiText.Raw("Apr 9"),
     cycleDay = 6,
     cycleLength = 28,
     averagePeriodLength = 5,
-    variabilityText = "26-29d range",
-    fertileWindowText = "Mar 21 - Mar 26",
-    ovulationEstimateText = "Mar 25",
+    variabilityText = UiText.Raw("26-29d range"),
+    fertileWindowText = UiText.Raw("Mar 21 - Mar 26"),
+    ovulationEstimateText = UiText.Raw("Mar 25"),
     confidenceLabel = "",
     hasCurrentCycle = false,
-    cycleModeLabel = "Based on your history",
-    cyclePhaseLabel = "Early cycle",
-    cycleSourceSummary = "Predictions combine your saved baseline and recent local history.",
-    latestCycleSummary = "Most recent logged period • Feb 12 - Feb 16",
+    cycleModeLabel = uiText(R.string.based_on_your_history),
+    cyclePhaseLabel = uiText(R.string.early_cycle),
+    cycleSourceSummary = uiText(R.string.predictions_combine_latest_cycle_with_baseline),
+    latestCycleSummary = uiText(R.string.most_recent_logged_period, "Feb 12 - Feb 16"),
     reminderTeaser = HomeReminderTeaser(
-        title = "Daily check-in",
-        detail = "Take a moment to log mood, pain, energy, or medication for today.",
-        supporting = "Next up Mar 18 • 8:00 PM",
+        title = uiText(R.string.daily_check_in),
+        detail = uiText(R.string.take_a_moment_to_log_mood_energy_medication),
+        supporting = uiText(R.string.next_up_at_time, "Mar 18 • 8:00 PM"),
     ),
     insightTeaser = HomeInsightTeaser(
-        title = "Recent rhythm snapshot",
-        detail = "Recent cycle lengths are staying close to your saved baseline while stronger symptom clustering forms around period days.",
-        supporting = "Based on your four logged cycles.",
+        title = uiText(R.string.recent_rhythm_snapshot),
+        detail = uiText(R.string.recent_cycle_lengths_stay_close),
+        supporting = uiText(R.string.based_on_your_four_logged_cycles),
         trendPoints = listOf(
-            HomeTrendPoint("C1", 27),
-            HomeTrendPoint("C2", 28),
-            HomeTrendPoint("C3", 29),
-            HomeTrendPoint("C4", 28),
+            HomeTrendPoint(uiText(R.string.cycle_point_label, 1), 27),
+            HomeTrendPoint(uiText(R.string.cycle_point_label, 2), 28),
+            HomeTrendPoint(uiText(R.string.cycle_point_label, 3), 29),
+            HomeTrendPoint(uiText(R.string.cycle_point_label, 4), 28),
         ),
     ),
     cyclesLoggedCount = 4,

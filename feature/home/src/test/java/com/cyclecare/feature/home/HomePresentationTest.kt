@@ -8,6 +8,10 @@ import com.cyclecare.core.domain.CycleRecordValidator
 import com.cyclecare.core.model.PredictionSnapshot
 import com.cyclecare.core.model.TrackingGoal
 import com.cyclecare.core.model.UserProfile
+import com.cyclecare.core.designsystem.text.UiText
+import com.cyclecare.core.designsystem.text.uiText
+import com.cyclecare.core.designsystem.text.pluralUiText
+import com.cyclecare.core.designsystem.text.resolve
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
 import org.junit.Test
@@ -20,7 +24,7 @@ class HomePresentationTest {
             endInclusive = LocalDate.of(2026, 3, 26),
         )
 
-        assertThat(formatFertileWindow(range)).isEqualTo("Mar 21 - Mar 26")
+        assertThat(formatFertileWindow(range)).isEqualTo(uiText(R.string.date_range, "Mar 21", "Mar 26"))
     }
 
     @Test
@@ -31,7 +35,7 @@ class HomePresentationTest {
                 cycleLength = 28,
                 confidenceLabel = "Baseline estimate",
             ),
-        ).isEqualTo("Day 6 / 28 • Baseline estimate")
+        ).isEqualTo(uiText(R.string.day_slash_total_with_confidence, "6", 28, "Baseline estimate"))
     }
 
     @Test
@@ -39,11 +43,11 @@ class HomePresentationTest {
         val state = HomeUiState(
             hasCurrentCycle = true,
             daysUntilNextPeriod = 21,
-            nextPeriodDateText = "Apr 6",
+            nextPeriodDateText = UiText.Raw("Apr 6"),
         )
 
-        assertThat(homeHeroTitle(state)).isEqualTo("Period started")
-        assertThat(homeHeroSubtitle(state)).isEqualTo("Log how today feels")
+        assertThat(homeHeroTitle(state)).isEqualTo(uiText(R.string.period_started))
+        assertThat(homeHeroSubtitle(state)).isEqualTo(uiText(R.string.log_how_today_feels))
     }
 
     @Test
@@ -51,15 +55,15 @@ class HomePresentationTest {
         val state = HomeUiState(
             hasCurrentCycle = false,
             daysUntilNextPeriod = 3,
-            nextPeriodDateText = "Mar 19",
+            nextPeriodDateText = UiText.Raw("Mar 19"),
             // Declared explicitly because supportsRange defaults to
             // false: a caller that omits it gets the honest "no range"
             // copy rather than a bare date presented as expected.
             supportsRange = true,
         )
 
-        assertThat(homeHeroTitle(state)).isEqualTo("Next period in 3 days")
-        assertThat(homeHeroSubtitle(state)).isEqualTo("Expected Mar 19")
+        assertThat(homeHeroTitle(state)).isEqualTo(pluralUiText(R.plurals.next_period_in_n_days, 3, 3))
+        assertThat(homeHeroSubtitle(state)).isEqualTo(uiText(R.string.expected_date, UiText.Raw("Mar 19")))
     }
 
     @Test
@@ -88,13 +92,13 @@ class HomePresentationTest {
                 prediction = prediction,
                 cycleLength = 28,
             ),
-        ).isEqualTo("Period days")
+        ).isEqualTo(uiText(R.string.period_days))
     }
 
     @Test
     fun progressStateDescription_isUserFacing() {
-        assertThat(progressStateDescription(cycleDay = 6, cycleLength = 28)).isEqualTo("Day 6 of 28")
-        assertThat(progressStateDescription(cycleDay = null, cycleLength = 28)).isEqualTo("Cycle progress unavailable")
+        assertThat(progressStateDescription(cycleDay = 6, cycleLength = 28)).isEqualTo(uiText(R.string.day_x_of_y, 6, 28))
+        assertThat(progressStateDescription(cycleDay = null, cycleLength = 28)).isEqualTo(uiText(R.string.cycle_progress_unavailable))
     }
 
     @Test
@@ -132,7 +136,7 @@ class HomePresentationTest {
             validator = CycleRecordValidator(),
         )
 
-        assertThat(validated.startDateError).isEqualTo("Start date cannot be in the future.")
+        assertThat(validated.startDateError).isEqualTo(uiText(R.string.start_date_cannot_be_future))
         assertThat(validated.isSaveEnabled).isFalse()
     }
 
@@ -150,7 +154,7 @@ class HomePresentationTest {
             validator = CycleRecordValidator(),
         )
 
-        assertThat(validated.cycleLengthError).isEqualTo("Cycle length is required.")
+        assertThat(validated.cycleLengthError).isEqualTo(uiText(R.string.cycle_length_required))
         assertThat(validated.isSaveEnabled).isFalse()
     }
 
@@ -166,9 +170,7 @@ class HomePresentationTest {
         )
 
         assertThat(text).isNotNull()
-        assertThat(text).contains("Apr 7")
-        assertThat(text).contains("Apr 11")
-        assertThat(text).contains("2 days")
+        assertThat(text).isEqualTo(uiText(R.string.date_range_with_halfwidth, "Apr 7", "Apr 11", 2))
     }
 
     @Test
@@ -179,37 +181,37 @@ class HomePresentationTest {
         val text = formatNextPeriodRange(range = null, supportsRange = false, halfWidthDays = null)
 
         assertThat(text).isNotNull()
-        assertThat(text).contains("Not enough history")
+        assertThat(text).isEqualTo(uiText(R.string.not_enough_history_yet_for_a_range))
     }
 
     @Test
     fun heroSubtitle_doesNotPresentAPointEstimateAsExpectedWithoutARange() {
         val state = HomeUiState(
-            nextPeriodDateText = "Apr 9",
+            nextPeriodDateText = UiText.Raw("Apr 9"),
             supportsRange = false,
             hasCurrentCycle = false,
         )
 
-        assertThat(homeHeroSubtitle(state)).doesNotContain("Expected Apr 9 ")
-        assertThat(homeHeroSubtitle(state)).contains("not enough history")
+        assertThat(homeHeroSubtitle(state)).isNotEqualTo(uiText(R.string.expected_date, UiText.Raw("Apr 9")))
+        assertThat(homeHeroSubtitle(state)).isEqualTo(uiText(R.string.date_not_enough_history_for_a_range, UiText.Raw("Apr 9")))
     }
 
     @Test
     fun heroSubtitle_surfacesOverdueDays() {
         val state = HomeUiState(
-            nextPeriodDateText = "Apr 9",
+            nextPeriodDateText = UiText.Raw("Apr 9"),
             supportsRange = true,
             overdueDays = 3,
             hasCurrentCycle = false,
         )
 
-        assertThat(homeHeroSubtitle(state)).contains("3 days past")
+        assertThat(homeHeroSubtitle(state)).isEqualTo(uiText(R.string.expected_date_with_overdue, UiText.Raw("Apr 9"), pluralUiText(R.plurals.n_days_past_the_expected_date, 3, 3)))
     }
 
     @Test
     fun overdueFormatting_isSingularAtOneDay() {
-        assertThat(formatOverdue(1)).isEqualTo("1 day past the expected date")
-        assertThat(formatOverdue(0)).isEmpty()
-        assertThat(formatOverdue(5)).contains("5 days past")
+        assertThat(formatOverdue(1)).isEqualTo(uiText(R.string.one_day_past_the_expected_date))
+        assertThat(formatOverdue(0)).isEqualTo(UiText.Raw(""))
+        assertThat(formatOverdue(5)).isEqualTo(pluralUiText(R.plurals.n_days_past_the_expected_date, 5, 5))
     }
 }
