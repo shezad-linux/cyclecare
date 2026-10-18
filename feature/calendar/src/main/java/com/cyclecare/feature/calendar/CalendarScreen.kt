@@ -196,6 +196,7 @@ internal object CalendarTags {
     const val PREVIOUS_MONTH = "calendar_previous_month"
     const val NEXT_MONTH = "calendar_next_month"
     const val SELECTED_DAY_PANEL = "calendar_selected_day_panel"
+    const val SCROLL = "calendar_scroll"
 
     fun day(date: LocalDate): String = "calendar_day_$date"
     fun history(id: String): String = "calendar_history_$id"
@@ -755,7 +756,10 @@ internal fun CalendarScreen(
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+            .padding(16.dp)
+            // Tagged so tests can reach the selected-day panel, which
+            // sits below the grid and is off-screen at rest.
+            .testTag(CalendarTags.SCROLL),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         GradientHeaderCard(

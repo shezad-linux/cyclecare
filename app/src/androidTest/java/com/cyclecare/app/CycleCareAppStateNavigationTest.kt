@@ -3,10 +3,14 @@ package com.cyclecare.app
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -239,25 +243,83 @@ class CycleCareAppStateNavigationTest {
         composeRule.onNodeWithTag("settings_list").assertIsDisplayed()
     }
 
+    /**
+     * Steps the calendar back until [monthLabel] is shown.
+     *
+     * The calendar opens on the current month, so any assertion about a
+     * fixed historical date has to navigate there first. Loops on the
+     * visible label rather than a fixed click count, so this does not
+     * silently break when the clock moves on.
+     */
+    /**
+     * Asserts the selected-day panel is showing March 23.
+     *
+     * The panel sits below the month grid, so it is off-screen at rest.
+     * The assertion is on the selected date rather than on a cycle state
+     * label: what this test verifies is that the selection survives, and
+     * which states March 23 falls into depends on the fixture.
+     */
+    private fun stateContains(value: String): SemanticsMatcher = SemanticsMatcher(
+        description = "state contains $value",
+    ) { node ->
+        node.config[SemanticsProperties.StateDescription]?.contains(value) ?: false
+    }
+
+    /**
+     * Asserts March 23 is selected and shown in the day panel.
+     *
+     * KNOWN DEFECT: this currently fails after activity recreation. The
+     * displayed month survives but the selected day resets, so the cell
+     * reports "fertile, ovulation, current month" with no "selected"
+     * state. The assertion is kept at its correct value deliberately so
+     * the defect stays visible rather than being written around; see the
+     * open item on calendar selection restoration.
+     */
+    private fun assertCalendarSelectionIsMarch23() {
+        composeRule.onNodeWithTag("calendar_scroll")
+            .performScrollToNode(hasTestTag("calendar_selected_day_panel"))
+        composeRule.onNodeWithTag("calendar_day_2026-03-23").assert(
+            stateContains("selected"),
+        )
+        composeRule.onNodeWithTag("calendar_day_2026-03-23").assert(
+            stateContains("selected"),
+        )
+    }
+
+    private fun navigateCalendarTo(monthLabel: String) {
+        for (attempt in 0 until 24) {
+            val texts = composeRule
+                .onNodeWithTag("calendar_month_label")
+                .fetchSemanticsNode()
+                .config
+                .getOrElse(SemanticsProperties.Text) { emptyList() }
+            if (texts.any { it.text == monthLabel }) return
+            composeRule.onNodeWithTag("calendar_previous_month").performClick()
+            composeRule.waitForIdle()
+        }
+        throw AssertionError("Could not reach $monthLabel on the calendar")
+    }
+
     @Test
     fun calendarSelection_survivesTabSwitchRepeatedTapAndRecreate() {
         val env = TestAppEnvironment.populated()
 
         renderApp(env)
         composeRule.onNodeWithTag(navTag("calendar")).performClick()
+        navigateCalendarTo("March 2026")
         composeRule.onNodeWithTag("calendar_day_2026-03-23").performClick()
-        composeRule.onNodeWithText("Ovulation estimate").assertIsDisplayed()
+        assertCalendarSelectionIsMarch23()
 
         composeRule.onNodeWithTag(navTag("home")).performClick()
         composeRule.onNodeWithTag(navTag("calendar")).performClick()
-        composeRule.onNodeWithText("Ovulation estimate").assertIsDisplayed()
+        assertCalendarSelectionIsMarch23()
 
         composeRule.onNodeWithTag(navTag("calendar")).performClick()
-        composeRule.onNodeWithText("Ovulation estimate").assertIsDisplayed()
+        assertCalendarSelectionIsMarch23()
 
         composeRule.activityRule.scenario.recreate()
         renderApp(env)
-        composeRule.onNodeWithText("Ovulation estimate").assertIsDisplayed()
+        assertCalendarSelectionIsMarch23()
     }
 
     @Test
@@ -521,6 +583,10 @@ class CycleCareAppStateNavigationTest {
 
         renderApp(env)
         composeRule.onNodeWithTag(navTag("log")).performClick()
+        // The mood chips sit inside the logging LazyColumn and are not
+        // composed until scrolled into range.
+        composeRule.onNodeWithTag("logging_list")
+            .performScrollToNode(hasTestTag("logging_mood_Happy"))
         composeRule.onNodeWithTag("logging_mood_Happy").performClick()
         composeRule.onNodeWithTag("logging_list").performScrollToNode(hasText("Add medication or notes"))
         composeRule.onNodeWithText("Add medication or notes").performClick()
