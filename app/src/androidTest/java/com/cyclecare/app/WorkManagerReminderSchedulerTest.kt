@@ -224,6 +224,14 @@ class WorkManagerReminderSchedulerTest {
         fertileWindow = DateRange(fertileStart, fertileEnd),
         confidenceLabel = "Stable",
         daysUntilNextPeriod = daysUntilNextPeriod,
+        // The planner withholds prediction-derived reminders when the
+        // engine reports no supportable range, so these fixtures carry a
+        // real one. Scheduling itself is what this test exercises.
+        nextPeriodWindow = DateRange(
+            nextPeriodDate.minusDays(1),
+            nextPeriodDate.plusDays(1),
+        ),
+        nextPeriodHalfWidthDays = 1,
     )
 }
 
