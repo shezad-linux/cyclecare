@@ -47,7 +47,11 @@ class ReminderSchedulePlannerTest {
         assertThat(schedules[0].scheduledAt).isEqualTo(ZonedDateTime.of(2026, 3, 10, 9, 0, 0, 0, kolkata))
         assertThat(schedules[0].title).isEqualTo("Fertile window reminder")
         assertThat(schedules[1].scheduledAt).isEqualTo(ZonedDateTime.of(2026, 3, 10, 20, 0, 0, 0, kolkata))
-        assertThat(schedules[2].scheduledAt).isEqualTo(ZonedDateTime.of(2026, 3, 26, 9, 0, 0, 0, kolkata))
+        // Two days before the earliest plausible start (28th minus the
+        // one-day half-width), not two days before the centre estimate.
+        // Anchoring to the centre would assert a precision the app does
+        // not have. Spec: 13-notification-intelligence.md section 6.
+        assertThat(schedules[2].scheduledAt).isEqualTo(ZonedDateTime.of(2026, 3, 25, 9, 0, 0, 0, kolkata))
         assertThat(schedules[2].privateBody).contains("Open the app")
     }
 
@@ -125,7 +129,10 @@ class ReminderSchedulePlannerTest {
             ),
             now = leapNow,
         )
-        assertThat(leapSchedules.single().scheduledAt.toLocalDate()).isEqualTo(LocalDate.parse("2028-02-29"))
+        // 2028-03-02 minus the one-day half-width is 03-01, and two
+        // days before that is 02-28. Still a leap-year boundary, so the
+        // transition stays covered.
+        assertThat(leapSchedules.single().scheduledAt.toLocalDate()).isEqualTo(LocalDate.parse("2028-02-28"))
 
         val monthEndNow = ZonedDateTime.of(2026, 1, 30, 8, 0, 0, 0, kolkata)
         val monthEndSchedules = planner.buildSchedules(
@@ -141,7 +148,9 @@ class ReminderSchedulePlannerTest {
             ),
             now = monthEndNow,
         )
-        assertThat(monthEndSchedules.single().scheduledAt.toLocalDate()).isEqualTo(LocalDate.parse("2026-01-31"))
+        // 2026-02-01 minus the half-width is 01-31, and one day before
+        // that is 01-30. The month-end crossing is still exercised.
+        assertThat(monthEndSchedules.single().scheduledAt.toLocalDate()).isEqualTo(LocalDate.parse("2026-01-30"))
 
         val yearBoundaryNow = ZonedDateTime.of(2026, 12, 29, 8, 0, 0, 0, kolkata)
         val yearBoundarySchedules = planner.buildSchedules(
@@ -157,7 +166,9 @@ class ReminderSchedulePlannerTest {
             ),
             now = yearBoundaryNow,
         )
-        assertThat(yearBoundarySchedules.single().scheduledAt.toLocalDate()).isEqualTo(LocalDate.parse("2026-12-31"))
+        // Shifted by the half-width, as above; the year boundary is still
+        // exercised.
+        assertThat(yearBoundarySchedules.single().scheduledAt.toLocalDate()).isEqualTo(LocalDate.parse("2026-12-30"))
     }
 
     @Test
@@ -261,6 +272,9 @@ class ReminderSchedulePlannerTest {
         fertileStart: LocalDate = LocalDate.parse("2026-03-02"),
         fertileEnd: LocalDate = LocalDate.parse("2026-03-07"),
         daysUntilNextPeriod: Int = 10,
+        // A supportable estimate carries a real range. Tests that mean to
+        // exercise suppression pass a narrower snapshot explicitly.
+        halfWidthDays: Int? = 1,
     ) = PredictionSnapshot(
         generatedAt = LocalDate.parse("2026-03-10"),
         cycleDay = 10,
@@ -272,5 +286,98 @@ class ReminderSchedulePlannerTest {
         ),
         confidenceLabel = "Stable",
         daysUntilNextPeriod = daysUntilNextPeriod,
+        nextPeriodWindow = halfWidthDays?.let {
+            DateRange(nextPeriodDate.minusDays(it.toLong()), nextPeriodDate.plusDays(it.toLong()))
+        },
+        nextPeriodHalfWidthDays = halfWidthDays,
     )
+
+    @Test
+    fun buildSchedules_withholdsPeriodReminderWhenHistoryIsInsufficient() {
+        // With fewer than three intervals there is nothing worth
+        // interrupting anyone about. Spec section 6 treats this as
+        // "no period reminder at all".
+        val now = ZonedDateTime.of(2026, 3, 10, 8, 0, 0, 0, kolkata)
+
+        val schedules = planner.buildSchedules(
+            prediction = predictionSnapshot(
+                nextPeriodDate = LocalDate.parse("2026-03-28"),
+                daysUntilNextPeriod = 18,
+                halfWidthDays = null,
+            ),
+            rules = listOf(
+                ReminderRule("period", ReminderType.PeriodPrep, enabled = true, daysBefore = -2, hourOfDay = 9, minute = 0),
+                ReminderRule("fertile", ReminderType.FertileWindowStart, enabled = true, daysBefore = 0, hourOfDay = 9, minute = 0),
+                ReminderRule("daily", ReminderType.DailyLog, enabled = true, daysBefore = 0, hourOfDay = 20, minute = 0),
+            ),
+            now = now,
+        )
+
+        // The daily nudge survives; the estimate-derived reminders do not.
+        assertThat(schedules.map { it.type }).containsExactly(ReminderType.DailyLog)
+    }
+
+    @Test
+    fun buildSchedules_anchorsPeriodPrepToEarliestPlausibleStart() {
+        val now = ZonedDateTime.of(2026, 3, 10, 8, 0, 0, 0, kolkata)
+
+        val schedules = planner.buildSchedules(
+            prediction = predictionSnapshot(
+                nextPeriodDate = LocalDate.parse("2026-03-28"),
+                daysUntilNextPeriod = 18,
+                halfWidthDays = 3,
+            ),
+            rules = listOf(
+                ReminderRule("period", ReminderType.PeriodPrep, enabled = true, daysBefore = -2, hourOfDay = 9, minute = 0),
+            ),
+            now = now,
+        )
+
+        // Earliest plausible start is the 25th (28th minus three days),
+        // and the reminder is two days ahead of that.
+        assertThat(schedules.single().scheduledAt.toLocalDate())
+            .isEqualTo(LocalDate.parse("2026-03-23"))
+    }
+
+    @Test
+    fun buildSchedules_widerRangePushesPeriodPrepEarlier() {
+        val now = ZonedDateTime.of(2026, 3, 10, 8, 0, 0, 0, kolkata)
+        val rule = ReminderRule("period", ReminderType.PeriodPrep, enabled = true, daysBefore = -2, hourOfDay = 9, minute = 0)
+
+        val narrow = planner.buildSchedules(
+            prediction = predictionSnapshot(nextPeriodDate = LocalDate.parse("2026-03-28"), halfWidthDays = 1),
+            rules = listOf(rule),
+            now = now,
+        )
+        val wide = planner.buildSchedules(
+            prediction = predictionSnapshot(nextPeriodDate = LocalDate.parse("2026-03-28"), halfWidthDays = 5),
+            rules = listOf(rule),
+            now = now,
+        )
+
+        assertThat(wide.single().scheduledAt.toLocalDate()).isLessThan(narrow.single().scheduledAt.toLocalDate())
+    }
+
+    @Test
+    fun buildSchedules_wideRangePeriodCopyStatesTheRangeNotAPoint() {
+        val now = ZonedDateTime.of(2026, 3, 10, 8, 0, 0, 0, kolkata)
+
+        val schedules = planner.buildSchedules(
+            prediction = predictionSnapshot(
+                nextPeriodDate = LocalDate.parse("2026-03-28"),
+                halfWidthDays = 3,
+            ),
+            rules = listOf(
+                ReminderRule("period", ReminderType.PeriodPrep, enabled = true, daysBefore = 0, hourOfDay = 9, minute = 0),
+            ),
+            now = now,
+        )
+
+        // Copy must be written against the range. Claiming a single date
+        // is the overstatement this whole change exists to remove.
+        val body = schedules.single().body
+        assertThat(body).doesNotContain("due today")
+        assertThat(body).contains("2026-03-25")
+        assertThat(body).contains("2026-03-28")
+    }
 }
