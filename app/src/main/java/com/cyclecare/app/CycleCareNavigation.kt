@@ -56,6 +56,16 @@ internal fun routeAllowsBanner(route: String?): Boolean = route in adBannerRoute
 
 internal fun navTag(route: String): String = "nav_$route"
 
+/**
+ * Test tag for a tab's icon.
+ *
+ * The icon is centred in the tab and the selection indicator is a wider
+ * pill centred on the same point, so the icon's own bounds are what a
+ * test needs to find the indicator's area. The icon carries no content
+ * description, so it has no semantics node of its own until it is tagged.
+ */
+internal fun navIconTag(route: String): String = "nav_icon_$route"
+
 internal fun NavHostController.navigateToTopLevel(route: String) {
     navigate(route) {
         popUpTo(graph.findStartDestination().id) {

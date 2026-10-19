@@ -366,7 +366,13 @@ internal fun CycleCareBottomNavigation(
                             selected = selectedTopLevelRoute == destination.route,
                             onClick = { onNavigate(destination.route) },
                             modifier = Modifier.testTag(navTag(destination.route)),
-                            icon = { Icon(destination.icon, contentDescription = null) },
+                            icon = {
+                                Icon(
+                                    destination.icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.testTag(navIconTag(destination.route)),
+                                )
+                            },
                             label = { Text(destination.label) },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,

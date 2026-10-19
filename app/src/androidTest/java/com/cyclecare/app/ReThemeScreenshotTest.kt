@@ -16,7 +16,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.cyclecare.core.designsystem.CycleCareTheme
@@ -80,6 +81,23 @@ class ReThemeScreenshotTest {
         composeRule.waitForIdle()
     }
 
+    /**
+     * Switches tab without the touch feedback.
+     *
+     * Material draws a ripple on the tab that was tapped, and it lingers
+     * over the selection indicator. A screenshot taken while it is still
+     * fading shows a grey pill behind every tab that was tapped, which
+     * reads as a design defect but is only a transient touch effect.
+     * Invoking the click semantics navigates without the touch input, so
+     * the review images show the resting state.
+     */
+    private fun switchTab(route: String) {
+        composeRule.onNodeWithTag(navTag(route)).performSemanticsAction(SemanticsActions.OnClick) {
+            it()
+        }
+        composeRule.waitForIdle()
+    }
+
     private fun capture(screen: String, widthDp: Int, dark: Boolean) {
         composeRule.waitForIdle()
         val bitmap = composeRule.onNodeWithTag(CAPTURE_TAG).captureToImage().asAndroidBitmap()
@@ -131,8 +149,7 @@ class ReThemeScreenshotTest {
                 // explicitly rather than assuming a fresh start.
                 render(widthDp, dark, screenContent())
                 routes.forEach { route ->
-                    composeRule.onNodeWithTag(navTag(route)).performClick()
-                    composeRule.waitForIdle()
+                    switchTab(route)
                     capture(route, widthDp, dark)
                 }
             }

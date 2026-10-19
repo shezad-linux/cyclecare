@@ -337,7 +337,7 @@ internal fun HomeScreen(
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     Text(
-                        stringResource(R.string.your_data_stays_private_on_this_device),
+                        stringResource(R.string.cycle_data_storage_and_ad_privacy),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

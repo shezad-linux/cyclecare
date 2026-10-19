@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.cyclecare.core.designsystem.MetricCard
+import com.cyclecare.core.designsystem.metricCardAccents
 
 @Composable
 internal fun HomeReminderButton(
@@ -62,6 +63,10 @@ internal fun HomeMetricGrid(
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val useStackedMetrics = maxWidth < 420.dp || LocalDensity.current.fontScale > 1.2f
 
+        val accents = metricCardAccents(MaterialTheme.colorScheme)
+        val neutralAccent = accents.neutral
+        val periodAccent = accents.period
+
         if (useStackedMetrics) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -71,25 +76,25 @@ internal fun HomeMetricGrid(
                     label = "Avg cycle",
                     value = "${uiState.cycleLength} days",
                     modifier = Modifier.fillMaxWidth(),
-                    accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.86f),
+                    accent = neutralAccent,
                 )
                 MetricCard(
                     label = "Avg period",
                     value = "${uiState.averagePeriodLength} days",
                     modifier = Modifier.fillMaxWidth(),
-                    accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.86f),
+                    accent = periodAccent,
                 )
                 MetricCard(
                     label = "Variability",
                     value = uiState.variabilityText.resolve(),
                     modifier = Modifier.fillMaxWidth(),
-                    accent = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.18f),
+                    accent = neutralAccent,
                 )
                 MetricCard(
                     label = "Unread reminders",
                     value = reminderUnreadCount.toString(),
                     modifier = Modifier.fillMaxWidth(),
-                    accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
+                    accent = neutralAccent,
                 )
             }
         } else {
@@ -105,13 +110,13 @@ internal fun HomeMetricGrid(
                         label = "Avg cycle",
                         value = "${uiState.cycleLength} days",
                         modifier = Modifier.weight(1f),
-                        accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.86f),
+                        accent = neutralAccent,
                     )
                     MetricCard(
                         label = "Avg period",
                         value = "${uiState.averagePeriodLength} days",
                         modifier = Modifier.weight(1f),
-                        accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.86f),
+                        accent = periodAccent,
                     )
                 }
                 Row(
@@ -122,13 +127,13 @@ internal fun HomeMetricGrid(
                         label = "Variability",
                         value = uiState.variabilityText.resolve(),
                         modifier = Modifier.weight(1f),
-                        accent = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.18f),
+                        accent = neutralAccent,
                     )
                     MetricCard(
                         label = "Unread reminders",
                         value = reminderUnreadCount.toString(),
                         modifier = Modifier.weight(1f),
-                        accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
+                        accent = neutralAccent,
                     )
                 }
             }

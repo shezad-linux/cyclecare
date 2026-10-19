@@ -34,7 +34,7 @@
     <string name="trend_charts_are_still_building">Trend charts are still building</string>
     <string name="view_cycle_trends">View cycle trends</string>
     <string name="view_symptom_patterns">View symptom patterns</string>
-    <string name="your_data_stays_private_on_this_device">Your data stays private on this device.</string>
+    <string name="cycle_data_storage_and_ad_privacy">Your cycle records stay in this app\'s local database. Advertising services may read your device\'s advertising identifier, but cycle data is not included in ad-targeting requests.</string>
 
     <!-- Insight state copy -->
     <string name="trend_charts_building_summary">Once you have two logged cycles, this section will show the shape of your recent cycle lengths and period lengths.</string>

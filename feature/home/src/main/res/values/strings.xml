@@ -13,7 +13,7 @@
     <string name="start_a_new_period_today_or_expand_the_details_if_you_need_t">Start a new period today or expand the details if you need to correct dates before saving.</string>
     <string name="update_the_cycle_entry_covering_today_changes_stay_local_and">Update the cycle entry covering today. Changes stay local and refresh the timeline immediately.</string>
     <string name="use_your_saved_baseline_and_period_length_for_a_quick_local_">Use your saved baseline and period length for a quick local entry.</string>
-    <string name="your_data_stays_private_on_this_device">Your data stays private on this device.</string>
+    <string name="cycle_data_storage_and_ad_privacy">Your cycle records stay in this app\'s local database. Advertising services may read your device\'s advertising identifier, but cycle data is not included in ad-targeting requests.</string>
     <string name="prediction_unavailable">Prediction unavailable</string>
     <string name="from_your_setup">From your setup</string>
     <string name="fertile_window_unavailable">Fertile window unavailable</string>

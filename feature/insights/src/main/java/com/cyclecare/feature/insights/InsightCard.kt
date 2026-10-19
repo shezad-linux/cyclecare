@@ -3,6 +3,7 @@
 package com.cyclecare.feature.insights
 
 import com.cyclecare.core.designsystem.DashboardPill
+import com.cyclecare.core.designsystem.metricCardAccents
 import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,17 +48,18 @@ import kotlinx.coroutines.flow.map
 internal fun InsightsMetricGrid(uiState: InsightsUiState) {
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val stackMetrics = maxWidth < 420.dp || LocalDensity.current.fontScale > 1.2f
+        val accents = metricCardAccents(MaterialTheme.colorScheme)
         if (stackMetrics) {
             Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 InsightMetricCard(
                     label = stringResource(R.string.avg_cycle),
                     value = uiState.averageCycleText.resolve(),
-                    accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f),
+                    accent = accents.neutral,
                 )
                 InsightMetricCard(
                     label = stringResource(R.string.avg_period),
                     value = uiState.averagePeriodText.resolve(),
-                    accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.84f),
+                    accent = accents.period,
                 )
             }
         } else {
@@ -66,13 +68,13 @@ internal fun InsightsMetricGrid(uiState: InsightsUiState) {
                     label = stringResource(R.string.avg_cycle),
                     value = uiState.averageCycleText.resolve(),
                     modifier = Modifier.weight(1f),
-                    accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f),
+                    accent = accents.neutral,
                 )
                 InsightMetricCard(
                     label = stringResource(R.string.avg_period),
                     value = uiState.averagePeriodText.resolve(),
                     modifier = Modifier.weight(1f),
-                    accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.84f),
+                    accent = accents.period,
                 )
             }
         }

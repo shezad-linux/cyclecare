@@ -73,10 +73,12 @@ internal fun InsightsOverviewScreen(
                             text = uiState.variabilityText.resolve(),
                             emphasized = uiState.hasEnoughCycleData,
                         )
-                        if (uiState.cycleWindowLabel.resolve().isNotBlank()) {
-                            InsightBadge(text = uiState.cycleWindowLabel.resolve())
-                        }
                     }
+                    // The source context is the line below, not a second
+                    // badge. A white pill on a white card wrapped awkwardly
+                    // and said the same thing the line does. The exact
+                    // figures, "based on 6 logged cycles from Oct 2025 to
+                    // Mar 2026", are on the cycle trends screen.
                     Text(
                         uiState.variabilityInterpretation.resolve(),
                         style = MaterialTheme.typography.bodyMedium,
@@ -205,7 +207,7 @@ internal fun InsightsOverviewScreen(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        stringResource(R.string.your_data_stays_private_on_this_device),
+                        stringResource(R.string.cycle_data_storage_and_ad_privacy),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

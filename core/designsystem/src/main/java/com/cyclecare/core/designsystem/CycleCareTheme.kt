@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.LocalContentColor
@@ -275,6 +276,28 @@ fun GradientHeaderCard(
         }
     }
 }
+
+/**
+ * The surfaces a metric card is painted on.
+ *
+ * Sibling metric cards share one neutral surface. Only a metric that is
+ * genuinely about the period keeps the warm period tint, because that is
+ * the one distinction a reader can act on.
+ *
+ * The previous mix of mint, blush, sage-grey and near-white had no rule
+ * behind it: three of the four were arbitrary. The neutral is also the
+ * lightest of them, so it is the safer one for the label text, which is
+ * onSurfaceVariant in every case.
+ */
+data class MetricCardAccents(
+    val neutral: Color,
+    val period: Color,
+)
+
+fun metricCardAccents(scheme: ColorScheme): MetricCardAccents = MetricCardAccents(
+    neutral = scheme.surfaceVariant.copy(alpha = 0.82f),
+    period = scheme.secondaryContainer.copy(alpha = 0.86f),
+)
 
 @Composable
 fun MetricCard(
