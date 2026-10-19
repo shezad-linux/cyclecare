@@ -263,7 +263,7 @@
         application for Android. We are committed to protecting your privacy. This policy explains
         what data the app handles, what stays on your device, and how ad privacy choices work.
       </p>
-      <p><strong>Effective Date:</strong> 23 March 2026</p>
+      <p><strong>Effective Date:</strong> 19 October 2026 (previous version: 23 March 2026)</p>
     </section>
 
     <!-- 2 ── Information We Collect -->
@@ -276,8 +276,8 @@
       </p>
       <ul>
         <li><strong>No account or sign-up required</strong> — the app works immediately after install.</li>
-        <li><strong>No analytics or tracking SDKs</strong> — we do not embed third-party analytics.</li>
-        <li><strong>Ads and consent</strong> — AdMob and Google UMP may process ad consent, device, network, and advertising-related data.</li>
+        <li><strong>No analytics or crash-reporting product</strong> — we do not embed Firebase Analytics, Firebase Crashlytics, or any similar third-party analytics product.</li>
+        <li><strong>Ads and consent</strong> — we do embed Google AdMob and the Google User Messaging Platform. AdMob can read your device's advertising identifier and collect device, network, and usage data to serve and measure ads, and Google's ad services may use it to personalise ads to you based on activity across other apps and websites. See <a href="#data-sharing">Data Sharing</a>.</li>
       </ul>
     </section>
 
@@ -289,9 +289,11 @@
         Data is never uploaded to the cloud unless you explicitly choose to export it.
       </p>
       <ul>
-        <li>Data remains on your device and under your control at all times.</li>
-        <li>Uninstalling the app permanently deletes all stored data.</li>
-        <li>Optional data export produces files that are saved to your device's local storage.</li>
+        <li>Data remains under your control. It is not accessible to us, because we do not operate a server that receives it.</li>
+        <li><strong>Cloud backup is switched off</strong>, so your data is not copied to Google's cloud backup service.</li>
+        <li><strong>Device-to-device transfer is enabled</strong> on Android 12 and higher, so when you move to a new phone your cycle data can be copied to it directly. If that happens, uninstalling the app from your old phone does not delete the copy on the new one.</li>
+        <li>On Android 8.0 to 11, both cloud backup and device-to-device transfer are disabled, so uninstalling removes all app data from the device.</li>
+        <li>Optional data export produces files that are saved to your device's local storage, wherever you choose.</li>
       </ul>
     </section>
 
@@ -320,10 +322,18 @@
           <strong>Boot Completed</strong> — Used to reschedule your reminders after a device restart so
           you never miss a notification you set up.
         </li>
+        <li>
+          <strong>Exact alarms (special access)</strong> — Used so that reminders you have configured
+          arrive at the time you chose rather than at a later, batched time. This is a special
+          "app access" permission, not a runtime prompt, and Android may revoke it at any time.
+          CycleCare degrades to inexact delivery if it is revoked, and you can grant or withdraw it
+          from Android Settings.
+        </li>
       </ul>
       <div class="highlight-box">
-        CycleCare requests Internet access for ads and ad privacy consent. It does <strong>not</strong>
-        request Camera, Location, Contacts, or other sensitive permissions.
+        CycleCare requests Internet access for ads and ad privacy consent, and network state to
+        detect connectivity. It does <strong>not</strong> request Camera, Location, Contacts,
+        Microphone, or other sensitive permissions.
       </div>
     </section>
 
@@ -373,6 +383,13 @@
         We may update this Privacy Policy from time to time. Any changes will be reflected on this
         page with an updated effective date. We encourage you to review this policy periodically.
       </p>
+      <p><strong>What changed on 19 October 2026</strong></p>
+      <ul>
+        <li>Removed the claim that the app embeds no analytics or tracking SDKs. We do not embed an analytics or crash-reporting product, but we do embed Google AdMob and the Google User Messaging Platform, which can read your device's advertising identifier and collect device, network, and usage data for advertising.</li>
+        <li>Removed the claim that uninstalling permanently deletes all stored data. Cloud backup is disabled, but device-to-device transfer is enabled on Android 12 and higher, so a copy may already exist on a new device.</li>
+        <li>Documented the exact alarms special permission, which was previously requested but not disclosed.</li>
+        <li>Documented network state access alongside internet access.</li>
+      </ul>
     </section>
 
     <!-- 10 ── Contact Us -->
