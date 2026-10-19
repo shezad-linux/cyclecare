@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.cyclecare.core.designsystem.ChartFillColor
 import com.cyclecare.core.designsystem.GradientHeaderCard
 import com.cyclecare.core.designsystem.MetricCard
 import com.cyclecare.core.designsystem.text.resolve
@@ -63,7 +64,7 @@ internal fun CycleTrendsScreen(
                     if (uiState.hasEnoughCycleData) {
                         MiniBarChart(
                             points = uiState.cycleTrendBars,
-                            accent = MaterialTheme.colorScheme.primary,
+                            accent = ChartFillColor(),
                             minBarHeight = 48.dp,
                             maxBarHeight = 150.dp,
                         )

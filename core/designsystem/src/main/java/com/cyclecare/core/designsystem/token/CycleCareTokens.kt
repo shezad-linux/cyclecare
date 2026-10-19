@@ -117,6 +117,32 @@ object CycleCareColor {
     val DarkPeriodActiveContainer = Color(0xFF4D231C)
     val DarkPeriodActiveOnContainer = Color(0xFFFFD9D1)
     val DarkPeriodActiveAccent = Color(0xFFE88675)
+
+    // ── Large-surface fills ────────────────────────────────────────────
+    //
+    // The saturated primary is reserved for actions, for selection and for
+    // navigation. A full-bleed card or a field of chart bars in that
+    // colour dominates the screen and flattens the hierarchy, because
+    // everything ends up shouting at the same volume.
+    //
+    // These are the same hues at a lower saturation, so the palette stays
+    // recognisably the same. The text contrast improves rather than
+    // degrades: the desaturated hero teal is a little lighter, so white
+    // text on it measures higher than on the saturated primary.
+    //
+    // Measured, with the text colour each surface actually uses:
+    //   Light hero start  #155556  white title 8.52:1, subtitle 7.04:1
+    //   Light hero end    #3F5A4C  white title 7.56:1, subtitle 6.30:1
+    //   Dark hero start   #124A48  title 8.36:1, subtitle 6.21:1
+    //   Dark hero end     #2B4A38  title 8.20:1, subtitle 6.13:1
+    //   Light chart fill  #1D7677  5.37:1 against a white card
+    //   Dark chart fill   #64B2AE  6.59:1 against a dark card
+    val LightHeroGradientStart = Color(0xFF155556)
+    val LightHeroGradientEnd = Color(0xFF3F5A4C)
+    val DarkHeroGradientStart = Color(0xFF124A48)
+    val DarkHeroGradientEnd = Color(0xFF2B4A38)
+    val LightChartFill = Color(0xFF1D7677)
+    val DarkChartFill = Color(0xFF64B2AE)
 }
 
 // ── Shape ─────────────────────────────────────────────────────────

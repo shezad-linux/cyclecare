@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import com.cyclecare.core.designsystem.ChartFillColor
 import com.cyclecare.core.designsystem.CycleCarePanel
 import com.cyclecare.core.designsystem.GradientHeaderCard
 import com.cyclecare.core.designsystem.text.resolve
@@ -91,7 +92,7 @@ internal fun InsightsOverviewScreen(
                         Text(stringResource(R.string.recent_cycle_trends), style = MaterialTheme.typography.titleLarge)
                         MiniBarChart(
                             points = uiState.cycleTrendBars,
-                            accent = MaterialTheme.colorScheme.primary,
+                            accent = ChartFillColor(),
                         )
                         PeriodLengthStrip(items = uiState.periodTrendItems)
                         Text(

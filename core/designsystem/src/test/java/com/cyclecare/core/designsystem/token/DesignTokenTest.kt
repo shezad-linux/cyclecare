@@ -494,4 +494,88 @@ class DesignTokenTest {
     /** Collapses a colour to the grey it would become with colour removed. */
     private fun greyOf(colour: Color): Int =
         kotlin.math.round(colour.luminance() * 255f).toInt()
+
+    // ── large-surface fills ──────────────────────────────────────────
+    //
+    // The saturated primary is reserved for actions, selection and
+    // navigation. A full-bleed hero or a field of chart bars uses the
+    // softened teal instead, so it does not dominate the screen. These
+    // tests hold that line and the contrast it has to keep.
+
+    @Test
+    fun theLightHeroGradientCarriesWhiteTextAtTheBodyTarget() {
+        val title = CycleCareColor.LightOnPrimary
+        listOf(
+            CycleCareColor.LightHeroGradientStart,
+            CycleCareColor.LightHeroGradientEnd,
+        ).forEach { background ->
+            assertThat(contrastRatio(title, background)).isAtLeast(CycleCareA11y.CONTRAST_BODY)
+        }
+    }
+
+    @Test
+    fun theDarkHeroGradientCarriesBodyTextAtTheBodyTarget() {
+        val title = CycleCareColor.DarkOnSurface
+        listOf(
+            CycleCareColor.DarkHeroGradientStart,
+            CycleCareColor.DarkHeroGradientEnd,
+        ).forEach { background ->
+            assertThat(contrastRatio(title, background)).isAtLeast(CycleCareA11y.CONTRAST_BODY)
+        }
+    }
+
+    @Test
+    fun theChartFillIsVisibleAgainstTheCardItSitsOn() {
+        // A chart bar is a meaningful graphic, so WCAG 1.4.11 applies.
+        assertThat(
+            contrastRatio(CycleCareColor.LightChartFill, CycleCareColor.LightSurface),
+        ).isAtLeast(3.0)
+        assertThat(
+            contrastRatio(CycleCareColor.DarkChartFill, CycleCareColor.DarkSurface),
+        ).isAtLeast(3.0)
+    }
+
+    @Test
+    fun theLargeSurfaceFillsAreLessSaturatedThanThePrimary() {
+        // The point of the softened tokens is that they carry the same hue
+        // at a lower saturation. If someone raises the saturation of the
+        // hero or the chart fill back to the primary's, the split between
+        // "action" and "large surface" has been lost.
+        val primary = saturationOf(CycleCareColor.LightPrimary)
+        assertThat(saturationOf(CycleCareColor.LightHeroGradientStart)).isLessThan(primary)
+        assertThat(saturationOf(CycleCareColor.LightHeroGradientEnd)).isLessThan(primary)
+        assertThat(saturationOf(CycleCareColor.LightChartFill)).isLessThan(primary)
+    }
+
+    @Test
+    fun thePrimaryKeepsItsContrastOnThePageAndOnACard() {
+        // The primary is the action colour, so it still has to carry white
+        // text and still has to read against the page it sits on.
+        assertThat(
+            contrastRatio(CycleCareColor.LightOnPrimary, CycleCareColor.LightPrimary),
+        ).isAtLeast(CycleCareA11y.CONTRAST_BODY)
+        assertThat(
+            contrastRatio(CycleCareColor.LightPrimary, CycleCareColor.LightBackground),
+        ).isAtLeast(CycleCareA11y.CONTRAST_LARGE)
+    }
+
+    /**
+     * The HSL saturation of a colour.
+     *
+     * Saturation is the meaningful measure of "how vivid does this look".
+     * The spread between the strongest and weakest RGB channel is not: a
+     * dark, desaturated teal can have a large spread and still read as
+     * muted, and a light one the other way round.
+     */
+    private fun saturationOf(colour: Color): Float {
+        val strongest = max(max(colour.red, colour.green), colour.blue)
+        val weakest = min(min(colour.red, colour.green), colour.blue)
+        if (strongest == weakest) return 0f
+        val lightness = (strongest + weakest) / 2f
+        return if (lightness <= 0.5f) {
+            (strongest - weakest) / (strongest + weakest)
+        } else {
+            (strongest - weakest) / (2f - strongest - weakest)
+        }
+    }
 }

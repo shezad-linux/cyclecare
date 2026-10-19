@@ -159,6 +159,16 @@ fun PeriodActiveGradientColors(): List<Color> {
 fun PeriodActiveContainerColor(): Color =
     if (isSystemInDarkTheme()) CycleCareColor.DarkPeriodActiveContainer else CycleCareColor.LightPeriodActiveContainer
 
+/**
+ * Fill colour for chart bars.
+ *
+ * A field of bars is a large surface, so it uses the softened teal rather
+ * than the saturated primary, which would otherwise dominate the screen.
+ * The saturated teal stays on actions, selection and navigation.
+ */
+@Composable
+fun ChartFillColor(): Color =
+    if (isSystemInDarkTheme()) CycleCareColor.DarkChartFill else CycleCareColor.LightChartFill
 
 @Composable
 fun PeriodActiveAccentColor(): Color =
@@ -191,15 +201,19 @@ fun GradientHeaderCard(
                 trailing != null &&
                 (maxWidth < 340.dp || LocalDensity.current.fontScale > 1.15f)
             val isDark = isSystemInDarkTheme()
+            // A large surface uses the softened hero gradient rather than
+            // the saturated primary, so the card does not dominate the
+            // screen. The saturated teal stays on actions, selection and
+            // navigation.
             val resolvedGradientColors = gradientColors ?: if (isDark) {
                 listOf(
-                    MaterialTheme.colorScheme.primaryContainer,
-                    MaterialTheme.colorScheme.tertiaryContainer,
+                    CycleCareColor.DarkHeroGradientStart,
+                    CycleCareColor.DarkHeroGradientEnd,
                 )
             } else {
                 listOf(
-                    MaterialTheme.colorScheme.primary,
-                    MaterialTheme.colorScheme.tertiary,
+                    CycleCareColor.LightHeroGradientStart,
+                    CycleCareColor.LightHeroGradientEnd,
                 )
             }
             val contentColor = HeaderOnGradientColor
