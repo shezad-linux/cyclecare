@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Home
@@ -27,6 +29,7 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
@@ -338,6 +341,7 @@ internal fun CycleCareBottomNavigation(
     selectedTopLevelRoute: String?,
     onNavigate: (String) -> Unit,
 ) {
+    val largeFontScale = LocalDensity.current.fontScale > 1.2f
     Column {
         // Spec 15 §11.2: Today and Insights only.
         if (canRequestAds && routeAllowsBanner(selectedTopLevelRoute)) {
@@ -373,7 +377,32 @@ internal fun CycleCareBottomNavigation(
                                     modifier = Modifier.testTag(navIconTag(destination.route)),
                                 )
                             },
-                            label = { Text(destination.label) },
+                            label = {
+                                // A four-tab bar gives each label a quarter
+                                // of the width, and at a large font scale a
+                                // single word like "Calendar" no longer
+                                // fits, so it broke mid-word into "Calen
+                                // dar". That reads as a rendering fault
+                                // rather than as a label.
+                                //
+                                // The label drops to the smaller role at
+                                // large font scales, the way the metric grid
+                                // stacks, and is held to a single line so
+                                // it can never break mid-word again. The
+                                // full text stays in the semantics, so a
+                                // screen reader still announces the whole
+                                // label.
+                                Text(
+                                    text = destination.label,
+                                    style = if (largeFontScale) {
+                                        MaterialTheme.typography.labelSmall
+                                    } else {
+                                        LocalTextStyle.current
+                                    },
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
