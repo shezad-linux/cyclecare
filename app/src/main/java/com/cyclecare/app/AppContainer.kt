@@ -17,6 +17,9 @@ import com.cyclecare.core.domain.ReminderEventsRepository
 import com.cyclecare.core.domain.ReminderScheduler
 import com.cyclecare.core.domain.SyncAdapter
 import com.cyclecare.core.domain.SymptomRepository
+import com.cyclecare.core.domain.ads.DraftTracker
+import com.cyclecare.core.domain.ads.InterstitialStatsRepository
+import com.cyclecare.core.domain.time.TimeProvider
 
 data class AppContainer(
     val profileRepository: ProfileRepository,
@@ -35,6 +38,21 @@ data class AppContainer(
     val appVisibilityObserver: AppVisibilityObserver,
     val reminderNavigationCoordinator: ReminderNavigationCoordinator,
     val syncAdapter: SyncAdapter,
+    /**
+     * Persisted counters for the interstitial gate. Spec 15 §11.3 conditions
+     * 2, 3 and 8 all depend on state that must outlive the process.
+     */
+    val interstitialStatsRepository: InterstitialStatsRepository,
+    /**
+     * Whether an unsaved draft exists anywhere in the app. Spec 15 §11.3
+     * condition 4.
+     */
+    val draftTracker: DraftTracker,
+    /**
+     * The app's single clock. Injected rather than read ambiently so that
+     * time-dependent behaviour such as the interstitial gate is testable.
+     */
+    val timeProvider: TimeProvider,
     val processStartEpochMillis: Long = System.currentTimeMillis(),
     val reminderNotificationClient: ReminderNotificationClient = NoOpReminderNotificationClient,
     val crashReporter: CrashReporter = NoOpCrashReporter,

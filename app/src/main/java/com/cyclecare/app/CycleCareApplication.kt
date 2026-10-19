@@ -4,6 +4,8 @@ import android.app.Application
 import android.os.Build
 import android.os.StrictMode
 import androidx.room.Room
+import com.cyclecare.core.data.DataStoreInterstitialStatsRepository
+import com.cyclecare.core.domain.ads.InMemoryDraftTracker
 import com.cyclecare.core.data.LocalAppResetRepository
 import com.cyclecare.core.data.LocalExportRepository
 import com.cyclecare.core.data.LocalInsightRepository
@@ -68,7 +70,14 @@ class CycleCareApplication : Application() {
         val reminderEventsRepository = RoomReminderEventsRepository(database, appLogger)
         val privacyRepository = LocalPrivacyRepository(applicationContext)
         val notificationPermissionController = AndroidNotificationPermissionController(applicationContext)
-        val appVisibilityObserver = ProcessAppVisibilityObserver()
+        val interstitialStatsRepository = DataStoreInterstitialStatsRepository(applicationContext)
+        val draftTracker = InMemoryDraftTracker()
+        // Each foreground entry is one session. Spec 15 §11.3 condition 2
+        // counts them, and the count has to survive the process so the
+        // observer reports the transition and the repository persists it.
+        val appVisibilityObserver = ProcessAppVisibilityObserver(
+            onEnteredForeground = { interstitialStatsRepository.recordSession() },
+        )
         val reminderNavigationCoordinator = InMemoryReminderNavigationCoordinator()
         val reminderNotificationClient = AndroidReminderNotificationClient(
             context = applicationContext,
@@ -114,6 +123,9 @@ class CycleCareApplication : Application() {
             appVisibilityObserver = appVisibilityObserver,
             reminderNavigationCoordinator = reminderNavigationCoordinator,
             syncAdapter = NoOpSyncAdapter(),
+            interstitialStatsRepository = interstitialStatsRepository,
+            draftTracker = draftTracker,
+            timeProvider = timeProvider,
             reminderNotificationClient = reminderNotificationClient,
             crashReporter = crashReporter,
             appLogger = appLogger,

@@ -407,15 +407,24 @@ class DefaultInterstitialAdLoader : InterstitialAdLoader {
     }
 }
 
+/**
+ * Loads and shows interstitial ads.
+ *
+ * This class owns the ad mechanics only. Whether an interstitial may be
+ * shown at all is decided by [InterstitialCoordinator], which applies the
+ * eight conditions in spec 15 §11.3.
+ *
+ * The 60 second cooldown that used to live here has been removed: spec
+ * §11.3 condition 3 replaces it with a 10 minute minimum, and the gate
+ * enforces it against a persisted timestamp so it survives the process.
+ */
 class InterstitialAdManager(
     private val context: Context,
     private val adLoader: InterstitialAdLoader = DefaultInterstitialAdLoader(),
-    private val minIntervalMillis: Long = 60000L, // 60 seconds default cooldown
     private val adUnitIdProvider: () -> String = { interstitialAdUnitId() }
 ) {
     private var interstitialAd: InterstitialAd? = null
     private var isLoading = false
-    private var lastShownTimeMillis = 0L
 
     fun loadAd() {
         if (interstitialAd != null || isLoading) return
@@ -450,32 +459,33 @@ class InterstitialAdManager(
         )
     }
 
-    fun showAd(activity: android.app.Activity, onAdClosedOrNotReady: () -> Unit) {
-        val now = System.currentTimeMillis()
-        if (now - lastShownTimeMillis < minIntervalMillis) {
-            onAdClosedOrNotReady()
-            return
-        }
-
+    /**
+     * Shows the loaded interstitial.
+     *
+     * [onFinished] is invoked exactly once with true only when the ad was
+     * actually displayed. A failed display, or no ad being available, both
+     * report false so that an impression is never recorded for an ad the
+     * user did not see.
+     */
+    fun showAd(activity: android.app.Activity, onFinished: (shown: Boolean) -> Unit) {
         val ad = interstitialAd
         if (ad != null) {
             val oldCallback = ad.fullScreenContentCallback
             ad.fullScreenContentCallback = object : FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {
-                    lastShownTimeMillis = System.currentTimeMillis()
                     oldCallback?.onAdDismissedFullScreenContent()
-                    onAdClosedOrNotReady()
+                    onFinished(true)
                 }
 
                 override fun onAdFailedToShowFullScreenContent(error: com.google.android.gms.ads.AdError) {
                     oldCallback?.onAdFailedToShowFullScreenContent(error)
-                    onAdClosedOrNotReady()
+                    onFinished(false)
                 }
             }
             ad.show(activity)
         } else {
             loadAd()
-            onAdClosedOrNotReady()
+            onFinished(false)
         }
     }
 

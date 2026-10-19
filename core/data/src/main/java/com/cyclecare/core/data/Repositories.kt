@@ -85,7 +85,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
-private val Context.dataStore by preferencesDataStore(name = "cyclecare_prefs")
+internal val Context.dataStore by preferencesDataStore(name = "cyclecare_prefs")
 
 private object PreferenceKeys {
     val hideNotificationPreview = booleanPreferencesKey("hide_notification_preview")
@@ -238,6 +238,9 @@ class RoomReminderEventsRepository(
     override suspend fun dismiss(id: String) {
         database.reminderEventDao().dismiss(id, System.currentTimeMillis())
     }
+
+    override suspend fun latestDeliveryAtSince(sinceEpochMillis: Long): Long? =
+        database.reminderEventDao().latestDeliveryAtSince(sinceEpochMillis)
 }
 
 class LocalReminderChannelSettingsRepository(

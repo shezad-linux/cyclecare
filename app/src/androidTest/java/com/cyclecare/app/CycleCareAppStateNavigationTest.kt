@@ -29,6 +29,8 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.lifecycle.Lifecycle
 import androidx.test.espresso.Espresso.pressBackUnconditionally
 import com.cyclecare.core.designsystem.CycleCareTheme
+import com.cyclecare.core.domain.ads.InMemoryDraftTracker
+import com.cyclecare.core.domain.time.SystemTimeProvider
 import com.cyclecare.core.domain.AppResetRepository
 import com.cyclecare.core.domain.CycleRepository
 import com.cyclecare.core.domain.ExportRepository
@@ -719,6 +721,9 @@ private class TestAppEnvironment(
         appVisibilityObserver = appVisibilityObserver,
         reminderNavigationCoordinator = reminderNavigationCoordinator,
         syncAdapter = FakeSyncAdapter(),
+        interstitialStatsRepository = FakeInterstitialStatsRepository(),
+        draftTracker = InMemoryDraftTracker(),
+        timeProvider = SystemTimeProvider(),
     )
 
     companion object {
@@ -1030,6 +1035,11 @@ private class FakeReminderEventsRepository : ReminderEventsRepository {
         val now = System.currentTimeMillis()
         state.update { current -> current.map { if (it.id == id) it.copy(dismissedAtEpochMillis = now) else it } }
     }
+
+    override suspend fun latestDeliveryAtSince(sinceEpochMillis: Long): Long? =
+        state.value
+            .filter { it.deliveredAt.toInstant().toEpochMilli() >= sinceEpochMillis }
+            .maxOfOrNull { it.deliveredAt.toInstant().toEpochMilli() }
 }
 
 private class FakeAppVisibilityObserver : AppVisibilityObserver {

@@ -6,6 +6,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.work.ListenableWorker
 import androidx.work.workDataOf
 import androidx.work.testing.TestListenableWorkerBuilder
+import com.cyclecare.core.domain.ads.InMemoryDraftTracker
+import com.cyclecare.core.domain.time.SystemTimeProvider
 import com.cyclecare.core.domain.AppResetRepository
 import com.cyclecare.core.domain.CycleRepository
 import com.cyclecare.core.domain.ExportRepository
@@ -248,6 +250,9 @@ private class WorkerTestEnvironment(
         appVisibilityObserver = appVisibilityObserver,
         reminderNavigationCoordinator = InMemoryReminderNavigationCoordinator(),
         syncAdapter = NoOpSyncAdapterImpl(),
+        interstitialStatsRepository = FakeInterstitialStatsRepository(),
+        draftTracker = InMemoryDraftTracker(),
+        timeProvider = SystemTimeProvider(),
         reminderNotificationClient = notificationClient,
         appLogger = NoOpAppLogger,
     )
@@ -304,6 +309,11 @@ private class WorkerFakeReminderEventsRepository : ReminderEventsRepository {
     override suspend fun markAllRead() = Unit
 
     override suspend fun dismiss(id: String) = Unit
+
+    override suspend fun latestDeliveryAtSince(sinceEpochMillis: Long): Long? =
+        state.value
+            .filter { it.deliveredAt.toInstant().toEpochMilli() >= sinceEpochMillis }
+            .maxOfOrNull { it.deliveredAt.toInstant().toEpochMilli() }
 }
 
 private class WorkerFakeReminderChannelSettingsRepository : ReminderChannelSettingsRepository {

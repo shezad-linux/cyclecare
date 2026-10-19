@@ -58,6 +58,7 @@ import com.cyclecare.core.designsystem.text.pluralUiText
 import com.cyclecare.core.designsystem.text.resolve
 import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.domain.CycleRepository
+import com.cyclecare.core.domain.ads.DraftTracker
 import com.cyclecare.core.domain.PredictionRepository
 import com.cyclecare.core.domain.ProfileRepository
 import com.cyclecare.core.domain.SymptomRepository
@@ -291,6 +292,36 @@ internal fun buildEditorState(
     )
 }
 
+/**
+ * Whether the editor holds content that differs from what is saved.
+ *
+ * The comparison is against the stored entry rather than against a snapshot
+ * taken when the editor was first opened. A snapshot would be wrong across
+ * a ViewModel recreation, because the restored editor would be compared
+ * against itself and no draft would ever be detected. The stored entry is
+ * the source of truth for what has been saved, so comparing against it
+ * gives the same answer every time.
+ *
+ * `isDetailsExpanded` is deliberately excluded: it is a presentation flag,
+ * not content, and expanding the details section is not a draft.
+ */
+internal fun LoggingEditorState.hasUnsavedContentComparedTo(entry: SymptomLog?): Boolean {
+    if (entry == null) {
+        return mood != null ||
+            painLevel != null ||
+            energyLevel != null ||
+            dischargeType != null ||
+            medication.isNotBlank() ||
+            notes.isNotBlank()
+    }
+    return mood != entry.mood ||
+        painLevel != entry.painLevel ||
+        energyLevel != entry.energyLevel ||
+        dischargeType != entry.dischargeType ||
+        medication != entry.medication.orEmpty() ||
+        notes != entry.notes.orEmpty()
+}
+
 internal fun validateSymptomNotes(notes: String): UiText? =
     if (notes.length <= MAX_SYMPTOM_NOTE_LENGTH) {
         null
@@ -490,6 +521,11 @@ class LoggingViewModel(
     cycleRepository: CycleRepository,
     predictionRepository: PredictionRepository,
     private val savedStateHandle: SavedStateHandle,
+    /**
+     * Reports whether this editor holds unsaved changes, so the interstitial
+     * gate can honour spec 15 §11.3 condition 4.
+     */
+    private val draftTracker: DraftTracker,
 ) : ViewModel() {
     private val today = LocalDate.now()
     private val editorFlow = MutableStateFlow(savedStateHandle.toLoggingEditorState())
@@ -545,6 +581,23 @@ class LoggingViewModel(
                 }
             }
         }
+        // Report the draft state whenever either the editor or the stored
+        // entry changes, because both decide whether a draft exists: the
+        // editor holds what the user typed, the entry holds what was saved.
+        viewModelScope.launch {
+            combine(editorFlow, contextFlow) { editor, context -> editor to context.todayEntry }
+                .collect { (editor, savedEntry) ->
+                    draftTracker.setUnsavedDraft(editor.hasUnsavedContentComparedTo(savedEntry))
+                }
+        }
+    }
+
+    override fun onCleared() {
+        // The draft surface is gone, so it is no longer holding unsaved
+        // changes. Without this the tracker would keep suppressing
+        // interstitials for a draft the user can no longer reach.
+        draftTracker.setUnsavedDraft(false)
+        super.onCleared()
     }
 
     fun applyYesterdayPattern() {
@@ -634,6 +687,7 @@ class LoggingViewModelFactory(
     private val profileRepository: ProfileRepository,
     private val cycleRepository: CycleRepository,
     private val predictionRepository: PredictionRepository,
+    private val draftTracker: DraftTracker,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T =
@@ -643,6 +697,7 @@ class LoggingViewModelFactory(
             cycleRepository = cycleRepository,
             predictionRepository = predictionRepository,
             savedStateHandle = extras.createSavedStateHandle(),
+            draftTracker = draftTracker,
         ) as T
 }
 

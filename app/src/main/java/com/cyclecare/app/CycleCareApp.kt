@@ -412,6 +412,17 @@ private fun MainShell(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val activity = context.findComponentActivity()
+    val interstitialCoordinator = remember(container, interstitialAdManager, scope) {
+        InterstitialCoordinator(
+            adManager = interstitialAdManager,
+            statsRepository = container.interstitialStatsRepository,
+            reminderEventsRepository = container.reminderEventsRepository,
+            profileRepository = container.profileRepository,
+            draftTracker = container.draftTracker,
+            timeProvider = container.timeProvider,
+            scope = scope,
+        )
+    }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val selectedTopLevelRoute = currentRoute.toSelectedTopLevelRoute()
@@ -482,9 +493,22 @@ private fun MainShell(
                     canRequestAds = canRequestAds,
                     selectedTopLevelRoute = selectedTopLevelRoute,
                     onNavigate = { route ->
-                        if (canRequestAds && activity != null) {
-                            interstitialAdManager.showAd(activity) {
-                                navController.navigateToTopLevel(route)
+                        val currentActivity = activity
+                        if (canRequestAds && currentActivity != null) {
+                            // Spec 15 §11.3. The gate decides; if a condition
+                            // fails the interstitial is dropped and the
+                            // navigation goes ahead immediately rather than
+                            // the ad being deferred to a later screen.
+                            scope.launch {
+                                interstitialCoordinator.requestInterstitial(
+                                    activity = currentActivity,
+                                    // The raw route, not the selected tab:
+                                    // the forbidden list contains detail
+                                    // routes that map onto an allowed tab.
+                                    currentRoute = currentRoute,
+                                    adsConsentGranted = canRequestAds,
+                                    onFinished = { navController.navigateToTopLevel(route) },
+                                )
                             }
                         } else {
                             navController.navigateToTopLevel(route)
@@ -717,6 +741,7 @@ private fun AppNavHost(
                     profileRepository = container.profileRepository,
                     cycleRepository = container.cycleRepository,
                     predictionRepository = container.predictionRepository,
+                    draftTracker = container.draftTracker,
                 ),
             )
         }

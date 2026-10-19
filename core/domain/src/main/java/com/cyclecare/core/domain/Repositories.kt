@@ -61,6 +61,17 @@ interface ReminderEventsRepository {
     suspend fun markRead(id: String)
     suspend fun markAllRead()
     suspend fun dismiss(id: String)
+
+    /**
+     * The most recent delivery time at or after [sinceEpochMillis], or null
+     * when nothing was delivered in that window.
+     *
+     * Spec 15 §11.3 condition 5 needs to know whether a reminder was
+     * delivered in the last 30 minutes. This is a one-off query rather than
+     * an observation because the gate evaluates it at the moment an
+     * interstitial would be shown.
+     */
+    suspend fun latestDeliveryAtSince(sinceEpochMillis: Long): Long?
 }
 
 interface PrivacyRepository {

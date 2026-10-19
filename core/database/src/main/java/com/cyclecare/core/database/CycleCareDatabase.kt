@@ -314,6 +314,23 @@ interface ReminderEventDao {
     )
     fun observeUnreadCount(): Flow<Int>
 
+    /**
+     * The most recent delivery time at or after [sinceEpochMillis].
+     *
+     * Spec 15 §11.3 condition 5 asks whether a reminder was delivered in the
+     * last 30 minutes. This deliberately does not filter on
+     * `dismissedAtEpochMillis`: a reminder that was delivered and then
+     * dismissed was still delivered, and dismissing it is not the user
+     * asking for another interruption.
+     */
+    @Query(
+        """
+        SELECT MAX(deliveredAtEpochMillis) FROM reminder_events
+        WHERE deliveredAtEpochMillis >= :sinceEpochMillis
+        """,
+    )
+    suspend fun latestDeliveryAtSince(sinceEpochMillis: Long): Long?
+
     @Query(
         """
         SELECT * FROM reminder_events

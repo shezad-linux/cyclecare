@@ -115,11 +115,16 @@ class InterstitialAdManagerTest {
         )
 
         var callbackInvoked = false
-        manager.showAd(FakeActivity()) {
+        var adWasShown = true
+        manager.showAd(FakeActivity()) { shown ->
             callbackInvoked = true
+            adWasShown = shown
         }
 
         assertThat(callbackInvoked).isTrue()
+        // No ad was available, so nothing was shown and no impression may
+        // be recorded for it.
+        assertThat(adWasShown).isFalse()
         assertThat(loader.loadCount).isEqualTo(1)
     }
 
@@ -138,44 +143,19 @@ class InterstitialAdManagerTest {
         assertThat(loader.loadCount).isEqualTo(1)
 
         var callbackInvoked = false
-        manager.showAd(FakeActivity()) {
+        var adWasShown = false
+        manager.showAd(FakeActivity()) { shown ->
             callbackInvoked = true
+            adWasShown = shown
         }
 
         // Ad show should trigger dismissed callback and then onAdClosedOrNotReady lambda
         assertThat(callbackInvoked).isTrue()
+        // The ad was displayed and dismissed, so an impression is recorded.
+        assertThat(adWasShown).isTrue()
         // AdManager should automatically set interstitialAd to null and preload the next ad
         assertThat(manager.isLoaded()).isTrue() // loaded because it preloaded successfully immediately
         assertThat(loader.loadCount).isEqualTo(2) // 1 initial load + 1 preload
     }
 
-    @Test
-    fun showAd_whenCooldownActive_proceedsImmediatelyWithoutShowingAd() {
-        val loader = FakeInterstitialAdLoader()
-        val manager = InterstitialAdManager(
-            context = FakeContext(),
-            adLoader = loader,
-            minIntervalMillis = 60000L,
-            adUnitIdProvider = { "test_unit_id" }
-        )
-
-        // Load and show first ad (sets lastShownTimeMillis)
-        manager.loadAd()
-        var callback1Invoked = false
-        manager.showAd(FakeActivity()) {
-            callback1Invoked = true
-        }
-        assertThat(callback1Invoked).isTrue()
-        assertThat(loader.loadCount).isEqualTo(2) // 1 initial load + 1 preload
-
-        // Try to show again immediately (within 60 seconds)
-        var callback2Invoked = false
-        manager.showAd(FakeActivity()) {
-            callback2Invoked = true
-        }
-        
-        // Should proceed immediately without invoking show or requesting another load
-        assertThat(callback2Invoked).isTrue()
-        assertThat(loader.loadCount).isEqualTo(2) 
-    }
 }

@@ -3,6 +3,7 @@ package com.cyclecare.feature.logging
 import androidx.lifecycle.SavedStateHandle
 import com.cyclecare.core.designsystem.text.pluralUiText
 import com.cyclecare.core.domain.CycleRepository
+import com.cyclecare.core.domain.ads.InMemoryDraftTracker
 import com.cyclecare.core.domain.PredictionRepository
 import com.cyclecare.core.domain.ProfileRepository
 import com.cyclecare.core.domain.SymptomRepository
@@ -91,6 +92,7 @@ class LoggingValidationTest {
             cycleRepository = EmptyCycleRepository(),
             predictionRepository = EmptyPredictionRepository(),
             savedStateHandle = SavedStateHandle(),
+            draftTracker = InMemoryDraftTracker(),
         )
 
         launch { viewModel.save() }
