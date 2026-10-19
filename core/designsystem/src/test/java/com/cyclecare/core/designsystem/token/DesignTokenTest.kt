@@ -143,9 +143,15 @@ class DesignTokenTest {
     fun everyCycleStateHasADistinctAccessibilityLabel() {
         val labels = CycleStateKind.entries.map { it.accessibilityLabel }
 
+        // The labels are resource references, so what matters is that each
+        // state points at a distinct resource and that none is empty.
         assertThat(labels).containsNoDuplicates()
-        assertThat(labels).contains("Logged period")
-        assertThat(labels).contains("Estimated period")
+        assertThat(labels).contains(
+            com.cyclecare.core.designsystem.R.string.cycle_state_logged_period,
+        )
+        assertThat(labels).contains(
+            com.cyclecare.core.designsystem.R.string.cycle_state_estimated_period,
+        )
     }
 
     @Test
@@ -437,7 +443,7 @@ class DesignTokenTest {
         assertThat(states).hasSize(4)
         states.forEach { state ->
             assertThat(state.distinguishesFromColourAlone).isTrue()
-            assertThat(state.accessibilityLabel).isNotEmpty()
+            assertThat(state.accessibilityLabel).isNotEqualTo(0)
         }
 
         val confirmed = states.first { !it.isEstimated }

@@ -1,5 +1,7 @@
 package com.cyclecare.feature.settings
 
+import com.cyclecare.core.designsystem.text.pluralUiText
+import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.model.ReminderRule
 import com.cyclecare.core.model.ReminderChannelKey
 import com.cyclecare.core.model.ReminderChannelSettings
@@ -40,20 +42,48 @@ class SettingsPresentationTest {
             ),
         )
 
-        assertThat(items[0].title).isEqualTo("Period preparation")
-        assertThat(items[0].scheduleLabel).isEqualTo("2 days before • 9:00 AM")
-        assertThat(items[1].title).isEqualTo("Fertile window")
-        assertThat(items[1].scheduleLabel).isEqualTo("Window start • 9:00 AM")
-        assertThat(items[2].title).isEqualTo("Daily check-in")
-        assertThat(items[2].scheduleLabel).isEqualTo("Daily • 8:00 PM")
+        // Asserted on resource identity rather than on English, so the
+        // copy can be reworded or translated without breaking the test and
+        // cannot drift away from the resource it claims to come from.
+        assertThat(items[0].title).isEqualTo(uiText(R.string.reminder_type_period_preparation))
+        assertThat(items[0].scheduleLabel)
+            .isEqualTo(
+                uiText(
+                    R.string.reminder_schedule_separator,
+                    pluralUiText(R.plurals.days_before, 2, 2),
+                    "9:00 AM",
+                ),
+            )
+        assertThat(items[1].title).isEqualTo(uiText(R.string.reminder_type_fertile_window))
+        assertThat(items[1].scheduleLabel)
+            .isEqualTo(
+                uiText(
+                    R.string.reminder_schedule_separator,
+                    uiText(R.string.reminder_schedule_window_start),
+                    "9:00 AM",
+                ),
+            )
+        assertThat(items[2].title).isEqualTo(uiText(R.string.reminder_type_daily_check_in))
+        assertThat(items[2].scheduleLabel)
+            .isEqualTo(
+                uiText(
+                    R.string.reminder_schedule_separator,
+                    uiText(R.string.reminder_schedule_daily),
+                    "8:00 PM",
+                ),
+            )
     }
 
     @Test
     fun `reminder type detail copy stays user facing`() {
-        assertThat(ReminderType.PeriodPrep.detailCopy()).isEqualTo("Heads-up before your predicted start date.")
-        assertThat(ReminderType.FertileWindowStart.detailCopy()).isEqualTo("Heads-up when your fertile window estimate begins.")
-        assertThat(ReminderType.OvulationEstimate.detailCopy()).isEqualTo("Heads-up on your ovulation estimate day.")
-        assertThat(ReminderType.DailyLog.detailCopy()).isEqualTo("Prompt to capture mood, pain, energy, and notes.")
+        assertThat(ReminderType.PeriodPrep.detailCopy())
+            .isEqualTo(uiText(R.string.reminder_detail_period_preparation))
+        assertThat(ReminderType.FertileWindowStart.detailCopy())
+            .isEqualTo(uiText(R.string.reminder_detail_fertile_window))
+        assertThat(ReminderType.OvulationEstimate.detailCopy())
+            .isEqualTo(uiText(R.string.reminder_detail_ovulation_estimate))
+        assertThat(ReminderType.DailyLog.detailCopy())
+            .isEqualTo(uiText(R.string.reminder_detail_daily_log))
     }
 
     @Test
@@ -67,8 +97,16 @@ class SettingsPresentationTest {
             minute = 30,
         )
 
-        assertThat(ReminderType.OvulationEstimate.displayTitle()).isEqualTo("Ovulation estimate")
-        assertThat(buildReminderScheduleLabel(rule)).isEqualTo("Ovulation estimate • 7:30 AM")
+        assertThat(ReminderType.OvulationEstimate.displayTitle())
+            .isEqualTo(uiText(R.string.reminder_type_ovulation_estimate))
+        assertThat(buildReminderScheduleLabel(rule))
+            .isEqualTo(
+                uiText(
+                    R.string.reminder_schedule_separator,
+                    uiText(R.string.reminder_type_ovulation_estimate),
+                    "7:30 AM",
+                ),
+            )
     }
 
     @Test
@@ -92,6 +130,11 @@ class SettingsPresentationTest {
             ),
         )
 
-        assertThat(items.map { it.title }).containsExactly("Cycle alerts", "Daily check-in").inOrder()
+        assertThat(items.map { it.title })
+            .containsExactly(
+                uiText(R.string.channel_cycle_alerts),
+                uiText(R.string.channel_daily_check_in),
+            )
+            .inOrder()
     }
 }

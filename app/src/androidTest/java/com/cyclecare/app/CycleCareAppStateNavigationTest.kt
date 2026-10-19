@@ -28,6 +28,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.lifecycle.Lifecycle
 import androidx.test.espresso.Espresso.pressBackUnconditionally
+import androidx.test.platform.app.InstrumentationRegistry
 import com.cyclecare.core.designsystem.CycleCareTheme
 import com.cyclecare.core.domain.ads.InMemoryDraftTracker
 import com.cyclecare.core.domain.time.SystemTimeProvider
@@ -463,6 +464,10 @@ class CycleCareAppStateNavigationTest {
 
     @Test
     fun appLock_wrongPinFiveTimes_startsCooldown() {
+        val tooManyFailedAttempts =
+            InstrumentationRegistry.getInstrumentation().targetContext.getString(
+                R.string.too_many_failed_attempts,
+            )
         val env = TestAppEnvironment.populated()
         runBlocking {
             env.privacyRepository.seedPin(pin = "1234", appLockEnabled = true)
@@ -474,9 +479,18 @@ class CycleCareAppStateNavigationTest {
         repeat(4) { attempt ->
             enterPin("9999")
             clickPrimaryAction()
+            // Driven by the resource, so the expectation follows the
+            // singular and plural forms rather than assuming one of them.
             composeRule.waitUntil(5_000) {
                 composeRule.onAllNodes(
-                    hasText("Incorrect PIN. ${4 - attempt} attempts remaining."),
+                    hasText(
+                        InstrumentationRegistry.getInstrumentation().targetContext.resources
+                            .getQuantityString(
+                                R.plurals.attempts_remaining,
+                                4 - attempt,
+                                4 - attempt,
+                            ),
+                    ),
                 ).fetchSemanticsNodes().isNotEmpty()
             }
         }
@@ -484,9 +498,9 @@ class CycleCareAppStateNavigationTest {
         clickPrimaryAction()
 
         composeRule.waitUntil(5_000) {
-            composeRule.onAllNodes(hasText("Too many failed attempts. Try again in 30 seconds.")).fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodes(hasText(tooManyFailedAttempts)).fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithText("Too many failed attempts. Try again in 30 seconds.").assertIsDisplayed()
+        composeRule.onNodeWithText(tooManyFailedAttempts).assertIsDisplayed()
         composeRule
             .onNodeWithTag(PrivacyUiTags.PRIMARY_ACTION)
             .performScrollTo()

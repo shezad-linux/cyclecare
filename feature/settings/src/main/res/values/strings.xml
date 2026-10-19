@@ -55,4 +55,46 @@
     </plurals>
     <string name="use_vibration_for_this_channel_when_android_allows_it">Use vibration for this channel when Android allows it.</string>
     <string name="vibration">Vibration</string>
+    <!-- Reminder types -->
+    <string name="reminder_type_period_preparation">Period preparation</string>
+    <string name="reminder_type_fertile_window">Fertile window</string>
+    <string name="reminder_type_ovulation_estimate">Ovulation estimate</string>
+    <string name="reminder_type_daily_check_in">Daily check-in</string>
+    <string name="reminder_type_late_period_check">Late-period check</string>
+    <string name="reminder_type_hydration">Hydration reminder</string>
+    <string name="reminder_type_pill">Pill reminder</string>
+
+    <string name="reminder_detail_period_preparation">Heads-up before your predicted start date.</string>
+    <string name="reminder_detail_fertile_window">Heads-up when your fertile window estimate begins.</string>
+    <string name="reminder_detail_ovulation_estimate">Heads-up on your ovulation estimate day.</string>
+    <string name="reminder_detail_daily_log">Prompt to capture mood, pain, energy, and notes.</string>
+    <string name="reminder_detail_late_period">Optional check-in if your predicted start date has already passed.</string>
+    <string name="reminder_detail_hydration">Gentle nudge to stay hydrated.</string>
+    <string name="reminder_detail_pill">Daily birth control reminder.</string>
+
+    <!-- The schedule label, which is two parts joined by a bullet. -->
+    <string name="reminder_schedule_separator">%1$s • %2$s</string>
+    <string name="reminder_schedule_window_start">Window start</string>
+    <string name="reminder_schedule_daily">Daily</string>
+    <plurals name="days_before">
+        <item quantity="one">%1$d day before</item>
+        <item quantity="other">%1$d days before</item>
+    </plurals>
+    <plurals name="days_late">
+        <item quantity="one">%1$d day late</item>
+        <item quantity="other">%1$d days late</item>
+    </plurals>
+
+    <!-- Notification channels -->
+    <string name="channel_cycle_alerts">Cycle alerts</string>
+    <string name="channel_fertility_alerts">Fertility alerts</string>
+    <string name="channel_daily_check_in">Daily check-in</string>
+    <string name="channel_detail_cycle_alerts">Period preparation and optional late-period reminders.</string>
+    <string name="channel_detail_fertility_alerts">Fertile-window start and ovulation reminders.</string>
+    <string name="channel_detail_daily_check_in">Daily symptom logging prompts.</string>
+
+    <!-- Reminder sounds -->
+    <string name="sound_gentle_bell">Gentle bell</string>
+    <string name="sound_soft_chime">Soft chime</string>
+    <string name="sound_water_drop">Water drop</string>
 </resources>

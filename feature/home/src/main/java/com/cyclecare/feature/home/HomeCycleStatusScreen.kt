@@ -6,6 +6,8 @@
 package com.cyclecare.feature.home
 
 import com.cyclecare.core.designsystem.token.CycleCareSpace
+import com.cyclecare.core.designsystem.metricCardAccents
+import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.designsystem.text.resolve
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +42,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalDensity
@@ -180,15 +183,16 @@ internal fun HomeCycleStatusScreen(
                     horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
                     MetricCard(
-                        label = stringResource(R.string.avg_cycle),
-                        value = stringResource(R.string.n_days, uiState.cycleLength),
+                        label = uiText(R.string.avg_cycle),
+                        value = pluralStringResource(R.plurals.n_days, uiState.cycleLength, uiState.cycleLength),
                         modifier = Modifier.weight(1f),
+                        accent = metricCardAccents(MaterialTheme.colorScheme).neutral,
                     )
                     MetricCard(
-                        label = stringResource(R.string.avg_period),
-                        value = stringResource(R.string.n_days, uiState.averagePeriodLength),
+                        label = uiText(R.string.avg_period),
+                        value = pluralStringResource(R.plurals.n_days, uiState.averagePeriodLength, uiState.averagePeriodLength),
                         modifier = Modifier.weight(1f),
-                        accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.86f),
+                        accent = metricCardAccents(MaterialTheme.colorScheme).period,
                     )
                 }
                 Row(
@@ -196,13 +200,13 @@ internal fun HomeCycleStatusScreen(
                     horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
                     MetricCard(
-                        label = stringResource(R.string.variability),
+                        label = uiText(R.string.variability),
                         value = uiState.variabilityText.resolve(),
                         modifier = Modifier.weight(1f),
-                        accent = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.18f),
+                        accent = metricCardAccents(MaterialTheme.colorScheme).neutral,
                     )
                     MetricCard(
-                        label = stringResource(R.string.next_period),
+                        label = uiText(R.string.next_period),
                         value = uiState.nextPeriodDateText.resolve(),
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),

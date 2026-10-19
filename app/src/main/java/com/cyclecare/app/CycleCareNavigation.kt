@@ -8,13 +8,15 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 
 internal data class TopLevelDestination(
     val route: String,
-    val label: String,
+    /** The tab's label, as a resource so it can be translated. */
+    @param:StringRes val labelRes: Int,
     val icon: ImageVector,
 )
 
@@ -25,10 +27,10 @@ internal data class TopLevelDestination(
  * Today for attention and was the least-revisited screen in the app.
  */
 internal val topLevelDestinations = listOf(
-    TopLevelDestination("home", "Today", Icons.Rounded.Home),
-    TopLevelDestination("calendar", "Calendar", Icons.Rounded.DateRange),
-    TopLevelDestination("log", "Log", Icons.Rounded.Edit),
-    TopLevelDestination("insights", "Insights", Icons.Rounded.Favorite),
+    TopLevelDestination("home", R.string.nav_today, Icons.Rounded.Home),
+    TopLevelDestination("calendar", R.string.nav_calendar, Icons.Rounded.DateRange),
+    TopLevelDestination("log", R.string.nav_log, Icons.Rounded.Edit),
+    TopLevelDestination("insights", R.string.nav_insights, Icons.Rounded.Favorite),
 )
 
 /** Reachable from the app bar, not a tab. */

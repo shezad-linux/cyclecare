@@ -5,6 +5,8 @@
 
 package com.cyclecare.feature.onboarding
 
+import com.cyclecare.core.designsystem.text.UiText
+import com.cyclecare.core.designsystem.text.resolve
 import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -147,7 +149,7 @@ internal fun FinalStepActions(
 
 @Composable
 internal fun StepperField(
-    valueLabel: String,
+    valueLabel: UiText,
     onDecrement: () -> Unit,
     onIncrement: () -> Unit,
     decrementEnabled: Boolean,
@@ -176,7 +178,7 @@ internal fun StepperField(
                 )
             }
             Text(
-                valueLabel,
+                valueLabel.resolve(),
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = if (valueTestTag != null) Modifier.testTag(valueTestTag) else Modifier
             )

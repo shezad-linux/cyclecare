@@ -5,6 +5,7 @@
 
 package com.cyclecare.feature.onboarding
 
+import com.cyclecare.core.designsystem.text.resolve
 import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -63,7 +64,7 @@ internal fun OnboardingBaselineStep(
                         selected = uiState.ageBand == ageBand,
                         onClick = { onAgeBandSelected(ageBand) },
                         modifier = Modifier.testTag("onboarding_age_${ageBand.name}"),
-                        label = { Text(ageBand.displayLabel()) },
+                        label = { Text(ageBand.displayLabel().resolve()) },
                         colors = onboardingChipColors(),
                     )
                 }
@@ -167,7 +168,7 @@ internal fun OnboardingPreferencesStep(
                         selected = uiState.goal == goal,
                         onClick = { onGoalSelected(goal) },
                         modifier = Modifier.testTag("onboarding_goal_${goal.name}"),
-                        label = { Text(goal.displayLabel()) },
+                        label = { Text(goal.displayLabel().resolve()) },
                         colors = onboardingChipColors(),
                     )
                 }

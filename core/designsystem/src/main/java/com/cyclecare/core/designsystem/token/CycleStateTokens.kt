@@ -4,6 +4,8 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
+import androidx.annotation.StringRes
+import com.cyclecare.core.designsystem.R
 
 /**
  * Semantic cycle states.
@@ -30,35 +32,43 @@ import androidx.compose.ui.graphics.Color
 enum class CycleStateKind(
     val border: CycleStateBorder,
     val icon: CycleStateIcon,
-    val accessibilityLabel: String,
+    /**
+     * The spoken label for this state.
+     *
+     * A resource reference rather than a literal, so the label is
+     * translatable from the moment it starts being read out. It is not
+     * rendered today, which is exactly why it was easy to leave as a
+     * literal: nothing looked wrong until it was spoken.
+     */
+    @param:StringRes val accessibilityLabel: Int,
     val isEstimated: Boolean,
 ) {
     /** Filled droplet: the user logged this. */
     CONFIRMED_PERIOD(
         border = CycleStateBorder.SOLID,
         icon = CycleStateIcon.FILLED_DROPLET,
-        accessibilityLabel = "Logged period",
+        accessibilityLabel = R.string.cycle_state_logged_period,
         isEstimated = false,
     ),
 
     PREDICTED_PERIOD(
         border = CycleStateBorder.DASHED,
         icon = CycleStateIcon.DASHED_RING,
-        accessibilityLabel = "Estimated period",
+        accessibilityLabel = R.string.cycle_state_estimated_period,
         isEstimated = true,
     ),
 
     ESTIMATED_FERTILE(
         border = CycleStateBorder.DOTTED,
         icon = CycleStateIcon.DOTTED_RING,
-        accessibilityLabel = "Estimated fertile days",
+        accessibilityLabel = R.string.cycle_state_estimated_fertile_days,
         isEstimated = true,
     ),
 
     ESTIMATED_OVULATION(
         border = CycleStateBorder.DOTTED,
         icon = CycleStateIcon.DOT,
-        accessibilityLabel = "Estimated ovulation",
+        accessibilityLabel = R.string.cycle_state_estimated_ovulation,
         isEstimated = true,
     ),
     ;
@@ -120,7 +130,9 @@ data class CycleStateStyle(
 ) {
     val border: CycleStateBorder get() = kind.border
     val icon: CycleStateIcon get() = kind.icon
-    val accessibilityLabel: String get() = kind.accessibilityLabel
+    /** The resource holding this state's spoken label. */
+    @get:StringRes
+    val accessibilityLabel: Int get() = kind.accessibilityLabel
     val isEstimated: Boolean get() = kind.isEstimated
 }
 

@@ -113,7 +113,7 @@ internal fun FertilityTeaserCard(
     onOpenFertilityDetail: () -> Unit,
 ) {
     DashboardSectionCard(
-        title = "Fertile window",
+        title = stringResource(R.string.fertile_window),
         subtitle = fertileWindowText,
         modifier = Modifier.testTag(HomeTags.FERTILE_CARD),
     ) {

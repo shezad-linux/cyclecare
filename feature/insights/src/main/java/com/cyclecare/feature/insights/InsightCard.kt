@@ -52,12 +52,12 @@ internal fun InsightsMetricGrid(uiState: InsightsUiState) {
         if (stackMetrics) {
             Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 InsightMetricCard(
-                    label = stringResource(R.string.avg_cycle),
+                    label = uiText(R.string.avg_cycle),
                     value = uiState.averageCycleText.resolve(),
                     accent = accents.neutral,
                 )
                 InsightMetricCard(
-                    label = stringResource(R.string.avg_period),
+                    label = uiText(R.string.avg_period),
                     value = uiState.averagePeriodText.resolve(),
                     accent = accents.period,
                 )
@@ -65,13 +65,13 @@ internal fun InsightsMetricGrid(uiState: InsightsUiState) {
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 InsightMetricCard(
-                    label = stringResource(R.string.avg_cycle),
+                    label = uiText(R.string.avg_cycle),
                     value = uiState.averageCycleText.resolve(),
                     modifier = Modifier.weight(1f),
                     accent = accents.neutral,
                 )
                 InsightMetricCard(
-                    label = stringResource(R.string.avg_period),
+                    label = uiText(R.string.avg_period),
                     value = uiState.averagePeriodText.resolve(),
                     modifier = Modifier.weight(1f),
                     accent = accents.period,
@@ -83,7 +83,7 @@ internal fun InsightsMetricGrid(uiState: InsightsUiState) {
 
 @Composable
 internal fun InsightMetricCard(
-    label: String,
+    label: UiText,
     value: String,
     accent: Color,
     modifier: Modifier = Modifier,

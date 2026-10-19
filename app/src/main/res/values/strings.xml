@@ -25,5 +25,64 @@
         <item quantity="one">%1$d unread reminder</item>
         <item quantity="other">%1$d unread reminders</item>
     </plurals>
+    <!-- Reminder deep link destinations -->
+    <string name="reminder_target_home">Home</string>
+    <string name="reminder_target_calendar">Calendar</string>
+    <string name="reminder_target_log">Log</string>
+    <string name="reminder_target_reminder_center">Reminder center</string>
+
+    <!-- Notification channels -->
+    <string name="channel_cycle_alerts">Cycle alerts</string>
+    <string name="channel_cycle_alerts_description">Period preparation and late-cycle reminders.</string>
+    <string name="channel_fertility_alerts">Fertility alerts</string>
+    <string name="channel_fertility_alerts_description">Fertile window and ovulation reminders.</string>
+    <string name="channel_daily_check_in">Daily check-in</string>
+    <string name="channel_daily_check_in_description">Daily symptom logging reminders.</string>
+    <string name="reminder_notification_title">Cycle reminder</string>
+
+    <!-- Notification permission recovery -->
+    <string name="allow_notifications">Allow notifications</string>
+    <string name="open_notification_settings">Open notification settings</string>
+
+    <!-- App lock -->
+    <string name="unlock_cyclecare_subtitle">Use biometrics to unlock local cycle data.</string>
+    <string name="cyclecare_locked">CycleCare locked</string>
+    <string name="cyclecare_locked_subtitle">Reopen local cycle data with your PIN or biometrics. Secure device auth is also available for PIN recovery.</string>
+    <string name="biometric_ready">Biometric ready</string>
+    <string name="pin_required">PIN required</string>
+    <string name="no_secure_recovery">No secure recovery</string>
+    <string name="no_secure_recovery_subtitle">This device has no biometric or screen-lock recovery set up. If you lose your PIN, the only way forward is to reset local data.</string>
+    <string name="recovery_eyebrow">Recovery</string>
+    <string name="too_many_failed_attempts">Too many failed attempts. Try again in 30 seconds.</string>
+    <plurals name="attempts_remaining">
+        <item quantity="one">Incorrect PIN. %1$d attempt remaining.</item>
+        <item quantity="other">Incorrect PIN. %1$d attempts remaining.</item>
+    </plurals>
+    <string name="recover_access">Recover access</string>
+    <string name="recover_access_subtitle">Authenticate with biometrics or your screen lock to reset the app PIN.</string>
+    <string name="use_biometric_instead">Use biometric instead</string>
+
+    <!-- Notification permission gate -->
+    <string name="notifications_required">Notifications are required for reminders</string>
+    <string name="notifications_required_subtitle">Daily check-ins and cycle reminders need notification access before you can continue.</string>
+
+    <!-- Reminder centre -->
+    <string name="unread">Unread</string>
+    <string name="active_days">Active days</string>
+    <string name="stored_events">Stored events</string>
+    <string name="no_reminders_yet">No reminders yet</string>
+    <string name="no_reminders_yet_subtitle">Delivered reminders will appear here so you can reopen them later even if Android blocked or hid the notification.</string>
+    <string name="local_history_eyebrow">Local history</string>
+    <string name="delivered_reminders_eyebrow">Delivered reminders</string>
+    <plurals name="reminders_captured_on_day">
+        <item quantity="one">%1$d reminder captured on this day.</item>
+        <item quantity="other">%1$d reminders captured on this day.</item>
+    </plurals>
+
+    <!--
+      The mandatory attribution on a native ad. It is a label, not a
+      sentence, but it is still user-facing text.
+    -->
+    <string name="ad_label">Ad</string>
 </resources>
 

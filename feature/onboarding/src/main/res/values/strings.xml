@@ -34,4 +34,26 @@
     <string name="used_to_tailor_cycle_predictions_and_insights">Used to tailor cycle predictions and insights.</string>
     <string name="wellness_goal">Wellness goal</string>
     <string name="your_data_stays_private_on_your_device">Your data stays private on your device.</string>
+    <!-- Values and validation -->
+    <plurals name="n_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="cycle_length_out_of_range">Cycle length must stay between 20 and 45 days.</string>
+    <string name="period_length_out_of_range">Period length must stay between 2 and 10 days.</string>
+    <string name="last_period_start_in_future">Last period start cannot be in the future.</string>
+
+    <!-- Age bands -->
+    <string name="age_band_teen">Teen (13-19)</string>
+    <string name="age_band_twenties">20s</string>
+    <string name="age_band_thirties">30s</string>
+    <string name="age_band_forties_plus">40+</string>
+
+    <!-- Goals -->
+    <string name="goal_period_preparation">Period Preparation</string>
+    <string name="goal_symptom_tracking">Symptom Tracking</string>
+    <string name="goal_pregnancy_planning">Pregnancy Planning</string>
+    <string name="goal_period_preparation_description">Get reminders before your period</string>
+    <string name="goal_symptom_tracking_description">Track mood, pain, and trends</string>
+    <string name="goal_pregnancy_planning_description">Focus on fertile window insights</string>
 </resources>

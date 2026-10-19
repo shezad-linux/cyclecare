@@ -43,4 +43,6 @@
     <string name="import_unsupported_version">The backup was created by a newer version of CycleCare and cannot be read.</string>
     <string name="import_failed">Import failed. No changes were made.</string>
     <string name="share_report_chooser_title">Share CycleCare report</string>
+    <!-- The fallback shown when a backup fails without a message of its own. -->
+    <string name="backup_failed">Backup failed</string>
 </resources>

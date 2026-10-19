@@ -2,6 +2,8 @@
 
 package com.cyclecare.feature.settings
 
+import com.cyclecare.core.designsystem.text.UiText
+import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
@@ -35,17 +37,17 @@ internal fun SettingsMetricGrid(
         if (stackMetrics) {
             Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 SettingsMetricCard(
-                    label = stringResource(R.string.reminders),
+                    label = uiText(R.string.reminders),
                     value = stringResource(if (remindersEnabled) R.string.on else R.string.off),
                     accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f),
                 )
                 SettingsMetricCard(
-                    label = stringResource(R.string.unread_center),
+                    label = uiText(R.string.unread_center),
                     value = unreadReminderCount.toString(),
                     accent = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.82f),
                 )
                 SettingsMetricCard(
-                    label = stringResource(R.string.preview_mode),
+                    label = uiText(R.string.preview_mode),
                     value = previewMode,
                     accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f),
                 )
@@ -54,20 +56,20 @@ internal fun SettingsMetricGrid(
             Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
                     SettingsMetricCard(
-                        label = stringResource(R.string.reminders),
+                        label = uiText(R.string.reminders),
                         value = stringResource(if (remindersEnabled) R.string.on else R.string.off),
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f),
                     )
                     SettingsMetricCard(
-                        label = stringResource(R.string.unread_center),
+                        label = uiText(R.string.unread_center),
                         value = unreadReminderCount.toString(),
                         modifier = Modifier.weight(1f),
                         accent = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.82f),
                     )
                 }
                 SettingsMetricCard(
-                    label = stringResource(R.string.preview_mode),
+                    label = uiText(R.string.preview_mode),
                     value = previewMode,
                     accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f),
                 )
@@ -78,7 +80,7 @@ internal fun SettingsMetricGrid(
 
 @Composable
 internal fun SettingsMetricCard(
-    label: String,
+    label: UiText,
     value: String,
     accent: androidx.compose.ui.graphics.Color,
     modifier: Modifier = Modifier,

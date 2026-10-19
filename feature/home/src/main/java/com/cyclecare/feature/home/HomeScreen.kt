@@ -160,6 +160,12 @@ internal fun HomeScreen(
     // accessibility state description stays locale-correct without
     // calling stringResource inside the modifier lambda.
     val progressStateDescriptionText = progressStateDescription(uiState.cycleDay, uiState.cycleLength).resolve()
+    // Resolved outside the semantics block, which is not a composable
+    // context, so a string resource cannot be read inside it.
+    val cycleProgressStateDescription = progressStateDescription(
+        uiState.cycleDay,
+        uiState.cycleLength,
+    ).resolve()
     val heroTitle = homeHeroTitle(uiState).resolve()
     val heroSubtitle = homeHeroSubtitle(uiState).resolve()
     val heroGradientColors = if (uiState.hasCurrentCycle) PeriodActiveGradientColors() else null
@@ -199,7 +205,11 @@ internal fun HomeScreen(
                         verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
                     ) {
                         MetricPill(
-                            text = "Day ${uiState.cycleDay ?: "--"} of ${uiState.cycleLength}",
+                            text = stringResource(
+                                R.string.day_of_cycle,
+                                uiState.cycleDay?.toString() ?: "--",
+                                uiState.cycleLength.toString(),
+                            ),
                             tone = MetricPillTone.Inverse,
                         )
                         MetricPill(
@@ -242,7 +252,7 @@ internal fun HomeScreen(
                             .height(6.dp)
                             .testTag(HomeTags.PROGRESS_BAR)
                             .semantics {
-                                stateDescription = "Day ${uiState.cycleDay ?: 0} of ${uiState.cycleLength}"
+                                stateDescription = cycleProgressStateDescription
                             },
                         color = if (isDark) MaterialTheme.colorScheme.primary else Color.White,
                         trackColor = (if (isDark) MaterialTheme.colorScheme.primary else Color.White).copy(alpha = 0.24f),
@@ -320,7 +330,7 @@ internal fun HomeScreen(
         }
         item {
             DashboardSectionCard(
-                title = "Quick actions",
+                title = stringResource(R.string.quick_actions),
                 modifier = Modifier.testTag(HomeTags.TODAY_ACTIONS),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {

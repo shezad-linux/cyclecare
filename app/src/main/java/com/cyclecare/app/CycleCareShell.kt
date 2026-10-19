@@ -109,13 +109,13 @@ internal fun NotificationPermissionRequiredGate(
                 tint = MaterialTheme.colorScheme.primary,
             )
             Text(
-                text = "Notifications are required for reminders",
+                text = stringResource(R.string.notifications_required),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(top = CycleCareSpace.space16),
             )
             Text(
-                text = "Daily check-ins and cycle reminders need notification access before you can continue.",
+                text = stringResource(R.string.notifications_required_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = CycleCareSpace.space8),
@@ -393,7 +393,7 @@ internal fun CycleCareBottomNavigation(
                                 // screen reader still announces the whole
                                 // label.
                                 Text(
-                                    text = destination.label,
+                                    text = stringResource(destination.labelRes),
                                     style = if (largeFontScale) {
                                         MaterialTheme.typography.labelSmall
                                     } else {

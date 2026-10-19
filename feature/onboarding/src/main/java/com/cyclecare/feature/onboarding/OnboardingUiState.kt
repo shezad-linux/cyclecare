@@ -7,6 +7,9 @@ package com.cyclecare.feature.onboarding
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import com.cyclecare.core.designsystem.text.UiText
+import com.cyclecare.core.designsystem.text.pluralUiText
+import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.model.AgeBand
 import com.cyclecare.core.model.TrackingGoal
 import java.time.LocalDate
@@ -23,14 +26,14 @@ data class OnboardingUiState(
     val showDatePicker: Boolean = false,
     val saving: Boolean = false,
 ) {
-    val cycleLengthLabel: String get() = "$cycleLength days"
-    val periodLengthLabel: String get() = "$periodLength days"
-    val cycleLengthError: String?
-        get() = if (cycleLength in 20..45) null else "Cycle length must stay between 20 and 45 days."
-    val periodLengthError: String?
-        get() = if (periodLength in 2..10) null else "Period length must stay between 2 and 10 days."
-    val lastPeriodStartError: String?
-        get() = if (!lastPeriodStart.isAfter(LocalDate.now())) null else "Last period start cannot be in the future."
+    val cycleLengthLabel: UiText get() = pluralUiText(R.plurals.n_days, cycleLength, cycleLength)
+    val periodLengthLabel: UiText get() = pluralUiText(R.plurals.n_days, periodLength, periodLength)
+    val cycleLengthError: UiText?
+        get() = if (cycleLength in 20..45) null else uiText(R.string.cycle_length_out_of_range)
+    val periodLengthError: UiText?
+        get() = if (periodLength in 2..10) null else uiText(R.string.period_length_out_of_range)
+    val lastPeriodStartError: UiText?
+        get() = if (!lastPeriodStart.isAfter(LocalDate.now())) null else uiText(R.string.last_period_start_in_future)
     val isSubmitEnabled: Boolean
         get() = !saving &&
             cycleLengthError == null &&
@@ -47,23 +50,23 @@ internal object OnboardingTags {
     const val START_TRACKING_BUTTON = "onboarding_start_tracking"
 }
 
-internal fun AgeBand.displayLabel(): String = when (this) {
-    AgeBand.Teen -> "Teen (13-19)"
-    AgeBand.Twenties -> "20s"
-    AgeBand.Thirties -> "30s"
-    AgeBand.FortiesPlus -> "40+"
+internal fun AgeBand.displayLabel(): UiText = when (this) {
+    AgeBand.Teen -> uiText(R.string.age_band_teen)
+    AgeBand.Twenties -> uiText(R.string.age_band_twenties)
+    AgeBand.Thirties -> uiText(R.string.age_band_thirties)
+    AgeBand.FortiesPlus -> uiText(R.string.age_band_forties_plus)
 }
 
-internal fun TrackingGoal.displayLabel(): String = when (this) {
-    TrackingGoal.PeriodPrep -> "Period Preparation"
-    TrackingGoal.SymptomAwareness -> "Symptom Tracking"
-    TrackingGoal.ConceptionAwareness -> "Pregnancy Planning"
+internal fun TrackingGoal.displayLabel(): UiText = when (this) {
+    TrackingGoal.PeriodPrep -> uiText(R.string.goal_period_preparation)
+    TrackingGoal.SymptomAwareness -> uiText(R.string.goal_symptom_tracking)
+    TrackingGoal.ConceptionAwareness -> uiText(R.string.goal_pregnancy_planning)
 }
 
-internal fun TrackingGoal.description(): String = when (this) {
-    TrackingGoal.PeriodPrep -> "Get reminders before your period"
-    TrackingGoal.SymptomAwareness -> "Track mood, pain, and trends"
-    TrackingGoal.ConceptionAwareness -> "Focus on fertile window insights"
+internal fun TrackingGoal.description(): UiText = when (this) {
+    TrackingGoal.PeriodPrep -> uiText(R.string.goal_period_preparation_description)
+    TrackingGoal.SymptomAwareness -> uiText(R.string.goal_symptom_tracking_description)
+    TrackingGoal.ConceptionAwareness -> uiText(R.string.goal_pregnancy_planning_description)
 }
 
 internal fun LocalDate.formatOnboardingDate(): String = onboardingDateFormatter.format(this)

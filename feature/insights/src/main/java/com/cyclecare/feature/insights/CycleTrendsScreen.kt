@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import com.cyclecare.core.designsystem.ChartFillColor
 import com.cyclecare.core.designsystem.GradientHeaderCard
 import com.cyclecare.core.designsystem.MetricCard
+import com.cyclecare.core.designsystem.metricCardAccents
+import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.designsystem.text.resolve
 
 @Composable
@@ -99,13 +101,13 @@ internal fun CycleTrendsScreen(
                 verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             ) {
                 MetricCard(
-                    label = stringResource(R.string.average),
+                    label = uiText(R.string.average),
                     value = uiState.averageCycleText.resolve(),
                     modifier = Modifier.widthIn(min = 150.dp),
                     accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.88f),
                 )
                 MetricCard(
-                    label = stringResource(R.string.range),
+                    label = uiText(R.string.range),
                     value = uiState.variabilityText.resolve(),
                     modifier = Modifier.widthIn(min = 150.dp),
                     accent = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.88f),

@@ -1,5 +1,6 @@
 package com.cyclecare.feature.onboarding
 
+import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.model.AgeBand
 import com.cyclecare.core.model.TrackingGoal
 import com.google.common.truth.Truth.assertThat
@@ -10,17 +11,24 @@ import org.junit.Test
 class OnboardingPresentationTest {
     @Test
     fun ageBandDisplayLabels_areUserFriendly() {
-        assertThat(AgeBand.Teen.displayLabel()).isEqualTo("Teen (13-19)")
-        assertThat(AgeBand.Twenties.displayLabel()).isEqualTo("20s")
-        assertThat(AgeBand.Thirties.displayLabel()).isEqualTo("30s")
-        assertThat(AgeBand.FortiesPlus.displayLabel()).isEqualTo("40+")
+        // Asserted on resource identity rather than on English, so the
+        // wording can change and the copy still cannot drift from the
+        // resource it claims to come from.
+        assertThat(AgeBand.Teen.displayLabel()).isEqualTo(uiText(R.string.age_band_teen))
+        assertThat(AgeBand.Twenties.displayLabel()).isEqualTo(uiText(R.string.age_band_twenties))
+        assertThat(AgeBand.Thirties.displayLabel()).isEqualTo(uiText(R.string.age_band_thirties))
+        assertThat(AgeBand.FortiesPlus.displayLabel())
+            .isEqualTo(uiText(R.string.age_band_forties_plus))
     }
 
     @Test
     fun trackingGoalDisplayLabels_areUserFriendly() {
-        assertThat(TrackingGoal.PeriodPrep.displayLabel()).isEqualTo("Period Preparation")
-        assertThat(TrackingGoal.SymptomAwareness.displayLabel()).isEqualTo("Symptom Tracking")
-        assertThat(TrackingGoal.ConceptionAwareness.displayLabel()).isEqualTo("Pregnancy Planning")
+        assertThat(TrackingGoal.PeriodPrep.displayLabel())
+            .isEqualTo(uiText(R.string.goal_period_preparation))
+        assertThat(TrackingGoal.SymptomAwareness.displayLabel())
+            .isEqualTo(uiText(R.string.goal_symptom_tracking))
+        assertThat(TrackingGoal.ConceptionAwareness.displayLabel())
+            .isEqualTo(uiText(R.string.goal_pregnancy_planning))
     }
 
     @Test
@@ -33,7 +41,8 @@ class OnboardingPresentationTest {
         val state = OnboardingUiState(lastPeriodStart = LocalDate.now().plusDays(1))
 
         assertThat(state.isSubmitEnabled).isFalse()
-        assertThat(state.lastPeriodStartError).isEqualTo("Last period start cannot be in the future.")
+        assertThat(state.lastPeriodStartError)
+            .isEqualTo(uiText(R.string.last_period_start_in_future))
     }
 
     @Test
@@ -41,7 +50,8 @@ class OnboardingPresentationTest {
         val state = OnboardingUiState(cycleLength = 19)
 
         assertThat(state.isSubmitEnabled).isFalse()
-        assertThat(state.cycleLengthError).isEqualTo("Cycle length must stay between 20 and 45 days.")
+        assertThat(state.cycleLengthError)
+            .isEqualTo(uiText(R.string.cycle_length_out_of_range))
     }
 
     @Test

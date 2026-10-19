@@ -124,7 +124,10 @@
     <string name="open_insights">Open insights</string>
     <string name="avg_cycle">Avg cycle</string>
     <string name="avg_period">Avg period</string>
-    <string name="n_days">%1$d days</string>
+    <plurals name="n_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
     <string name="variability">Variability</string>
     <string name="next_period">Next period</string>
     <string name="current_status">Current status</string>
@@ -147,4 +150,18 @@
         <item quantity="one">%1$d unread</item>
         <item quantity="other">%1$d unread</item>
     </plurals>
+    <!-- Dashboard metric cards -->
+    <string name="unread_reminders">Unread reminders</string>
+    <string name="open_reminder_center">Open reminder center</string>
+
+    <!-- Section headings and content descriptions -->
+    <string name="quick_actions">Quick actions</string>
+    <string name="fertility_detail">Fertility detail</string>
+    <string name="fertility_detail_subtitle">%1$s • Ovulation %2$s</string>
+
+    <!--
+      The cycle day, where the day may be unknown. "day_x_of_y" takes two
+      numbers, so the unknown case needs its own string.
+    -->
+    <string name="day_of_cycle">Day %1$s of %2$s</string>
 </resources>

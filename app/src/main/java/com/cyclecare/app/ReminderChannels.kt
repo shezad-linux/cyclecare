@@ -74,18 +74,18 @@ object ReminderChannels {
     ): NotificationChannel {
         val (name, description, importance) = when (settings.channelKey) {
             ReminderChannelKey.CycleAlerts -> Triple(
-                "Cycle alerts",
-                "Period preparation and late-cycle reminders.",
+                context.getString(R.string.channel_cycle_alerts),
+                context.getString(R.string.channel_cycle_alerts_description),
                 NotificationManager.IMPORTANCE_HIGH,
             )
             ReminderChannelKey.FertilityAlerts -> Triple(
-                "Fertility alerts",
-                "Fertile window and ovulation reminders.",
+                context.getString(R.string.channel_fertility_alerts),
+                context.getString(R.string.channel_fertility_alerts_description),
                 NotificationManager.IMPORTANCE_DEFAULT,
             )
             ReminderChannelKey.DailyCheckIn -> Triple(
-                "Daily check-in",
-                "Daily symptom logging reminders.",
+                context.getString(R.string.channel_daily_check_in),
+                context.getString(R.string.channel_daily_check_in_description),
                 NotificationManager.IMPORTANCE_LOW,
             )
         }

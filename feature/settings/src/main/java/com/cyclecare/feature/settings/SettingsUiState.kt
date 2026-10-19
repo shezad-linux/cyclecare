@@ -4,6 +4,9 @@ package com.cyclecare.feature.settings
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import com.cyclecare.core.designsystem.text.UiText
+import com.cyclecare.core.designsystem.text.pluralUiText
+import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.model.ConsentState
 import com.cyclecare.core.model.ReminderChannelKey
 import com.cyclecare.core.model.ReminderChannelSettings
@@ -28,15 +31,15 @@ data class SettingsUiState(
 
 data class SettingsReminderItem(
     val rule: ReminderRule,
-    val title: String,
-    val scheduleLabel: String,
-    val detail: String,
+    val title: UiText,
+    val scheduleLabel: UiText,
+    val detail: UiText,
 )
 
 data class SettingsChannelItem(
     val settings: ReminderChannelSettings,
-    val title: String,
-    val detail: String,
+    val title: UiText,
+    val detail: UiText,
 )
 
 private val reminderTimeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.US)
@@ -51,44 +54,47 @@ internal object SettingsTags {
     const val OPEN_AD_PRIVACY = "settings_open_ad_privacy"
 }
 
-internal fun ReminderType.displayTitle(): String = when (this) {
-    ReminderType.PeriodPrep -> "Period preparation"
-    ReminderType.FertileWindowStart -> "Fertile window"
-    ReminderType.OvulationEstimate -> "Ovulation estimate"
-    ReminderType.DailyLog -> "Daily check-in"
-    ReminderType.LatePeriod -> "Late-period check"
-    ReminderType.Hydration -> "Hydration reminder"
-    ReminderType.Pill -> "Pill reminder"
+internal fun ReminderType.displayTitle(): UiText = when (this) {
+    ReminderType.PeriodPrep -> uiText(R.string.reminder_type_period_preparation)
+    ReminderType.FertileWindowStart -> uiText(R.string.reminder_type_fertile_window)
+    ReminderType.OvulationEstimate -> uiText(R.string.reminder_type_ovulation_estimate)
+    ReminderType.DailyLog -> uiText(R.string.reminder_type_daily_check_in)
+    ReminderType.LatePeriod -> uiText(R.string.reminder_type_late_period_check)
+    ReminderType.Hydration -> uiText(R.string.reminder_type_hydration)
+    ReminderType.Pill -> uiText(R.string.reminder_type_pill)
 }
 
-internal fun buildReminderScheduleLabel(rule: ReminderRule): String {
+internal fun buildReminderScheduleLabel(rule: ReminderRule): UiText {
     val timeLabel = LocalTime.of(rule.hourOfDay, rule.minute).format(reminderTimeFormatter)
-    return when (rule.type) {
+    val label = when (rule.type) {
         ReminderType.PeriodPrep -> {
             val offset = rule.daysBefore.absoluteValue
-            val dayLabel = if (offset == 1) "1 day before" else "$offset days before"
-            "$dayLabel • $timeLabel"
+            pluralUiText(R.plurals.days_before, offset, offset)
         }
-        ReminderType.FertileWindowStart -> "Window start • $timeLabel"
-        ReminderType.OvulationEstimate -> "Ovulation estimate • $timeLabel"
-        ReminderType.DailyLog -> "Daily • $timeLabel"
+        ReminderType.FertileWindowStart -> uiText(R.string.reminder_schedule_window_start)
+        ReminderType.OvulationEstimate -> uiText(R.string.reminder_type_ovulation_estimate)
+        ReminderType.DailyLog -> uiText(R.string.reminder_schedule_daily)
         ReminderType.LatePeriod -> {
             val offset = rule.daysBefore.absoluteValue
-            val dayLabel = if (offset == 1) "1 day late" else "$offset days late"
-            "$dayLabel • $timeLabel"
+            pluralUiText(R.plurals.days_late, offset, offset)
         }
-        else -> timeLabel
+        else -> null
+    }
+    return if (label == null) {
+        UiText.Raw(timeLabel)
+    } else {
+        uiText(R.string.reminder_schedule_separator, label, timeLabel)
     }
 }
 
-internal fun ReminderType.detailCopy(): String = when (this) {
-    ReminderType.PeriodPrep -> "Heads-up before your predicted start date."
-    ReminderType.FertileWindowStart -> "Heads-up when your fertile window estimate begins."
-    ReminderType.OvulationEstimate -> "Heads-up on your ovulation estimate day."
-    ReminderType.DailyLog -> "Prompt to capture mood, pain, energy, and notes."
-    ReminderType.LatePeriod -> "Optional check-in if your predicted start date has already passed."
-    ReminderType.Hydration -> "Gentle nudge to stay hydrated."
-    ReminderType.Pill -> "Daily birth control reminder."
+internal fun ReminderType.detailCopy(): UiText = when (this) {
+    ReminderType.PeriodPrep -> uiText(R.string.reminder_detail_period_preparation)
+    ReminderType.FertileWindowStart -> uiText(R.string.reminder_detail_fertile_window)
+    ReminderType.OvulationEstimate -> uiText(R.string.reminder_detail_ovulation_estimate)
+    ReminderType.DailyLog -> uiText(R.string.reminder_detail_daily_log)
+    ReminderType.LatePeriod -> uiText(R.string.reminder_detail_late_period)
+    ReminderType.Hydration -> uiText(R.string.reminder_detail_hydration)
+    ReminderType.Pill -> uiText(R.string.reminder_detail_pill)
 }
 
 private val reminderDisplayOrder = listOf(
@@ -118,22 +124,22 @@ private val channelDisplayOrder = listOf(
     ReminderChannelKey.DailyCheckIn,
 )
 
-internal fun ReminderChannelKey.displayTitle(): String = when (this) {
-    ReminderChannelKey.CycleAlerts -> "Cycle alerts"
-    ReminderChannelKey.FertilityAlerts -> "Fertility alerts"
-    ReminderChannelKey.DailyCheckIn -> "Daily check-in"
+internal fun ReminderChannelKey.displayTitle(): UiText = when (this) {
+    ReminderChannelKey.CycleAlerts -> uiText(R.string.channel_cycle_alerts)
+    ReminderChannelKey.FertilityAlerts -> uiText(R.string.channel_fertility_alerts)
+    ReminderChannelKey.DailyCheckIn -> uiText(R.string.channel_daily_check_in)
 }
 
-internal fun ReminderChannelKey.detailCopy(): String = when (this) {
-    ReminderChannelKey.CycleAlerts -> "Period preparation and optional late-period reminders."
-    ReminderChannelKey.FertilityAlerts -> "Fertile-window start and ovulation reminders."
-    ReminderChannelKey.DailyCheckIn -> "Daily symptom logging prompts."
+internal fun ReminderChannelKey.detailCopy(): UiText = when (this) {
+    ReminderChannelKey.CycleAlerts -> uiText(R.string.channel_detail_cycle_alerts)
+    ReminderChannelKey.FertilityAlerts -> uiText(R.string.channel_detail_fertility_alerts)
+    ReminderChannelKey.DailyCheckIn -> uiText(R.string.channel_detail_daily_check_in)
 }
 
-internal fun ReminderSoundPreset.displayTitle(): String = when (this) {
-    ReminderSoundPreset.GentleBell -> "Gentle bell"
-    ReminderSoundPreset.SoftChime -> "Soft chime"
-    ReminderSoundPreset.WaterDrop -> "Water drop"
+internal fun ReminderSoundPreset.displayTitle(): UiText = when (this) {
+    ReminderSoundPreset.GentleBell -> uiText(R.string.sound_gentle_bell)
+    ReminderSoundPreset.SoftChime -> uiText(R.string.sound_soft_chime)
+    ReminderSoundPreset.WaterDrop -> uiText(R.string.sound_water_drop)
 }
 
 internal fun buildChannelItems(settings: List<ReminderChannelSettings>): List<SettingsChannelItem> =

@@ -161,7 +161,7 @@ class ReminderDeliveryWorker(
         )
 
         val (title, body) = if (consent.hideNotificationPreview) {
-            "Cycle reminder" to event.privateBody
+            applicationContext.getString(R.string.reminder_notification_title) to event.privateBody
         } else {
             event.title to event.body
         }

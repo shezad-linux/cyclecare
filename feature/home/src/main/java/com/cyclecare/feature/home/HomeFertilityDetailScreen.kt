@@ -7,6 +7,8 @@ package com.cyclecare.feature.home
 
 import com.cyclecare.core.designsystem.token.CycleCareSpace
 import com.cyclecare.core.designsystem.text.resolve
+import com.cyclecare.core.designsystem.metricCardAccents
+import com.cyclecare.core.designsystem.text.uiText
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,8 +53,12 @@ internal fun HomeFertilityDetailScreen(
     onOpenInsights: () -> Unit,
 ) {
     HomeDetailShell(
-        title = "Fertility detail",
-        subtitle = "${uiState.fertileWindowText} • Ovulation ${uiState.ovulationEstimateText}",
+        title = stringResource(R.string.fertility_detail),
+        subtitle = stringResource(
+            R.string.fertility_detail_subtitle,
+            uiState.fertileWindowText.resolve(),
+            uiState.ovulationEstimateText.resolve(),
+        ),
         modifier = Modifier.testTag(HomeTags.FERTILITY_DETAIL_SCREEN),
         onBack = onBack,
     ) {
@@ -62,16 +68,16 @@ internal fun HomeFertilityDetailScreen(
                 horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             ) {
                 MetricCard(
-                    label = "Fertile window",
+                    label = uiText(R.string.fertile_window),
                     value = uiState.fertileWindowText.resolve(),
                     modifier = Modifier.weight(1f),
-                    accent = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.86f),
+                    accent = metricCardAccents(MaterialTheme.colorScheme).neutral,
                 )
                 MetricCard(
-                    label = stringResource(R.string.ovulation),
+                    label = uiText(R.string.ovulation),
                     value = uiState.ovulationEstimateText.resolve(),
                     modifier = Modifier.weight(1f),
-                    accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.86f),
+                    accent = metricCardAccents(MaterialTheme.colorScheme).neutral,
                 )
             }
             DashboardSectionCard(

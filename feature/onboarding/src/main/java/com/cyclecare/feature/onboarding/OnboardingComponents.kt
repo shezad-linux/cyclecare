@@ -6,6 +6,8 @@
 package com.cyclecare.feature.onboarding
 
 import com.cyclecare.core.designsystem.DashboardPill
+import com.cyclecare.core.designsystem.text.UiText
+import com.cyclecare.core.designsystem.text.resolve
 import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -118,9 +120,9 @@ internal fun SoftDivider() {
 }
 
 @Composable
-internal fun InlineError(text: String) {
+internal fun InlineError(text: UiText) {
     Text(
-        text,
+        text.resolve(),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.error,
     )
@@ -166,13 +168,13 @@ internal fun DateSelectionField(
 }
 
 @Composable
-internal fun GoalSummary(text: String) {
+internal fun GoalSummary(text: UiText) {
     Surface(
         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
         shape = RoundedCornerShape(16.dp),
     ) {
         Text(
-            text,
+            text.resolve(),
             modifier = Modifier.padding(horizontal = CycleCareSpace.space14, vertical = CycleCareSpace.space12),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary,

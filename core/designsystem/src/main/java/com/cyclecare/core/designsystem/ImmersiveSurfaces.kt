@@ -35,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -209,14 +210,14 @@ fun BottomActionRail(
                                 strokeWidth = 2.dp
                             )
                             Text(
-                                text = "Saving...",
+                                text = stringResource(R.string.saving),
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold
                             )
                         } else {
                             if (targetState.contains("✓") || targetState.contains("Saved") || targetState.contains("Edit") || targetState.contains("Update")) {
                                 Text(
-                                    text = "✓ ",
+                                    text = stringResource(R.string.completed_action_mark),
                                     style = MaterialTheme.typography.labelLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimary

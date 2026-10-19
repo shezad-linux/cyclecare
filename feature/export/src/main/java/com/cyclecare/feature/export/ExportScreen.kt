@@ -75,7 +75,15 @@ sealed interface ExportStatus {
     data class BackupSuccess(val artifact: ExportArtifact) : ExportStatus
     data class ImportSuccess(val cycles: Int, val symptoms: Int) : ExportStatus
     data class ImportFailure(val failureRes: Int) : ExportStatus
-    data class BackupFailure(val message: String) : ExportStatus
+    /**
+     * A failure with a message of its own.
+     *
+     * The message is a [UiText] because the ViewModel cannot resolve a
+     * resource. An exception's own message is text owned by another
+     * system, so it is carried as [UiText.Raw]; the fallback is ours and
+     * is a resource.
+     */
+    data class BackupFailure(val message: UiText) : ExportStatus
 }
 
 data class ExportUiState(
@@ -131,7 +139,10 @@ class ExportViewModel(
                 mutableState.update {
                     it.copy(
                         isWorking = false,
-                        status = ExportStatus.BackupFailure(error.message ?: "Backup failed"),
+                        status = ExportStatus.BackupFailure(
+                            error.message?.let { UiText.Raw(it) }
+                                ?: uiText(R.string.backup_failed),
+                        ),
                     )
                 }
             }
@@ -323,19 +334,19 @@ private fun ExportScreen(
             modifier = Modifier.fillMaxWidth(),
         ) {
             MetricCard(
-                label = stringResource(R.string.formats),
+                label = uiText(R.string.formats),
                 value = stringResource(R.string.markdown_plus_pdf),
                 modifier = Modifier.widthIn(min = 150.dp),
                 accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.86f),
             )
             MetricCard(
-                label = stringResource(R.string.storage),
+                label = uiText(R.string.storage),
                 value = stringResource(R.string.on_device),
                 modifier = Modifier.widthIn(min = 150.dp),
                 accent = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.86f),
             )
             MetricCard(
-                label = stringResource(R.string.status),
+                label = uiText(R.string.status),
                 value = if (uiState.isWorking) {
                     stringResource(R.string.working)
                 } else {

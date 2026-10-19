@@ -24,10 +24,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.cyclecare.core.designsystem.MetricCard
+import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.designsystem.metricCardAccents
 
 @Composable
@@ -50,7 +53,10 @@ internal fun HomeReminderButton(
                 }
             },
         ) {
-            Icon(Icons.Rounded.Notifications, contentDescription = "Open reminder center")
+            Icon(
+                Icons.Rounded.Notifications,
+                contentDescription = stringResource(R.string.open_reminder_center),
+            )
         }
     }
 }
@@ -73,25 +79,25 @@ internal fun HomeMetricGrid(
                 verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
             ) {
                 MetricCard(
-                    label = "Avg cycle",
-                    value = "${uiState.cycleLength} days",
+                    label = uiText(R.string.avg_cycle),
+                    value = pluralStringResource(R.plurals.n_days, uiState.cycleLength, uiState.cycleLength),
                     modifier = Modifier.fillMaxWidth(),
                     accent = neutralAccent,
                 )
                 MetricCard(
-                    label = "Avg period",
-                    value = "${uiState.averagePeriodLength} days",
+                    label = uiText(R.string.avg_period),
+                    value = pluralStringResource(R.plurals.n_days, uiState.averagePeriodLength, uiState.averagePeriodLength),
                     modifier = Modifier.fillMaxWidth(),
                     accent = periodAccent,
                 )
                 MetricCard(
-                    label = "Variability",
+                    label = uiText(R.string.variability),
                     value = uiState.variabilityText.resolve(),
                     modifier = Modifier.fillMaxWidth(),
                     accent = neutralAccent,
                 )
                 MetricCard(
-                    label = "Unread reminders",
+                    label = uiText(R.string.unread_reminders),
                     value = reminderUnreadCount.toString(),
                     modifier = Modifier.fillMaxWidth(),
                     accent = neutralAccent,
@@ -107,14 +113,14 @@ internal fun HomeMetricGrid(
                     horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
                     MetricCard(
-                        label = "Avg cycle",
-                        value = "${uiState.cycleLength} days",
+                        label = uiText(R.string.avg_cycle),
+                        value = pluralStringResource(R.plurals.n_days, uiState.cycleLength, uiState.cycleLength),
                         modifier = Modifier.weight(1f),
                         accent = neutralAccent,
                     )
                     MetricCard(
-                        label = "Avg period",
-                        value = "${uiState.averagePeriodLength} days",
+                        label = uiText(R.string.avg_period),
+                        value = pluralStringResource(R.plurals.n_days, uiState.averagePeriodLength, uiState.averagePeriodLength),
                         modifier = Modifier.weight(1f),
                         accent = periodAccent,
                     )
@@ -124,13 +130,13 @@ internal fun HomeMetricGrid(
                     horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
                 ) {
                     MetricCard(
-                        label = "Variability",
+                        label = uiText(R.string.variability),
                         value = uiState.variabilityText.resolve(),
                         modifier = Modifier.weight(1f),
                         accent = neutralAccent,
                     )
                     MetricCard(
-                        label = "Unread reminders",
+                        label = uiText(R.string.unread_reminders),
                         value = reminderUnreadCount.toString(),
                         modifier = Modifier.weight(1f),
                         accent = neutralAccent,

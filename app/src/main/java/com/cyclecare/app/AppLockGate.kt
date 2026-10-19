@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -57,6 +58,7 @@ internal fun AppLockGate(
     secureAuthController: SecureAuthController,
     onOpenPrivacyAfterRecovery: () -> Unit,
 ) {
+    val context = LocalContext.current
     var pinEntry by rememberSaveable { mutableStateOf("") }
     var message by rememberSaveable { mutableStateOf<String?>(null) }
     var showResetConfirmation by rememberSaveable { mutableStateOf(false) }
@@ -73,6 +75,16 @@ internal fun AppLockGate(
     val isLockedOut = lockedUntilMillis > now
     val canRecover = capability != SecureAuthCapability.None
     val canUseBiometric = biometricEnabled && capability.supportsBiometric
+
+    // Hoisted so the local functions and the callbacks below can use them.
+    // A string resource cannot be read inside a callback, only during
+    // composition.
+    val unlockTitle = stringResource(R.string.unlock_cyclecare)
+    val unlockSubtitle = stringResource(R.string.unlock_cyclecare_subtitle)
+    val tooManyFailedAttempts = stringResource(R.string.too_many_failed_attempts)
+    val recoverAccessTitle = stringResource(R.string.recover_access)
+    val recoverAccessSubtitle = stringResource(R.string.recover_access_subtitle)
+    val useBiometricInstead = stringResource(R.string.use_biometric_instead)
 
     LaunchedEffect(lockedUntilMillis) {
         while (lockedUntilMillis > System.currentTimeMillis()) {
@@ -91,8 +103,8 @@ internal fun AppLockGate(
     fun requestBiometricUnlock() {
         secureAuthController.authenticate(
             preference = SecureAuthPreference.PreferBiometric,
-            title = "Unlock CycleCare",
-            subtitle = "Use biometrics to unlock local cycle data.",
+            title = unlockTitle,
+            subtitle = unlockSubtitle,
             onSuccess = {
                 scope.launch {
                     failedAttempts = 0
@@ -157,11 +169,17 @@ internal fun AppLockGate(
         ) {
             item {
                 GradientHeaderCard(
-                    title = "CycleCare locked",
-                    subtitle = "Reopen local cycle data with your PIN or biometrics. Secure device auth is also available for PIN recovery.",
+                    title = stringResource(R.string.cyclecare_locked),
+                    subtitle = stringResource(R.string.cyclecare_locked_subtitle),
                     supportingContent = {
                         Row(horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
-                            DashboardPill(text = if (canUseBiometric) "Biometric ready" else "PIN required")
+                            DashboardPill(
+                                text = if (canUseBiometric) {
+                                    stringResource(R.string.biometric_ready)
+                                } else {
+                                    stringResource(R.string.pin_required)
+                                },
+                            )
                             DashboardPill(
                                 text = capability.summaryLabel().resolve(),
                                 emphasized = capability != SecureAuthCapability.None,
@@ -174,9 +192,9 @@ internal fun AppLockGate(
             if (!canRecover) {
                 item {
                     DashboardSectionCard(
-                        title = "No secure recovery",
-                        subtitle = "This device has no biometric or screen-lock recovery set up. If you lose your PIN, the only way forward is to reset local data.",
-                        eyebrow = "Recovery",
+                        title = stringResource(R.string.no_secure_recovery),
+                        subtitle = stringResource(R.string.no_secure_recovery_subtitle),
+                        eyebrow = stringResource(R.string.recovery_eyebrow),
                     ) {
                         OutlinedButton(
                             onClick = { showResetConfirmation = true },
@@ -223,9 +241,13 @@ internal fun AppLockGate(
                                     failedAttempts += 1
                                     if (failedAttempts >= 5) {
                                         lockedUntilMillis = System.currentTimeMillis() + 30_000L
-                                        message = "Too many failed attempts. Try again in 30 seconds."
+                                        message = tooManyFailedAttempts
                                     } else {
-                                        message = "Incorrect PIN. ${5 - failedAttempts} attempts remaining."
+                                        message = context.resources.getQuantityString(
+                                            R.plurals.attempts_remaining,
+                                            5 - failedAttempts,
+                                            5 - failedAttempts,
+                                        )
                                     }
                                 }
                             }
@@ -241,13 +263,13 @@ internal fun AppLockGate(
                             pinEntry = pinEntry.dropLast(1)
                         }
                     },
-                    secondaryActionLabel = if (canRecover) "Recover access" else null,
+                    secondaryActionLabel = if (canRecover) recoverAccessTitle else null,
                     onSecondaryAction = if (canRecover) {
                         {
                             secureAuthController.authenticate(
                                 preference = SecureAuthPreference.PreferBiometric,
-                                title = "Recover access",
-                                subtitle = "Authenticate with biometrics or your screen lock to reset the app PIN.",
+                                title = recoverAccessTitle,
+                                subtitle = recoverAccessSubtitle,
                                 onSuccess = {
                                     scope.launch {
                                         privacyRepository.resetAppLock()
@@ -263,7 +285,7 @@ internal fun AppLockGate(
                     } else {
                         null
                     },
-                    tertiaryActionLabel = if (canUseBiometric) "Use biometric instead" else null,
+                    tertiaryActionLabel = if (canUseBiometric) useBiometricInstead else null,
                     onTertiaryAction = if (canUseBiometric) {
                         ::requestBiometricUnlock
                     } else {

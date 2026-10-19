@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Strings owned by the design system.
+
+  A component that renders its own text has to own that text, otherwise
+  the text is a hardcoded English literal that no locale can change. These
+  are the shared components' own labels, not the app's copy.
+-->
+<resources>
+    <!-- Shown while a shared action is in flight. -->
+    <string name="saving">Saving…</string>
+
+    <!--
+      The tick drawn beside a completed action's label. It is a glyph
+      rather than a word, but it is still rendered text and still has to
+      come from a resource so it can be replaced in a locale that needs a
+      different mark.
+    -->
+    <string name="completed_action_mark">✓</string>
+    <!--
+      The spoken labels for the semantic cycle states. A user must never
+      confuse something they recorded with something the app guessed, and
+      the spoken label is part of how that is carried.
+    -->
+    <string name="cycle_state_logged_period">Logged period</string>
+    <string name="cycle_state_estimated_period">Estimated period</string>
+    <string name="cycle_state_estimated_fertile_days">Estimated fertile days</string>
+    <string name="cycle_state_estimated_ovulation">Estimated ovulation</string>
+</resources>

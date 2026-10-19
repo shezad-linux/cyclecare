@@ -69,6 +69,7 @@ import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import android.content.Context
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -113,11 +114,14 @@ internal object NotificationPermissionTags {
     const val REQUIRED_ACTION = "notification_permission_required_action"
 }
 
-private fun NotificationPermissionStatus.recoveryLabel(): String? = when (recoveryAction) {
-    NotificationPermissionRecoveryAction.None -> null
-    NotificationPermissionRecoveryAction.RequestRuntimePermission -> "Allow notifications"
-    NotificationPermissionRecoveryAction.OpenSettings -> "Open notification settings"
-}
+private fun NotificationPermissionStatus.recoveryLabel(context: Context): String? =
+    when (recoveryAction) {
+        NotificationPermissionRecoveryAction.None -> null
+        NotificationPermissionRecoveryAction.RequestRuntimePermission ->
+            context.getString(R.string.allow_notifications)
+        NotificationPermissionRecoveryAction.OpenSettings ->
+            context.getString(R.string.open_notification_settings)
+    }
 
 @Composable
 fun CycleCareApp(
@@ -268,14 +272,15 @@ fun CycleCareApp(
         }
     } else if (notificationAccessRequired) {
         NotificationPermissionRequiredGate(
-            actionLabel = notificationPermissionStatus.recoveryLabel() ?: "Allow notifications",
+            actionLabel = notificationPermissionStatus.recoveryLabel(context)
+                ?: context.getString(R.string.allow_notifications),
             onResolveNotificationAccess = resolveNotificationAccess,
         )
     } else {
         MainShell(
             container = container,
             notificationsCanPost = notificationPermissionStatus.canPostNotifications,
-            notificationRecoveryActionLabel = notificationPermissionStatus.recoveryLabel(),
+            notificationRecoveryActionLabel = notificationPermissionStatus.recoveryLabel(context),
             secureAuthController = authController,
             canRequestAds = canRequestAds,
             interstitialAdManager = activeInterstitialAdManager,

@@ -37,6 +37,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import com.cyclecare.core.designsystem.text.UiText
+import com.cyclecare.core.designsystem.text.resolve
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -301,7 +303,14 @@ fun metricCardAccents(scheme: ColorScheme): MetricCardAccents = MetricCardAccent
 
 @Composable
 fun MetricCard(
-    label: String,
+    /**
+     * The card's label.
+     *
+     * A [UiText] rather than a [String] so a hardcoded English label
+     * cannot be passed in by accident. Every metric card in the app is
+     * labelled with a resource, and this is what keeps it that way.
+     */
+    label: UiText,
     value: String,
     modifier: Modifier = Modifier,
     accent: Color = MaterialTheme.colorScheme.primaryContainer,
@@ -319,7 +328,7 @@ fun MetricCard(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = label,
+                text = label.resolve(),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -35,6 +35,8 @@ import com.cyclecare.core.designsystem.DashboardPill
 import com.cyclecare.core.designsystem.DashboardSectionCard
 import com.cyclecare.core.designsystem.GradientHeaderCard
 import com.cyclecare.core.designsystem.MetricCard
+import com.cyclecare.core.designsystem.metricCardAccents
+import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.domain.ReminderEventsRepository
 import com.cyclecare.core.model.ReminderDeepLinkTarget
 import com.cyclecare.core.model.ReminderEvent
@@ -161,22 +163,22 @@ private fun ReminderCenterScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 MetricCard(
-                    label = "Unread",
+                    label = uiText(R.string.unread),
                     value = uiState.unreadCount.toString(),
                     modifier = Modifier.widthIn(min = 150.dp),
-                    accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.86f),
+                    accent = metricCardAccents(MaterialTheme.colorScheme).neutral,
                 )
                 MetricCard(
-                    label = "Active days",
+                    label = uiText(R.string.active_days),
                     value = uiState.groups.size.toString(),
                     modifier = Modifier.widthIn(min = 150.dp),
-                    accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.86f),
+                    accent = metricCardAccents(MaterialTheme.colorScheme).neutral,
                 )
                 MetricCard(
-                    label = "Stored events",
+                    label = uiText(R.string.stored_events),
                     value = totalEvents.toString(),
                     modifier = Modifier.widthIn(min = 150.dp),
-                    accent = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
+                    accent = metricCardAccents(MaterialTheme.colorScheme).neutral,
                 )
             }
         }
@@ -184,9 +186,9 @@ private fun ReminderCenterScreen(
         if (uiState.groups.isEmpty()) {
             item {
                 DashboardSectionCard(
-                    title = "No reminders yet",
-                    subtitle = "Delivered reminders will appear here so you can reopen them later even if Android blocked or hid the notification.",
-                    eyebrow = "Local history",
+                    title = stringResource(R.string.no_reminders_yet),
+                    subtitle = stringResource(R.string.no_reminders_yet_subtitle),
+                    eyebrow = stringResource(R.string.local_history_eyebrow),
                 )
             }
         } else {
@@ -194,8 +196,12 @@ private fun ReminderCenterScreen(
                 item {
                     DashboardSectionCard(
                         title = group.label,
-                        subtitle = "${group.items.size} reminder${if (group.items.size == 1) "" else "s"} captured on this day.",
-                        eyebrow = "Delivered reminders",
+                        subtitle = pluralStringResource(
+                            R.plurals.reminders_captured_on_day,
+                            group.items.size,
+                            group.items.size,
+                        ),
+                        eyebrow = stringResource(R.string.delivered_reminders_eyebrow),
                     ) {
                         Column(
                             verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
@@ -240,14 +246,15 @@ private fun ReminderEventCard(
             ) {
                 Text(event.title, style = MaterialTheme.typography.titleMedium)
                 if (event.readAtEpochMillis == null) {
-                    DashboardPill(text = "Unread", emphasized = true)
+                    DashboardPill(text = stringResource(R.string.unread), emphasized = true)
                 }
                 DashboardPill(
                     text = when (event.deepLinkTarget) {
-                        ReminderDeepLinkTarget.Home -> "Home"
-                        ReminderDeepLinkTarget.Calendar -> "Calendar"
-                        ReminderDeepLinkTarget.Log -> "Log"
-                        ReminderDeepLinkTarget.ReminderCenter -> "Reminder center"
+                        ReminderDeepLinkTarget.Home -> stringResource(R.string.reminder_target_home)
+                        ReminderDeepLinkTarget.Calendar -> stringResource(R.string.reminder_target_calendar)
+                        ReminderDeepLinkTarget.Log -> stringResource(R.string.reminder_target_log)
+                        ReminderDeepLinkTarget.ReminderCenter ->
+                            stringResource(R.string.reminder_target_reminder_center)
                     },
                 )
             }

@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -285,7 +286,9 @@ private fun createNativeAdView(context: Context): NativeAdView {
     }
 
     val attribution = TextView(context).apply {
-        text = "Ad"
+        // The mandatory attribution on a native ad. It is a label, not a
+        // sentence, but it is still user-facing text.
+        text = context.getString(R.string.ad_label)
         setTextColor(primaryColor)
         setTypeface(typeface, Typeface.BOLD)
         textSize = 12f

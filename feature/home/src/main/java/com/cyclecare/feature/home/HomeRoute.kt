@@ -119,7 +119,11 @@ private fun buildVariabilityText(
     confidenceLabel: String,
 ): UiText = when {
     insights == null || !insights.hasEnoughCycleData ->
-        confidenceLabel.ifBlank { "From your setup" }.let { UiText.Raw(it) }
+        // The confidence label comes from the domain as English prose, which
+        // is a known boundary gap. The fallback is ours, so it is a
+        // resource rather than a literal.
+        confidenceLabel.ifBlank { null }?.let { UiText.Raw(it) }
+            ?: uiText(R.string.from_your_setup)
     insights.minCycleLength == insights.maxCycleLength ->
         uiText(R.string.n_d_steady, insights.averageCycleLength)
     else ->

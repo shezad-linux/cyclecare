@@ -2,6 +2,7 @@
 
 package com.cyclecare.feature.settings
 
+import com.cyclecare.core.designsystem.text.resolve
 import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,15 +38,15 @@ internal fun ReminderRuleCard(
                 .padding(end = CycleCareSpace.space16),
             verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4),
         ) {
-            Text(item.title, style = MaterialTheme.typography.titleMedium)
+            Text(item.title.resolve(), style = MaterialTheme.typography.titleMedium)
             Text(
-                item.scheduleLabel,
+                item.scheduleLabel.resolve(),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                item.detail,
+                item.detail.resolve(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -70,8 +71,8 @@ internal fun ReminderChannelCard(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
         SettingSwitchRow(
-            title = item.title,
-            detail = item.detail,
+            title = item.title.resolve(),
+            detail = item.detail.resolve(),
             checked = item.settings.enabled,
             onCheckedChange = onToggleChannelEnabled,
         )
@@ -97,7 +98,7 @@ internal fun ReminderChannelCard(
                         enabled = remindersEnabled && item.settings.enabled && item.settings.soundEnabled,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(preset.displayTitle())
+                        Text(preset.displayTitle().resolve())
                     }
                 } else {
                     OutlinedButton(
@@ -105,7 +106,7 @@ internal fun ReminderChannelCard(
                         enabled = remindersEnabled && item.settings.enabled && item.settings.soundEnabled,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(preset.displayTitle())
+                        Text(preset.displayTitle().resolve())
                     }
                 }
             }
