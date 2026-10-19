@@ -146,10 +146,19 @@ def main() -> int:
             # a second extraction into the same target does not discard what
             # the first one put there.
             existing = open(path, encoding="utf-8").read()
-            marker = "\n\n"
-            index = existing.index("\n\n", existing.index("\n\n", existing.index("\n\n") + 1) + 1)
-            header = existing[: index + len(marker)]
-            previous_body = existing[index + len(marker):].rstrip()
+            lines = existing.splitlines(keepends=True)
+            # The body starts after the import block. Locating it by counting
+            # blank lines is fragile: a file whose header has a different
+            # shape loses its first declarations.
+            last_import = -1
+            for index, line in enumerate(lines):
+                if line.startswith("import "):
+                    last_import = index
+            body_start = last_import + 1
+            while body_start < len(lines) and not lines[body_start].strip():
+                body_start += 1
+            header = "".join(lines[:body_start])
+            previous_body = "".join(lines[body_start:]).rstrip()
             combined = previous_body + "\n\n" + body
             # The merged body may reference symbols the first pass did not
             # import, so the import set is recomputed over both bodies.
