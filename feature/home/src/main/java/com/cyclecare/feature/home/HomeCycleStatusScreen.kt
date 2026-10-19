@@ -30,6 +30,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -264,14 +266,22 @@ internal fun CycleStatusHeroCard(
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val useStackedLayout = maxWidth < 360.dp || LocalDensity.current.fontScale > 1.15f
         val heroMode = if (uiState.hasCurrentCycle) PeriodHeroMode.Active else PeriodHeroMode.Predicted
+        val isDark = isSystemInDarkTheme()
         val heroGradientColors = if (uiState.hasCurrentCycle) {
             PeriodActiveGradientColors()
         } else {
-            listOf(
-                MaterialTheme.colorScheme.primary,
-                MaterialTheme.colorScheme.secondary.copy(alpha = 0.9f),
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f),
-            )
+            if (isDark) {
+                listOf(
+                    MaterialTheme.colorScheme.primaryContainer,
+                    MaterialTheme.colorScheme.tertiaryContainer,
+                )
+            } else {
+                listOf(
+                    MaterialTheme.colorScheme.primary,
+                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.9f),
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f),
+                )
+            }
         }
         Card(
             shape = RoundedCornerShape(28.dp),
@@ -336,22 +346,24 @@ internal fun CycleStatusHeroText(
     uiState: HomeUiState,
     progress: Float,
 ) {
+    val isDark = isSystemInDarkTheme()
+    val heroTextColor = if (isDark) MaterialTheme.colorScheme.onSurface else Color.White
     val progressStateDescriptionText = progressStateDescription(uiState.cycleDay, uiState.cycleLength).resolve()
     Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
         Text(
             stringResource(R.string.cycle_detail),
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.84f),
+            color = heroTextColor.copy(alpha = 0.84f),
         )
         Text(
             text = homeHeroTitle(uiState).resolve(),
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onPrimary,
+            color = heroTextColor,
         )
         Text(
             text = homeHeroSubtitle(uiState).resolve(),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+            color = heroTextColor.copy(alpha = 0.9f),
         )
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space6),
@@ -372,7 +384,7 @@ internal fun CycleStatusHeroText(
             Text(
                 stringResource(R.string.cycle_progress),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.82f),
+                color = heroTextColor.copy(alpha = 0.82f),
             )
             LinearProgressIndicator(
                 progress = { progress },
@@ -382,8 +394,8 @@ internal fun CycleStatusHeroText(
                     .semantics {
                         stateDescription = progressStateDescriptionText
                     },
-                color = MaterialTheme.colorScheme.onPrimary,
-                trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.24f),
+                color = if (isDark) MaterialTheme.colorScheme.primary else Color.White,
+                trackColor = (if (isDark) MaterialTheme.colorScheme.primary else Color.White).copy(alpha = 0.24f),
             )
         }
     }

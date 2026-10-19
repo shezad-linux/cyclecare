@@ -16,7 +16,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.CompositionLocalProvider
+import com.cyclecare.core.designsystem.token.CycleCareColor
 import com.cyclecare.core.designsystem.token.CycleCareShapes
 import com.cyclecare.core.designsystem.token.CycleCareTypography
 import com.cyclecare.core.designsystem.token.DarkExtendedColors
@@ -41,66 +44,66 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF7A3458),
-    onPrimary = Color(0xFFFDF7F2),
-    primaryContainer = Color(0xFFF0D7E2),
-    onPrimaryContainer = Color(0xFF3A1328),
-    secondary = Color(0xFFDC6C57),
-    onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFFFD9D1),
-    onSecondaryContainer = Color(0xFF4C160D),
-    tertiary = Color(0xFF6F8D7E),
-    onTertiary = Color(0xFFFFFFFF),
-    tertiaryContainer = Color(0xFFD8E8DE),
-    onTertiaryContainer = Color(0xFF173527),
-    background = Color(0xFFF8F3EC),
-    onBackground = Color(0xFF241826),
-    surface = Color(0xFFFFFBF7),
-    onSurface = Color(0xFF241826),
-    surfaceVariant = Color(0xFFF4E5E2),
-    onSurfaceVariant = Color(0xFF655763),
-    outline = Color(0xFF8B7A84),
-    outlineVariant = Color(0xFFD9C7D1),
-    inverseSurface = Color(0xFF392D37),
-    inverseOnSurface = Color(0xFFF8EEF3),
-    inversePrimary = Color(0xFFFFB1C8),
-    error = Color(0xFFBA1A1A),
-    onError = Color(0xFFFFFFFF),
-    errorContainer = Color(0xFFFFDAD6),
-    onErrorContainer = Color(0xFF410002),
-    surfaceTint = Color(0xFF7A3458),
+    primary = CycleCareColor.LightPrimary,
+    onPrimary = CycleCareColor.LightOnPrimary,
+    primaryContainer = CycleCareColor.LightPrimaryContainer,
+    onPrimaryContainer = CycleCareColor.LightOnPrimaryContainer,
+    secondary = CycleCareColor.LightSecondary,
+    onSecondary = CycleCareColor.LightOnSecondary,
+    secondaryContainer = CycleCareColor.LightSecondaryContainer,
+    onSecondaryContainer = CycleCareColor.LightOnSecondaryContainer,
+    tertiary = CycleCareColor.LightTertiary,
+    onTertiary = CycleCareColor.LightOnTertiary,
+    tertiaryContainer = CycleCareColor.LightTertiaryContainer,
+    onTertiaryContainer = CycleCareColor.LightOnTertiaryContainer,
+    background = CycleCareColor.LightBackground,
+    onBackground = CycleCareColor.LightOnBackground,
+    surface = CycleCareColor.LightSurface,
+    onSurface = CycleCareColor.LightOnSurface,
+    surfaceVariant = CycleCareColor.LightSurfaceVariant,
+    onSurfaceVariant = CycleCareColor.LightOnSurfaceVariant,
+    outline = CycleCareColor.LightOutline,
+    outlineVariant = CycleCareColor.LightOutlineVariant,
+    inverseSurface = CycleCareColor.LightInverseSurface,
+    inverseOnSurface = CycleCareColor.LightInverseOnSurface,
+    inversePrimary = CycleCareColor.LightInversePrimary,
+    error = CycleCareColor.LightError,
+    onError = CycleCareColor.LightOnError,
+    errorContainer = CycleCareColor.LightErrorContainer,
+    onErrorContainer = CycleCareColor.LightOnErrorContainer,
+    surfaceTint = CycleCareColor.LightPrimary,
     scrim = Color(0xFF000000),
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFFFFC9D8),
-    onPrimary = Color(0xFF43192E),
-    primaryContainer = Color(0xFF5F2542),
-    onPrimaryContainer = Color(0xFFFFD9E5),
-    secondary = Color(0xFFFFB19B),
-    onSecondary = Color(0xFF5D1F12),
-    secondaryContainer = Color(0xFF823426),
-    onSecondaryContainer = Color(0xFFFFD9D1),
-    tertiary = Color(0xFFC3D7CB),
-    onTertiary = Color(0xFF25392E),
-    tertiaryContainer = Color(0xFF3B5144),
-    onTertiaryContainer = Color(0xFFDDEFE4),
-    background = Color(0xFF19131A),
-    onBackground = Color(0xFFF3E9EF),
-    surface = Color(0xFF251D27),
-    onSurface = Color(0xFFF3E9EF),
-    surfaceVariant = Color(0xFF413541),
-    onSurfaceVariant = Color(0xFFD4C3CE),
-    outline = Color(0xFFA996A2),
-    outlineVariant = Color(0xFF51444F),
-    inverseSurface = Color(0xFFF3E9EF),
-    inverseOnSurface = Color(0xFF352934),
-    inversePrimary = Color(0xFF7A3458),
-    error = Color(0xFFFFB4AB),
-    onError = Color(0xFF690005),
-    errorContainer = Color(0xFF93000A),
-    onErrorContainer = Color(0xFFFFDAD6),
-    surfaceTint = Color(0xFFFFC9D8),
+    primary = CycleCareColor.DarkPrimary,
+    onPrimary = CycleCareColor.DarkOnPrimary,
+    primaryContainer = CycleCareColor.DarkPrimaryContainer,
+    onPrimaryContainer = CycleCareColor.DarkOnPrimaryContainer,
+    secondary = CycleCareColor.DarkSecondary,
+    onSecondary = CycleCareColor.DarkOnSecondary,
+    secondaryContainer = CycleCareColor.DarkSecondaryContainer,
+    onSecondaryContainer = CycleCareColor.DarkOnSecondaryContainer,
+    tertiary = CycleCareColor.DarkTertiary,
+    onTertiary = CycleCareColor.DarkOnTertiary,
+    tertiaryContainer = CycleCareColor.DarkTertiaryContainer,
+    onTertiaryContainer = CycleCareColor.DarkOnTertiaryContainer,
+    background = CycleCareColor.DarkBackground,
+    onBackground = CycleCareColor.DarkOnBackground,
+    surface = CycleCareColor.DarkSurface,
+    onSurface = CycleCareColor.DarkOnSurface,
+    surfaceVariant = CycleCareColor.DarkSurfaceVariant,
+    onSurfaceVariant = CycleCareColor.DarkOnSurfaceVariant,
+    outline = CycleCareColor.DarkOutline,
+    outlineVariant = CycleCareColor.DarkOutlineVariant,
+    inverseSurface = CycleCareColor.DarkInverseSurface,
+    inverseOnSurface = CycleCareColor.DarkInverseOnSurface,
+    inversePrimary = CycleCareColor.DarkInversePrimary,
+    error = CycleCareColor.DarkError,
+    onError = CycleCareColor.DarkOnError,
+    errorContainer = CycleCareColor.DarkErrorContainer,
+    onErrorContainer = CycleCareColor.DarkOnErrorContainer,
+    surfaceTint = CycleCareColor.DarkPrimary,
     scrim = Color(0xFF000000),
 )
 
@@ -139,26 +142,32 @@ fun PeriodActiveGradientColors(): List<Color> {
     val darkTheme = isSystemInDarkTheme()
     return if (darkTheme) {
         listOf(
-            Color(0xFF8F2430),
-            Color(0xFFB43A3F),
-            Color(0xFF4C1F28),
+            CycleCareColor.DarkPeriodActiveStart,
+            CycleCareColor.DarkPeriodActiveEnd,
+            CycleCareColor.DarkPeriodActiveContainer,
         )
     } else {
         listOf(
-            Color(0xFFB7333F),
-            Color(0xFFE0635B),
-            Color(0xFFFFD7CE),
+            CycleCareColor.LightPeriodActiveStart,
+            CycleCareColor.LightPeriodActiveEnd,
+            CycleCareColor.LightPeriodActiveContainer,
         )
     }
 }
 
 @Composable
 fun PeriodActiveContainerColor(): Color =
-    if (isSystemInDarkTheme()) Color(0xFF3F1F27) else Color(0xFFFFECE8)
+    if (isSystemInDarkTheme()) CycleCareColor.DarkPeriodActiveContainer else CycleCareColor.LightPeriodActiveContainer
+
 
 @Composable
 fun PeriodActiveAccentColor(): Color =
-    if (isSystemInDarkTheme()) Color(0xFFFFB8AF) else Color(0xFFB7333F)
+    if (isSystemInDarkTheme()) CycleCareColor.DarkPeriodActiveAccent else CycleCareColor.LightPeriodActiveAccent
+
+val HeaderOnGradientColor: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (isSystemInDarkTheme()) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary
 
 @Composable
 fun GradientHeaderCard(
@@ -181,10 +190,19 @@ fun GradientHeaderCard(
             val useStackedTrailing = stackTrailingOnCompact &&
                 trailing != null &&
                 (maxWidth < 340.dp || LocalDensity.current.fontScale > 1.15f)
-            val resolvedGradientColors = gradientColors ?: listOf(
-                MaterialTheme.colorScheme.primary,
-                MaterialTheme.colorScheme.secondary,
-            )
+            val isDark = isSystemInDarkTheme()
+            val resolvedGradientColors = gradientColors ?: if (isDark) {
+                listOf(
+                    MaterialTheme.colorScheme.primaryContainer,
+                    MaterialTheme.colorScheme.tertiaryContainer,
+                )
+            } else {
+                listOf(
+                    MaterialTheme.colorScheme.primary,
+                    MaterialTheme.colorScheme.tertiary,
+                )
+            }
+            val contentColor = HeaderOnGradientColor
             val containerModifier = Modifier
                 .background(
                     Brush.linearGradient(
@@ -193,49 +211,51 @@ fun GradientHeaderCard(
                 )
                 .padding(contentPadding)
 
-            if (useStackedTrailing) {
-                Column(
-                    modifier = containerModifier,
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(
-                            text = title,
-                            style = titleStyle,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                        Text(
-                            text = subtitle,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
-                        )
-                        supportingContent?.invoke(this)
-                    }
-                    trailing?.invoke()
-                }
-            } else {
-                Row(
-                    modifier = containerModifier,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+            CompositionLocalProvider(LocalContentColor provides contentColor) {
+                if (useStackedTrailing) {
                     Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = containerModifier,
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        Text(
-                            text = title,
-                            style = titleStyle,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                        Text(
-                            text = subtitle,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
-                        )
-                        supportingContent?.invoke(this)
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text(
+                                text = title,
+                                style = titleStyle,
+                                color = contentColor,
+                            )
+                            Text(
+                                text = subtitle,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = contentColor.copy(alpha = if (isDark) 0.82f else 0.88f),
+                            )
+                            supportingContent?.invoke(this)
+                        }
+                        trailing?.invoke()
                     }
-                    trailing?.invoke()
+                } else {
+                    Row(
+                        modifier = containerModifier,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Text(
+                                text = title,
+                                style = titleStyle,
+                                color = contentColor,
+                            )
+                            Text(
+                                text = subtitle,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = contentColor.copy(alpha = if (isDark) 0.82f else 0.88f),
+                            )
+                            supportingContent?.invoke(this)
+                        }
+                        trailing?.invoke()
+                    }
                 }
             }
         }

@@ -5,6 +5,7 @@
 
 package com.cyclecare.feature.home
 
+import com.cyclecare.core.designsystem.token.CycleCareShapes
 import com.cyclecare.core.designsystem.token.CycleCareSpace
 import com.cyclecare.core.designsystem.text.resolve
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -141,6 +143,10 @@ internal fun FertilityTeaserCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag(HomeTags.FERTILITY_DETAIL_CTA),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                ),
             ) {
                 Text(stringResource(R.string.view_fertility_details))
             }
@@ -187,6 +193,10 @@ internal fun ReminderTeaserCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag(HomeTags.REMINDER_DETAIL_CTA),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
                 ) {
                     Text(stringResource(R.string.view_details))
                 }
@@ -232,19 +242,33 @@ internal fun QuickActionButton(
     FilledTonalButton(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
+        shape = CycleCareShapes.large,
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
         contentPadding = PaddingValues(horizontal = CycleCareSpace.space16, vertical = CycleCareSpace.space18),
     ) {
         Icon(
             imageVector = action.icon(),
             contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
         )
         Spacer(modifier = Modifier.width(12.dp))
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space2),
         ) {
-            Text(action.label.resolve(), style = MaterialTheme.typography.titleMedium)
-            Text(action.description.resolve(), style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = action.label.resolve(),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = action.description.resolve(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

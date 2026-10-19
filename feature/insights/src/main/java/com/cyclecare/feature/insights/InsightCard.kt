@@ -2,6 +2,7 @@
 
 package com.cyclecare.feature.insights
 
+import com.cyclecare.core.designsystem.DashboardPill
 import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -265,22 +266,10 @@ internal fun InsightBadge(
     text: String,
     emphasized: Boolean = false,
 ) {
-    Surface(
-        color = if (emphasized) {
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-        } else {
-            MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
-        },
-        shape = MaterialTheme.shapes.extraLarge,
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = CycleCareSpace.space12, vertical = CycleCareSpace.space8),
-            style = MaterialTheme.typography.labelLarge,
-            color = if (emphasized) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.SemiBold,
-        )
-    }
+    DashboardPill(
+        text = text,
+        emphasized = emphasized,
+    )
 }
 
 @Composable

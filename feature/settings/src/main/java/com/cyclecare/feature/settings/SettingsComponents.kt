@@ -42,7 +42,7 @@ internal fun SettingsMetricGrid(
                 SettingsMetricCard(
                     label = stringResource(R.string.unread_center),
                     value = unreadReminderCount.toString(),
-                    accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.82f),
+                    accent = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.82f),
                 )
                 SettingsMetricCard(
                     label = stringResource(R.string.preview_mode),
@@ -63,7 +63,7 @@ internal fun SettingsMetricGrid(
                         label = stringResource(R.string.unread_center),
                         value = unreadReminderCount.toString(),
                         modifier = Modifier.weight(1f),
-                        accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.82f),
+                        accent = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.82f),
                     )
                 }
                 SettingsMetricCard(

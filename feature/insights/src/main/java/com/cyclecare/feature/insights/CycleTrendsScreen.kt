@@ -107,7 +107,7 @@ internal fun CycleTrendsScreen(
                     label = stringResource(R.string.range),
                     value = uiState.variabilityText.resolve(),
                     modifier = Modifier.widthIn(min = 150.dp),
-                    accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f),
+                    accent = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.88f),
                 )
             }
         }

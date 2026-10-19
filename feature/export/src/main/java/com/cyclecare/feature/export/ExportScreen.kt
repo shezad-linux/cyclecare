@@ -332,7 +332,7 @@ private fun ExportScreen(
                 label = stringResource(R.string.storage),
                 value = stringResource(R.string.on_device),
                 modifier = Modifier.widthIn(min = 150.dp),
-                accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.86f),
+                accent = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.86f),
             )
             MetricCard(
                 label = stringResource(R.string.status),

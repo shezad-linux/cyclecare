@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.LocalContentColor
+import com.cyclecare.core.designsystem.token.CycleCareShapes
+import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -85,20 +89,47 @@ fun DashboardPill(
     modifier: Modifier = Modifier,
     emphasized: Boolean = false,
 ) {
+    val isDark = isSystemInDarkTheme()
+    val isHeaderContext = LocalContentColor.current != MaterialTheme.colorScheme.onSurface
+    val containerColor = when {
+        isHeaderContext -> if (isDark) {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.90f)
+        } else {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+        }
+        emphasized && isDark -> MaterialTheme.colorScheme.primaryContainer
+        emphasized -> MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+        isDark -> MaterialTheme.colorScheme.surfaceVariant
+        else -> MaterialTheme.colorScheme.surface
+    }
+    val contentColor = when {
+        isHeaderContext && emphasized -> MaterialTheme.colorScheme.primary
+        isHeaderContext -> MaterialTheme.colorScheme.onSurface
+        emphasized && isDark -> MaterialTheme.colorScheme.onPrimaryContainer
+        emphasized -> MaterialTheme.colorScheme.primary
+        isDark -> MaterialTheme.colorScheme.onSurfaceVariant
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+    val borderStroke = when {
+        isHeaderContext && emphasized -> BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.40f))
+        isHeaderContext -> BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.50f))
+        emphasized && isDark -> BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+        emphasized -> BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+        isDark -> BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+        else -> BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+    }
+
     Surface(
         modifier = modifier,
-        color = if (emphasized) {
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-        } else {
-            MaterialTheme.colorScheme.surface.copy(alpha = 0.78f)
-        },
-        shape = RoundedCornerShape(12.dp),
+        color = containerColor,
+        shape = CycleCareShapes.pill,
+        border = borderStroke,
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            style = MaterialTheme.typography.labelLarge,
-            color = if (emphasized) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = CycleCareSpace.space12, vertical = CycleCareSpace.space6),
+            style = MaterialTheme.typography.labelMedium,
+            color = contentColor,
             fontWeight = FontWeight.SemiBold,
         )
     }

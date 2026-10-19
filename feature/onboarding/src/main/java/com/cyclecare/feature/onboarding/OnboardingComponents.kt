@@ -5,6 +5,7 @@
 
 package com.cyclecare.feature.onboarding
 
+import com.cyclecare.core.designsystem.DashboardPill
 import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -59,17 +60,7 @@ import kotlin.math.roundToInt
 
 @Composable
 internal fun OnboardingPill(text: String) {
-    Surface(
-        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.14f),
-        shape = RoundedCornerShape(999.dp),
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = CycleCareSpace.space12, vertical = 7.dp),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onPrimary,
-        )
-    }
+    DashboardPill(text = text)
 }
 
 @Composable

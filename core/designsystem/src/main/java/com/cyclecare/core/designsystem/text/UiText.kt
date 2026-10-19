@@ -63,15 +63,19 @@ sealed interface UiText {
 @Composable
 @ReadOnlyComposable
 fun UiText.resolve(): String = when (this) {
-    is UiText.Resource ->
-        if (args.isEmpty()) stringResource(resId) else stringResource(resId, *args.toTypedArray())
+    is UiText.Resource -> {
+        val resolvedArgs = args.map { if (it is UiText) it.resolve() else it }
+        if (resolvedArgs.isEmpty()) stringResource(resId) else stringResource(resId, *resolvedArgs.toTypedArray())
+    }
 
-    is UiText.Plural ->
-        if (args.isEmpty()) {
+    is UiText.Plural -> {
+        val resolvedArgs = args.map { if (it is UiText) it.resolve() else it }
+        if (resolvedArgs.isEmpty()) {
             pluralStringResource(resId, quantity)
         } else {
-            pluralStringResource(resId, quantity, *args.toTypedArray())
+            pluralStringResource(resId, quantity, *resolvedArgs.toTypedArray())
         }
+    }
 
     is UiText.Raw -> value
 }
@@ -81,15 +85,19 @@ fun UiText.resolve(): String = when (this) {
  * composable: notification builders, platform dialogs, adapters.
  */
 fun UiText.resolve(context: Context): String = when (this) {
-    is UiText.Resource ->
-        if (args.isEmpty()) {
+    is UiText.Resource -> {
+        val resolvedArgs = args.map { if (it is UiText) it.resolve(context) else it }
+        if (resolvedArgs.isEmpty()) {
             context.getString(resId)
         } else {
-            context.getString(resId, *args.toTypedArray())
+            context.getString(resId, *resolvedArgs.toTypedArray())
         }
+    }
 
-    is UiText.Plural ->
-        context.resources.getQuantityString(resId, quantity, *args.toTypedArray())
+    is UiText.Plural -> {
+        val resolvedArgs = args.map { if (it is UiText) it.resolve(context) else it }
+        context.resources.getQuantityString(resId, quantity, *resolvedArgs.toTypedArray())
+    }
 
     is UiText.Raw -> value
 }

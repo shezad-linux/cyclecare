@@ -65,13 +65,13 @@ internal fun HomeFertilityDetailScreen(
                     label = "Fertile window",
                     value = uiState.fertileWindowText.resolve(),
                     modifier = Modifier.weight(1f),
-                    accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.86f),
+                    accent = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.86f),
                 )
                 MetricCard(
                     label = stringResource(R.string.ovulation),
                     value = uiState.ovulationEstimateText.resolve(),
                     modifier = Modifier.weight(1f),
-                    accent = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.86f),
+                    accent = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.86f),
                 )
             }
             DashboardSectionCard(

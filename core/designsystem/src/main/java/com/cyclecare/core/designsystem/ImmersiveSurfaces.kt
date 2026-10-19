@@ -23,7 +23,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.cyclecare.core.designsystem.token.CycleCareShapes
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -75,32 +77,33 @@ fun MetricPill(
     modifier: Modifier = Modifier,
     tone: MetricPillTone = MetricPillTone.Neutral,
 ) {
+    val isDark = isSystemInDarkTheme()
     val containerColor = when (tone) {
-        MetricPillTone.Neutral -> MaterialTheme.colorScheme.surface.copy(alpha = 0.76f)
-        MetricPillTone.Highlight -> MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-        MetricPillTone.Inverse -> MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)
+        MetricPillTone.Neutral -> MaterialTheme.colorScheme.surface.copy(alpha = if (isDark) 0.90f else 0.82f)
+        MetricPillTone.Highlight -> if (isDark) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+        MetricPillTone.Inverse -> if (isDark) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.18f)
     }
     val borderColor = when (tone) {
-        MetricPillTone.Neutral -> MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
-        MetricPillTone.Highlight -> MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
-        MetricPillTone.Inverse -> MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.24f)
+        MetricPillTone.Neutral -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isDark) 0.35f else 0.50f)
+        MetricPillTone.Highlight -> MaterialTheme.colorScheme.primary.copy(alpha = if (isDark) 0.35f else 0.25f)
+        MetricPillTone.Inverse -> if (isDark) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f) else Color.White.copy(alpha = 0.35f)
     }
     val contentColor = when (tone) {
         MetricPillTone.Neutral -> MaterialTheme.colorScheme.onSurface
-        MetricPillTone.Highlight -> MaterialTheme.colorScheme.primary
-        MetricPillTone.Inverse -> MaterialTheme.colorScheme.onPrimary
+        MetricPillTone.Highlight -> if (isDark) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary
+        MetricPillTone.Inverse -> if (isDark) MaterialTheme.colorScheme.onSurface else Color.White
     }
 
     Surface(
         modifier = modifier,
         color = containerColor,
-        shape = RoundedCornerShape(12.dp),
+        shape = CycleCareShapes.pill,
         border = BorderStroke(1.dp, borderColor),
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+            style = MaterialTheme.typography.labelMedium,
             color = contentColor,
             fontWeight = FontWeight.SemiBold,
         )
@@ -406,7 +409,7 @@ private fun periodHeroPalette(
         ring = PeriodActiveAccentColor().copy(alpha = 0.52f),
         accent = MaterialTheme.colorScheme.secondary.copy(alpha = 0.96f),
         shadow = PeriodActiveAccentColor().copy(alpha = 0.42f),
-        highlight = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.92f),
+        highlight = Color.White.copy(alpha = 0.92f),
     )
     PeriodHeroMode.Predicted -> PeriodHeroPalette(
         backgroundStart = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f),

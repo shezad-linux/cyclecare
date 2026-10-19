@@ -3,6 +3,7 @@ package com.cyclecare.core.designsystem.token
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -35,88 +36,87 @@ import androidx.compose.ui.unit.dp
 // reachable from one place.
 
 object CycleCareColor {
-    // Light scheme
-    val LightPrimary = Color(0xFF7A3458)
-    val LightOnPrimary = Color(0xFFFDF7F2)
-    val LightPrimaryContainer = Color(0xFFF0D7E2)
-    val LightOnPrimaryContainer = Color(0xFF3A1328)
-    val LightSecondary = Color(0xFFDC6C57)
+    // Light scheme: Botanical teal, warm neutral surfaces, restrained terracotta
+    val LightPrimary = Color(0xFF076364)           // Botanical deep cadet / teal
+    val LightOnPrimary = Color(0xFFFFFFFF)
+    val LightPrimaryContainer = Color(0xFFCCE8E5)  // Soft sage teal container
+    val LightOnPrimaryContainer = Color(0xFF003738) // Deep teal
+    val LightSecondary = Color(0xFF9C4F40)         // Restrained high-contrast terracotta / period accent
     val LightOnSecondary = Color(0xFFFFFFFF)
-    val LightSecondaryContainer = Color(0xFFFFD9D1)
-    val LightOnSecondaryContainer = Color(0xFF4C160D)
-    val LightTertiary = Color(0xFF6F8D7E)
+    val LightSecondaryContainer = Color(0xFFFBECE8)// Soft warm clay container
+    val LightOnSecondaryContainer = Color(0xFF4A1F18)
+    val LightTertiary = Color(0xFF39604C)          // Botanical eucalyptus / forest sage
     val LightOnTertiary = Color(0xFFFFFFFF)
-    val LightTertiaryContainer = Color(0xFFD8E8DE)
-    val LightOnTertiaryContainer = Color(0xFF173527)
-    val LightBackground = Color(0xFFF8F3EC)
-    val LightOnBackground = Color(0xFF241826)
-    val LightSurface = Color(0xFFFFFBF7)
-    val LightOnSurface = Color(0xFF241826)
-    val LightSurfaceVariant = Color(0xFFF4E5E2)
-    val LightOnSurfaceVariant = Color(0xFF655763)
-    val LightOutline = Color(0xFF8B7A84)
-    val LightOutlineVariant = Color(0xFFD9C7D1)
-    val LightInverseSurface = Color(0xFF392D37)
-    val LightInverseOnSurface = Color(0xFFF8EEF3)
-    val LightInversePrimary = Color(0xFFFFB1C8)
+    val LightTertiaryContainer = Color(0xFFD5EADB) // Soft eucalyptus container
+    val LightOnTertiaryContainer = Color(0xFF0F3822)
+    val LightBackground = Color(0xFFF5F4EF)        // Warm neutral limestone / alabaster
+    val LightOnBackground = Color(0xFF202724)      // Deep pine charcoal
+    val LightSurface = Color(0xFFFFFFFF)           // Crisp white main card surface
+    val LightOnSurface = Color(0xFF202724)
+    val LightSurfaceVariant = Color(0xFFEAF0EE)    // Subtle botanical surface wash
+    val LightOnSurfaceVariant = Color(0xFF50605A)  // Sage slate secondary text
+    val LightOutline = Color(0xFF6F807A)           // Border / outline
+    val LightOutlineVariant = Color(0xFFD2DDD8)    // Subtle hairline divider
+    val LightInverseSurface = Color(0xFF2B3330)
+    val LightInverseOnSurface = Color(0xFFEFF3F1)
+    val LightInversePrimary = Color(0xFF62C9C4)
     val LightError = Color(0xFFBA1A1A)
     val LightOnError = Color(0xFFFFFFFF)
-    val LightErrorContainer = Color(0xFFFFdad6)
+    val LightErrorContainer = Color(0xFFFFDAD6)
     val LightOnErrorContainer = Color(0xFF410002)
 
-    // Dark scheme
-    val DarkPrimary = Color(0xFFFFC9D8)
-    val DarkOnPrimary = Color(0xFF43192E)
-    val DarkPrimaryContainer = Color(0xFF5F2542)
-    val DarkOnPrimaryContainer = Color(0xFFFFD9E5)
-    val DarkSecondary = Color(0xFFFFB19B)
-    val DarkOnSecondary = Color(0xFF5D1F12)
-    val DarkSecondaryContainer = Color(0xFF823426)
-    val DarkOnSecondaryContainer = Color(0xFFFFD9D1)
-    val DarkTertiary = Color(0xFFC3D7CB)
-    val DarkOnTertiary = Color(0xFF25392E)
-    val DarkTertiaryContainer = Color(0xFF3B5144)
-    val DarkOnTertiaryContainer = Color(0xFFDDEFE4)
-    val DarkBackground = Color(0xFF19131A)
-    val DarkOnBackground = Color(0xFFF3E9EF)
-    val DarkSurface = Color(0xFF251D27)
-    val DarkOnSurface = Color(0xFFF3E9EF)
-    val DarkSurfaceVariant = Color(0xFF413541)
-    val DarkOnSurfaceVariant = Color(0xFFD4C3CE)
-    val DarkOutline = Color(0xFFA996A2)
-    val DarkOutlineVariant = Color(0xFF51444F)
-    val DarkInverseSurface = Color(0xFFF3E9EF)
-    val DarkInverseOnSurface = Color(0xFF352934)
-    val DarkInversePrimary = Color(0xFF7A3458)
+    // Dark scheme: Botanical obsidian, elevated pine surfaces, luminous seafoam & terracotta
+    val DarkPrimary = Color(0xFF5CC4BF)            // Luminous botanical seafoam/teal
+    val DarkOnPrimary = Color(0xFF003737)
+    val DarkPrimaryContainer = Color(0xFF0E4B4B)
+    val DarkOnPrimaryContainer = Color(0xFFB0F4F0)
+    val DarkSecondary = Color(0xFFEFA594)          // Luminous warm terracotta / clay
+    val DarkOnSecondary = Color(0xFF4C1D15)
+    val DarkSecondaryContainer = Color(0xFF6E3025)
+    val DarkOnSecondaryContainer = Color(0xFFFFDBD1)
+    val DarkTertiary = Color(0xFFA2CFB7)           // Luminous sage / eucalyptus
+    val DarkOnTertiary = Color(0xFF113824)
+    val DarkTertiaryContainer = Color(0xFF2B533E)
+    val DarkOnTertiaryContainer = Color(0xFFC6EED7)
+    val DarkBackground = Color(0xFF131917)         // Deep botanical obsidian
+    val DarkOnBackground = Color(0xFFE6ECE9)
+    val DarkSurface = Color(0xFF1A2220)            // Elevated botanical dark surface
+    val DarkOnSurface = Color(0xFFE6ECE9)
+    val DarkSurfaceVariant = Color(0xFF26322E)     // Subtle botanical dark surface
+    val DarkOnSurfaceVariant = Color(0xFFB2C2BC)   // Luminous sage slate
+    val DarkOutline = Color(0xFF788A83)            // Outline
+    val DarkOutlineVariant = Color(0xFF3D4C46)
+    val DarkInverseSurface = Color(0xFFE6ECE9)
+    val DarkInverseOnSurface = Color(0xFF1A2220)
+    val DarkInversePrimary = Color(0xFF076364)
     val DarkError = Color(0xFFFFB4AB)
     val DarkOnError = Color(0xFF690005)
     val DarkErrorContainer = Color(0xFF93000A)
     val DarkOnErrorContainer = Color(0xFFFFDAD6)
 
     // Surface elevation, tint-derived rather than shadow-derived.
-    // Keeps cards separable without heavy shadows.
-    val LightSurfaceContainerLowest = Color(0xFFFFFBF7)
-    val LightSurfaceContainerLow = Color(0xFFFDF7F1)
-    val LightSurfaceContainer = Color(0xFFF8F3EC)
-    val LightSurfaceContainerHigh = Color(0xFFF3EDE6)
-    val LightSurfaceContainerHighest = Color(0xFFEDE7E0)
-    val DarkSurfaceContainerLowest = Color(0xFF19131A)
-    val DarkSurfaceContainerLow = Color(0xFF211A23)
-    val DarkSurfaceContainer = Color(0xFF251D27)
-    val DarkSurfaceContainerHigh = Color(0xFF2F2731)
-    val DarkSurfaceContainerHighest = Color(0xFF3A313B)
+    val LightSurfaceContainerLowest = Color(0xFFFFFFFF)
+    val LightSurfaceContainerLow = Color(0xFFF9F8F4)
+    val LightSurfaceContainer = Color(0xFFF5F4EF)
+    val LightSurfaceContainerHigh = Color(0xFFEFECE5)
+    val LightSurfaceContainerHighest = Color(0xFFE8E5DD)
+    val DarkSurfaceContainerLowest = Color(0xFF0F1413)
+    val DarkSurfaceContainerLow = Color(0xFF161D1B)
+    val DarkSurfaceContainer = Color(0xFF1A2220)
+    val DarkSurfaceContainerHigh = Color(0xFF222B28)
+    val DarkSurfaceContainerHighest = Color(0xFF2B3532)
 
-    // Brand accents, previously hardcoded in CycleCareTheme.kt.
-    val LightPeriodActiveStart = Color(0xFF8F2430)
-    val LightPeriodActiveEnd = Color(0xFFB43A3F)
-    val LightPeriodActiveContainer = Color(0xFF4C1F28)
-    val LightPeriodActiveOnContainer = Color(0xFFFFECE8)
-    val LightPeriodActiveAccent = Color(0xFFB7333F)
-    val DarkPeriodActiveStart = Color(0xFFB7333F)
-    val DarkPeriodActiveEnd = Color(0xFFE0635B)
-    val DarkPeriodActiveContainer = Color(0xFFFFD7CE)
-    val DarkPeriodActiveOnContainer = Color(0xFF3F1F27)
-    val DarkPeriodActiveAccent = Color(0xFFFFB8AF)
+    // Brand / Menstrual-state accents
+    val LightPeriodActiveStart = Color(0xFF8A3326) // Deep rust terracotta
+    val LightPeriodActiveEnd = Color(0xFF9C4F40)   // High-contrast period accent
+    val LightPeriodActiveContainer = Color(0xFFFBECE8)
+    val LightPeriodActiveOnContainer = Color(0xFF4A1F18)
+    val LightPeriodActiveAccent = Color(0xFF9C4F40)
+    val DarkPeriodActiveStart = Color(0xFFBA5748)
+    val DarkPeriodActiveEnd = Color(0xFFD87262)
+    val DarkPeriodActiveContainer = Color(0xFF4D231C)
+    val DarkPeriodActiveOnContainer = Color(0xFFFFD9D1)
+    val DarkPeriodActiveAccent = Color(0xFFE88675)
 }
 
 // ── Shape ─────────────────────────────────────────────────────────
@@ -308,6 +308,7 @@ object CycleCareTypography {
 // Material's defaults and the radius scale above was decorative.
 
 object CycleCareShapes {
+    val pill = CircleShape
     val extraSmall = RoundedCornerShape(CycleCareRadius.xs)
     val small = RoundedCornerShape(CycleCareRadius.sm)
     val medium = RoundedCornerShape(CycleCareRadius.md)
@@ -335,28 +336,28 @@ object CycleCareShapes {
 // chosen once, here, and consumers read the active scheme.
 
 object CalendarLegendColors {
-    val LightPeriodFill = Color(0xFFF7CCD6)
-    val LightOvulationFill = Color(0xFFCFE8F7)
-    val LightFertileFill = Color(0xFFD8F5E6)
-    val LightPeriodSelected = Color(0xFFFFEEF3)
-    val LightFertileSelected = Color(0xFFEAF8EF)
-    val LightOvulationSelected = Color(0xFFEAF5FB)
+    val LightPeriodFill = Color(0xFFF5DCD5)
+    val LightOvulationFill = Color(0xFFD0E8E6)
+    val LightFertileFill = Color(0xFFD5EADB)
+    val LightPeriodSelected = Color(0xFFFCEEEA)
+    val LightFertileSelected = Color(0xFFE9F6EE)
+    val LightOvulationSelected = Color(0xFFE4F4F3)
     // Swatches sit on the bare page background, not behind text, so
-    // they use the deep end of each hue. The previous pale values were
-    // the same as the fills and landed near 1.1:1 against the surface.
-    val LightPeriodSwatch = Color(0xFF8F2430)
-    val LightFertileSwatch = Color(0xFF2F6B4F)
-    val LightOvulationSwatch = Color(0xFF1F4E63)
+    // they use the deep end of each hue. Tested to satisfy >= 3.0:1
+    // non-text contrast against the page surface.
+    val LightPeriodSwatch = Color(0xFF9C4F40)
+    val LightFertileSwatch = Color(0xFF2E684C)
+    val LightOvulationSwatch = Color(0xFF076364)
 
-    val DarkPeriodFill = Color(0xFF6A3B4B)
-    val DarkOvulationFill = Color(0xFF31556C)
-    val DarkFertileFill = Color(0xFF2E5B47)
-    val DarkPeriodSelected = Color(0xFF3F2531)
-    val DarkFertileSelected = Color(0xFF213E31)
-    val DarkOvulationSelected = Color(0xFF213D4D)
-    val DarkPeriodSwatch = Color(0xFFB78493)
-    val DarkFertileSwatch = Color(0xFF86C0A2)
-    val DarkOvulationSwatch = Color(0xFF8AB6D1)
+    val DarkPeriodFill = Color(0xFF4A2B25)
+    val DarkOvulationFill = Color(0xFF163E3F)
+    val DarkFertileFill = Color(0xFF203F30)
+    val DarkPeriodSelected = Color(0xFF5D332B)
+    val DarkFertileSelected = Color(0xFF2A533F)
+    val DarkOvulationSelected = Color(0xFF1F5254)
+    val DarkPeriodSwatch = Color(0xFFEFA594)
+    val DarkFertileSwatch = Color(0xFFA2CFB7)
+    val DarkOvulationSwatch = Color(0xFF5CC4BF)
 }
 
 @Immutable

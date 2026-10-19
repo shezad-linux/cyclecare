@@ -85,7 +85,7 @@ internal fun CalendarDayCell(
                 Text(
                     text = day.date.dayOfMonth.toString(),
                     color = when {
-                        hasCustomFill -> if (day.isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                        hasCustomFill -> MaterialTheme.colorScheme.onSurface
                         day.isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
                         else -> if (day.isCurrentMonth) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                     },
@@ -96,7 +96,7 @@ internal fun CalendarDayCell(
                         imageVector = Icons.Rounded.Star,
                         contentDescription = stringResource(R.string.ovulation),
                         modifier = Modifier.size(10.dp),
-                        tint = if (day.isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 }
             }

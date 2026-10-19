@@ -37,9 +37,9 @@ import com.cyclecare.core.designsystem.text.resolve
 internal fun LegendChip(item: CalendarLegendItem) {
     val accent = legendColor(item.type)
     Surface(
-        color = accent.copy(alpha = 0.28f),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
         shape = RoundedCornerShape(999.dp),
-        border = BorderStroke(0.75.dp, accent.copy(alpha = 0.5f)),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.65f)),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = CycleCareSpace.space10, vertical = 5.dp),
@@ -49,12 +49,13 @@ internal fun LegendChip(item: CalendarLegendItem) {
             Box(
                 modifier = Modifier
                     .size(8.dp)
-                    .background(accent.copy(alpha = 0.9f), CircleShape),
+                    .background(accent, CircleShape),
             )
             Text(
                 item.label.resolve(),
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Medium,
             )
         }
     }
