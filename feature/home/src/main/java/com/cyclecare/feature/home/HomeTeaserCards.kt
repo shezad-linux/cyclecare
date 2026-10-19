@@ -1,0 +1,251 @@
+@file:OptIn(
+    androidx.compose.foundation.layout.ExperimentalLayoutApi::class,
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+)
+
+package com.cyclecare.feature.home
+
+import com.cyclecare.core.designsystem.token.CycleCareSpace
+import com.cyclecare.core.designsystem.text.resolve
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import com.cyclecare.core.designsystem.DashboardPill
+import com.cyclecare.core.designsystem.DashboardSectionCard
+
+@Composable
+internal fun HomeDashboardHeader(
+    reminderUnreadCount: Int,
+    onOpenReminderCenter: () -> Unit,
+) {
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val useStackedHeader = maxWidth < 360.dp || LocalDensity.current.fontScale > 1.15f
+
+        if (useStackedHeader) {
+            Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space6)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.dashboard),
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.headlineMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    HomeReminderButton(
+                        reminderUnreadCount = reminderUnreadCount,
+                        onOpenReminderCenter = onOpenReminderCenter,
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.cycle_reminders_and_insights_in_one_local_view),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4),
+                ) {
+                    Text(
+                        text = stringResource(R.string.dashboard),
+                        style = MaterialTheme.typography.headlineMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = stringResource(R.string.cycle_reminders_and_insights_in_one_local_view),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                HomeReminderButton(
+                    reminderUnreadCount = reminderUnreadCount,
+                    onOpenReminderCenter = onOpenReminderCenter,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+internal fun FertilityTeaserCard(
+    fertileWindowText: String,
+    ovulationEstimateText: String,
+    confidenceLabel: String,
+    onOpenFertilityDetail: () -> Unit,
+) {
+    DashboardSectionCard(
+        title = "Fertile window",
+        subtitle = fertileWindowText,
+        modifier = Modifier.testTag(HomeTags.FERTILE_CARD),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4)) {
+                    Text(
+                        stringResource(R.string.ovulation_estimate),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        ovulationEstimateText,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+                if (confidenceLabel.isNotBlank()) {
+                    DashboardPill(text = confidenceLabel)
+                }
+            }
+            FilledTonalButton(
+                onClick = onOpenFertilityDetail,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(HomeTags.FERTILITY_DETAIL_CTA),
+            ) {
+                Text(stringResource(R.string.view_fertility_details))
+            }
+        }
+    }
+}
+
+@Composable
+internal fun ReminderTeaserCard(
+    teaser: HomeReminderTeaser,
+    unreadCount: Int,
+    onOpenReminderCenter: () -> Unit,
+    onTrackToday: () -> Unit,
+) {
+    val isDailyCheckIn = teaser.isActionable
+    DashboardSectionCard(
+        title = teaser.title.resolve(),
+        subtitle = teaser.detail.resolve(),
+        modifier = Modifier.testTag(HomeTags.REMINDER_CARD),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
+                verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
+            ) {
+                if (unreadCount > 0) {
+                    DashboardPill(
+                        text = pluralStringResource(R.plurals.n_unread, unreadCount, unreadCount),
+                        emphasized = true,
+                    )
+                }
+                DashboardPill(text = teaser.supporting.resolve())
+            }
+            if (isDailyCheckIn) {
+                Button(
+                    onClick = onTrackToday,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.check_in_now))
+                }
+            } else {
+                FilledTonalButton(
+                    onClick = onOpenReminderCenter,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(HomeTags.REMINDER_DETAIL_CTA),
+                ) {
+                    Text(stringResource(R.string.view_details))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun InsightTeaserCard(
+    teaser: HomeInsightTeaser,
+    onOpenInsights: () -> Unit,
+) {
+    DashboardSectionCard(
+        title = teaser.title.resolve(),
+        subtitle = teaser.detail.resolve(),
+        modifier = Modifier.testTag(HomeTags.INSIGHTS_CARD),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
+            if (teaser.trendPoints.isNotEmpty()) {
+                HomeMiniTrendStrip(points = teaser.trendPoints)
+            }
+            DashboardPill(
+                text = teaser.supporting.resolve(),
+                emphasized = teaser.trendPoints.isEmpty(),
+            )
+            OutlinedButton(
+                onClick = onOpenInsights,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.view_insights))
+            }
+        }
+    }
+}
+
+@Composable
+internal fun QuickActionButton(
+    modifier: Modifier = Modifier,
+    action: HomeQuickAction,
+    onClick: () -> Unit,
+) {
+    FilledTonalButton(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = CycleCareSpace.space16, vertical = CycleCareSpace.space18),
+    ) {
+        Icon(
+            imageVector = action.icon(),
+            contentDescription = null,
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space2),
+        ) {
+            Text(action.label.resolve(), style = MaterialTheme.typography.titleMedium)
+            Text(action.description.resolve(), style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
