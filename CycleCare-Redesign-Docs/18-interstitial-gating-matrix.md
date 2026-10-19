@@ -83,7 +83,22 @@ dropped for any other reason does not consume cap.
 
 | Gap | Handling |
 |---|---|
-| **The daily cap value is never given.** §11.3 condition 8 says "the daily interstitial cap" and §11.4 says interstitials "count toward the interstitial cap", but no number appears in `15` or in `13` §9. | Implemented as a single named constant, `MAX_INTERSTITIALS_PER_DAY = 3`, chosen to match the app's existing `MAX_SENDS_PER_DAY = 3` budget. **Needs confirmation.** Changing it is a one-line edit. |
+| **The daily cap value is never given.** §11.3 condition 8 says "the daily interstitial cap" and §11.4 says interstitials "count toward the interstitial cap", but no number appears in `15` or in `13` §9. | **Resolved as a product decision, not a specification requirement.** The approved value is 3 per day, recorded as `MAX_INTERSTITIALS_PER_DAY`. It is a dedicated constant rather than a reuse of `MAX_SENDS_PER_DAY`, so a change to the notification budget cannot silently change the ad budget, and it is configurable per evaluation without touching the other seven conditions. Raising it needs a documented decision informed by actual impression and retention data. |
 | **Condition 6's forbidden list is not enumerated in §11.3.** | Derived from §11.2's "Never place an ad" list, tabulated above, in one named set so it can be adjusted in one place. |
 | **Condition 5's 30-minute window is not named.** `POST_LOG_GRACE_MINUTES = 30` exists but is named for *logs*, and this condition is about *reminders*. | A separate constant, `MIN_MINUTES_AFTER_REMINDER = 30`, so the two are not conflated. |
 | **"Session" is undefined.** | A session is one foreground period: the app moving to foreground. Backed by `AppVisibilityObserver`, which already observes exactly that transition. |
+
+## Cooldown
+
+The app originally had a 60 second cooldown in `InterstitialAdManager`. Spec
+§11.3 condition 3 replaces it outright: "At least
+`MIN_MINUTES_BETWEEN_INTERSTITIALS` (10) since the last one — replacing the
+current 60-second cooldown." The ten minute rule is now enforced by the gate
+against a persisted timestamp, so it also survives the process being killed,
+which the old in-memory field did not.
+
+The old cooldown's other job, stopping two interstitials inside a minute of
+each other, is covered twice over: by the ten minute rule, and by the
+coordinator's in-memory mirror of the last-shown timestamp, which refuses a
+second request in the same instant before the first impression has even been
+written to disk.

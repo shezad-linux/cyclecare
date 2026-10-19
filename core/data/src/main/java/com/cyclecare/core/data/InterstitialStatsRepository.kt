@@ -11,6 +11,9 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.cyclecare.core.domain.ads.InterstitialStatsRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 
 private object InterstitialPreferenceKeys {
@@ -79,9 +82,18 @@ class DataStoreInterstitialStatsRepository(
          * The production store is process-wide, so a test using it would
          * inherit counters written by another test and could not assert on
          * a known starting state.
+         *
+         * The scope is exposed because DataStore allows only one active
+         * instance per file per process. Cancelling the scope releases the
+         * file, which is how a test can stand in for the app being
+         * restarted and check that the counters really are on disk.
          */
-        fun isolated(context: Context, name: String): DataStoreInterstitialStatsRepository {
-            val store = PreferenceDataStoreFactory.create {
+        fun isolated(
+            context: Context,
+            name: String,
+            scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+        ): DataStoreInterstitialStatsRepository {
+            val store = PreferenceDataStoreFactory.create(scope = scope) {
                 context.preferencesDataStoreFile(name)
             }
             return DataStoreInterstitialStatsRepository(store)

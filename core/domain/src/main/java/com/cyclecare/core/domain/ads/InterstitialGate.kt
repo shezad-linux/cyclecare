@@ -21,12 +21,21 @@ import com.cyclecare.core.domain.notification.MIN_SESSIONS_BEFORE_INTERSTITIAL
 /**
  * Maximum interstitials shown in one calendar day.
  *
- * Spec 15 §11.3 condition 8 requires a daily cap and §11.4 says interstitials
- * "count toward the interstitial cap", but no numeric value is given in `15`
- * or in `13` §9. The value used here matches the app's existing
- * `MAX_SENDS_PER_DAY = 3` budget, which is the same posture applied to a
- * more intrusive format. It is a single constant so it can be corrected in
- * one place.
+ * This is a product decision, not a specification requirement.
+ *
+ * Spec 15 §11.3 condition 8 requires a daily cap and §11.4 says
+ * interstitials "count toward the interstitial cap", but no numeric value
+ * appears anywhere in `15` or in `13` §9. The value was chosen to match
+ * the app's existing `MAX_SENDS_PER_DAY = 3` notification budget, which
+ * is the same restraint applied to a more intrusive format.
+ *
+ * `MAX_SENDS_PER_DAY` is deliberately not reused: that constant governs
+ * how many notifications may be sent, and coupling the two would mean a
+ * change to the notification budget silently changed the ad budget.
+ *
+ * Raising this needs a documented decision informed by actual impression
+ * and retention data, not a preference. It is configurable per evaluation
+ * so it can be adjusted without touching the other seven conditions.
  */
 const val MAX_INTERSTITIALS_PER_DAY = 3
 
@@ -150,7 +159,10 @@ data class InterstitialGateState(
  */
 object InterstitialGate {
 
-    fun evaluate(state: InterstitialGateState): InterstitialGateDecision {
+    fun evaluate(
+        state: InterstitialGateState,
+        dailyCap: Int = MAX_INTERSTITIALS_PER_DAY,
+    ): InterstitialGateDecision {
         if (!state.onboardingComplete) {
             return InterstitialGateDecision.Drop(InterstitialDropReason.ONBOARDING_INCOMPLETE)
         }
@@ -176,7 +188,7 @@ object InterstitialGate {
         if (!state.adsConsentGranted) {
             return InterstitialGateDecision.Drop(InterstitialDropReason.CONSENT_NOT_GRANTED)
         }
-        if (state.interstitialsShownToday >= MAX_INTERSTITIALS_PER_DAY) {
+        if (state.interstitialsShownToday >= dailyCap) {
             return InterstitialGateDecision.Drop(InterstitialDropReason.DAILY_CAP_REACHED)
         }
         return InterstitialGateDecision.Show

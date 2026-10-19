@@ -5,6 +5,7 @@ import com.cyclecare.core.domain.ProfileRepository
 import com.cyclecare.core.domain.ReminderEventsRepository
 import com.cyclecare.core.domain.ads.DraftTracker
 import com.cyclecare.core.domain.ads.InterstitialDropReason
+import com.cyclecare.core.domain.ads.MAX_INTERSTITIALS_PER_DAY
 import com.cyclecare.core.domain.ads.InterstitialGate
 import com.cyclecare.core.domain.ads.InterstitialGateDecision
 import com.cyclecare.core.domain.ads.InterstitialGateState
@@ -39,6 +40,14 @@ class InterstitialCoordinator(
     private val profileRepository: ProfileRepository,
     private val draftTracker: DraftTracker,
     private val timeProvider: TimeProvider,
+    /**
+     * The daily interstitial cap.
+     *
+     * A product decision rather than a specification requirement, so it is
+     * configurable here. The other seven conditions are fixed by spec 15
+     * §11.3 and cannot be relaxed.
+     */
+    private val dailyCap: Int = MAX_INTERSTITIALS_PER_DAY,
     /**
      * Scope used to record the impression once the ad has actually been
      * displayed. The ad callback is not a suspend context, so the write has
@@ -88,6 +97,7 @@ class InterstitialCoordinator(
                 currentRoute = currentRoute,
                 adsConsentGranted = adsConsentGranted,
             ),
+            dailyCap = dailyCap,
         )
 
         when (decision) {

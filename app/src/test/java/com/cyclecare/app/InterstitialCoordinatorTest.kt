@@ -8,6 +8,9 @@ import com.cyclecare.core.domain.ReminderEventsRepository
 import com.cyclecare.core.domain.ads.DraftTracker
 import com.cyclecare.core.domain.ads.InMemoryDraftTracker
 import com.cyclecare.core.domain.ads.InterstitialDropReason
+import com.cyclecare.core.domain.ads.InterstitialGate
+import com.cyclecare.core.domain.ads.InterstitialGateDecision
+import com.cyclecare.core.domain.ads.InterstitialGateState
 import com.cyclecare.core.domain.ads.InterstitialStatsRepository
 import com.cyclecare.core.domain.time.TimeProvider
 import com.cyclecare.core.model.AgeBand
@@ -389,5 +392,75 @@ class InterstitialCoordinatorTest {
 
         assertThat(f.stats.recordCalls).isEqualTo(1)
         assertThat(f.stats.shownOnDay).isEqualTo(1)
+    }
+
+    // ── the daily cap ──────────────────────────────────────────────
+    //
+    // The cap is a product decision of three per day. The gate decides;
+    // these tests check the whole path, so that the count the gate reads
+    // is the count that was actually recorded.
+
+    @Test
+    fun theFourthInterstitialOfTheDayIsSuppressed() = runTest {
+        val stats = FakeStatsRepository()
+        val subject = fixture(stats = stats, scope = this)
+
+        // Three are shown, each with enough time between them for the
+        // spacing rule to be satisfied.
+        repeat(3) { index ->
+            stats.recordInterstitialShown(
+                now.toInstant().toEpochMilli() - (3L - index) * 20 * minute,
+                "2026-10-19",
+            )
+        }
+        subject.coordinator.requestInterstitial(FakeActivity(), "home", true) { }
+        runCurrent()
+
+        assertThat(subject.dropped).containsExactly(InterstitialDropReason.DAILY_CAP_REACHED)
+        assertThat(stats.recordCalls).isEqualTo(3)
+    }
+
+    @Test
+    fun threeInterstitialsInADayAreAllowed() = runTest {
+        val stats = FakeStatsRepository()
+        val subject = fixture(stats = stats, scope = this)
+
+        // Two already shown today, so this is the third.
+        repeat(2) { index ->
+            stats.recordInterstitialShown(
+                now.toInstant().toEpochMilli() - (2L - index) * 20 * minute,
+                "2026-10-19",
+            )
+        }
+        subject.coordinator.requestInterstitial(FakeActivity(), "home", true) { }
+        runCurrent()
+
+        assertThat(subject.dropped).isEmpty()
+        assertThat(stats.recordCalls).isEqualTo(3)
+    }
+
+    // ── the spacing rule ───────────────────────────────────────────
+    //
+    // This is what the old 60 second cooldown was for, and it is now the
+    // ten minute rule in spec 15 §11.3 condition 3, which supersedes it.
+
+    @Test
+    fun twoInterstitialsAreNeverShownInsideTheSpacingRule() {
+        // The in-memory mirror means the second request in the same
+        // instant is refused even before the first impression has been
+        // written to disk.
+        val state = InterstitialGateState(
+            onboardingComplete = true,
+            completedSessions = 3,
+            millisSinceLastInterstitial = 0L,
+            hasUnsavedDraft = false,
+            millisSinceLastReminderDelivery = 60 * minute,
+            currentRoute = "home",
+            adsConsentGranted = true,
+            interstitialsShownToday = 0,
+        )
+
+        assertThat(InterstitialGate.evaluate(state))
+            .isEqualTo(InterstitialGateDecision.Drop(InterstitialDropReason.TOO_SOON_SINCE_LAST))
     }
 }
