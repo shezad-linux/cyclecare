@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.isVisible
@@ -60,6 +61,16 @@ private enum class AdLoadState {
     Failed,
 }
 
+/**
+ * Test tag for the banner container.
+ *
+ * Screen spec 15 §11.2 restricts the banner to Today and Insights, so the
+ * presence and absence of this tag is the only way to assert the rule from
+ * an instrumented test. The banner's inner content is driven by real ad
+ * network state and cannot be asserted on directly.
+ */
+internal const val AD_BANNER_TAG = "ad_banner"
+
 @Composable
 fun AdBanner(
     modifier: Modifier = Modifier,
@@ -70,7 +81,11 @@ fun AdBanner(
     val context = LocalContext.current
     val density = LocalDensity.current
 
-    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag(AD_BANNER_TAG),
+    ) {
         val adWidthDp = maxWidth.value.toInt().coerceAtLeast(1)
         val adSize = remember(context, adWidthDp) {
             AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, adWidthDp)

@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.input.KeyboardType
@@ -129,6 +130,27 @@ private val topLevelDestinations = listOf(
 /** Reachable from the app bar, not a tab. */
 private const val SETTINGS_ROUTE = "settings"
 private val topLevelRoutes = topLevelDestinations.map { it.route }.toSet()
+
+/**
+ * Routes allowed to carry an ad banner.
+ *
+ * Screen spec 15 §11.2 restricts the banner to Today and Insights. It must
+ * never appear on Calendar, where an inserted strip shifts the month grid
+ * out from under the finger that was just dragging it, nor on Log, where
+ * an ad next to an unsaved draft is both a distraction and a Play policy
+ * problem, nor on Settings or any detail screen.
+ */
+private val adBannerRoutes = setOf("home", "insights")
+
+/**
+ * Whether a route may carry an ad banner.
+ *
+ * Internal rather than private so the spec 15 §11.2 rule can be asserted
+ * directly. The banner itself renders from live ad-network state, so its
+ * presence is not observable from a UI test without an ad SDK stub.
+ */
+internal fun routeAllowsBanner(route: String?): Boolean = route in adBannerRoutes
+
 internal fun navTag(route: String): String = "nav_$route"
 
 internal object NotificationPermissionTags {
@@ -532,6 +554,7 @@ private fun CycleCareTopBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .statusBarsPadding()
                 .padding(horizontal = CycleCareSpace.space4, vertical = CycleCareSpace.space2),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
@@ -556,7 +579,10 @@ private fun CycleCareBottomNavigation(
     onNavigate: (String) -> Unit,
 ) {
     Column {
-        AdBanner(canRequestAds = canRequestAds)
+        // Spec 15 §11.2: Today and Insights only.
+        if (canRequestAds && routeAllowsBanner(selectedTopLevelRoute)) {
+            AdBanner(canRequestAds = true)
+        }
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
