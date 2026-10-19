@@ -279,20 +279,15 @@ class CycleCareAppStateNavigationTest {
     /**
      * Asserts March 23 is selected and shown in the day panel.
      *
-     * KNOWN DEFECT, and it is not a recreation problem: this fails on
-     * the very first assertion, before any recreation. Tapping a day
-     * cell does not select it, so the cell reports "fertile, ovulation,
-     * current month" with no "selected" state, and the selected-day
-     * panel is not even composed afterwards.
-     *
-     * Earlier readings suggested the selection was lost only across
-     * activity recreation. That was wrong: the original failure was that
-     * the March day node was never found, because the calendar opens on
-     * the current month. Navigating to March exposed that the click
-     * itself never takes effect.
-     *
-     * The assertion is kept at its correct value deliberately so the
-     * defect stays visible rather than being written around.
+     * A calendar defect used to make tapping a day cell a no-op on
+     * device ("fertile, ovulation, current month" with no "selected"
+     * state on the very first assertion). It was tracked in three
+     * earlier commits: af5a2b6 and 0176574 diagnosed it, b59ecee traced it
+     * to grid cells laid out with zero bounds, and ed8e6d6 restored the
+     * calendar position as one consistent unit. As of the October 19,
+     * 2026 audit run on an API 36 emulator this passes end-to-end
+     * (tapping, tab switches, and activity recreation), so the assertion
+     * is exercised as regression defence rather than as a red light.
      */
     private fun assertCalendarSelectionIsMarch23() {
         composeRule.onNodeWithTag("calendar_scroll")
