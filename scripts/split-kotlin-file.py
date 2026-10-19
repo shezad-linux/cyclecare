@@ -55,12 +55,25 @@ def package_of(path):
 
 
 def opt_in_of(path):
-    """Returns the file-level OptIn block of a file, or an empty string."""
+    """
+    Returns the file-level OptIn block of a file, or an empty string.
+
+    A short name such as `ExperimentalLayoutApi::class` is qualified with
+    its package, because the OptIn block sits above the imports and so
+    cannot rely on one of them.
+    """
     text = open(path, encoding="utf-8").read()
     if not text.startswith("@file:OptIn("):
         return ""
     end = text.index(")")
-    return text[: end + 1] + "\n\n"
+    block = text[: end + 1] + "\n\n"
+    known = {
+        "ExperimentalLayoutApi": "androidx.compose.foundation.layout.ExperimentalLayoutApi",
+        "ExperimentalMaterial3Api": "androidx.compose.material3.ExperimentalMaterial3Api",
+    }
+    for short, qualified in known.items():
+        block = block.replace(f"{short}::class", f"{qualified}::class")
+    return block
 
 
 def imports_of(path):
