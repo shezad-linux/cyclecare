@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -24,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -166,21 +168,44 @@ internal fun MiniBarChart(
 
 @Composable
 internal fun PeriodLengthStrip(items: List<InsightStripItemUi>) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
-        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
-    ) {
-        items.forEach { item ->
-            Surface(
-                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.72f),
-                shape = MaterialTheme.shapes.extraLarge,
+    // A flowing row wrapped the six chips four and then two, which read as
+    // a broken grid rather than as a set of chips. They are laid out on a
+    // fixed grid instead: one row when there is room for them, and three
+    // to a row when there is not, so the arrangement is the same at every
+    // width rather than depending on how the words happen to fall.
+    if (items.isEmpty()) return
+    val columns = if (items.size <= 4) items.size else 3
+    val rows = items.chunked(columns)
+    Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
+        rows.forEach { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(CycleCareSpace.space8),
             ) {
-                Text(
-                    text = "${item.label.resolve()} ${item.valueLabel.resolve()}",
-                    modifier = Modifier.padding(horizontal = CycleCareSpace.space12, vertical = CycleCareSpace.space8),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
+                row.forEach { item ->
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.72f),
+                        shape = MaterialTheme.shapes.extraLarge,
+                    ) {
+                        Text(
+                            text = "${item.label.resolve()} ${item.valueLabel.resolve()}",
+                            modifier = Modifier.padding(
+                                horizontal = CycleCareSpace.space12,
+                                vertical = CycleCareSpace.space8,
+                            ),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+                // A short final row would otherwise leave the chips narrower
+                // than the ones above it.
+                repeat(columns - row.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
             }
         }
     }

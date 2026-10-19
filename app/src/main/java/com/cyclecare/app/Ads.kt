@@ -13,9 +13,14 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -142,9 +147,21 @@ fun AdBanner(
                 },
             )
             if (loadState == AdLoadState.Loading) {
+                // The banner reserves its height from the first composition
+                // so nothing shifts when the ad arrives, which spec 15
+                // §11.4 requires. A bare spinner in a strip that tall read
+                // as a stray dot floating over the screen, so the reserved
+                // slot is drawn as a deliberate placeholder instead: a
+                // surface across the whole slot with the indicator in it.
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
+                    shape = RoundedCornerShape(12.dp),
+                ) {}
                 CircularProgressIndicator(
-                    modifier = Modifier.height(24.dp),
+                    modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
