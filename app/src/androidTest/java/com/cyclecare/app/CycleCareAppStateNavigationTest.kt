@@ -1255,3 +1255,17 @@ private class FakeAppResetRepository(
         environment.exportCleared = true
     }
 }
+
+/**
+ * Populated app graph for design review screenshots.
+ *
+ * ReThemeScreenshotTest needs the same realistic state the assertions use, but
+ * every fake above is private to this file. Rather than widen twelve fakes to
+ * internal, this exposes only the two public types the app composable actually
+ * consumes, which keeps the screenshots and the assertions on one source of
+ * truth without leaking the test doubles.
+ */
+internal fun populatedScreenshotEnvironment(): Pair<AppContainer, SecureAuthController> {
+    val environment = TestAppEnvironment.populated()
+    return environment.container to environment.secureAuthController
+}
