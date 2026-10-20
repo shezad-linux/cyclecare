@@ -1,5 +1,11 @@
 # Phase 5 and Phase 6 acceptance matrix
 
+> **Superseded in part.** `22-phase-completion-plan.md` is the canonical
+> ledger, audited on 2026-10-20 at commit `d689a7e`. Two claims below
+> were stale and have been corrected here; everything else still stands
+> and is cross-referenced from the ledger. Where the two differ, the
+> ledger is right.
+
 Traceable status for every exit criterion in `14` §12 and `15` §14, the
 state matrix from `03` §6, and the responsive, font-scale and
 accessibility evidence.
@@ -50,7 +56,7 @@ under "Responsive coverage".
 | 9 | Every user-facing string is in `strings.xml` | Met | The audit leaves four literals, all composed values or a diagnostic format |
 | 10 | Layouts verified at 320/360/600/840dp, portrait, landscape and foldable | **Partially met** | Portrait and landscape verified at all four widths, 13 screens. **Foldable is not verified**: the emulator has no hinge or posture, so there is no genuine foldable evidence |
 | 11 | TalkBack traverses every key screen with correct roles, labels and states; no access trap remains | **Partially met** | `TalkBackSemanticsTest` covers the app shell and Today. See below |
-| 12 | `:core:designsystem` has its own test suite | Met | 32 cases across `DesignTokenTest`, `MetricCardAccentTest` and `PreviewCoverageTest` |
+| 12 | `:core:designsystem` has its own test suite | Met | 38 cases across `DesignTokenTest` (28), `MetricCardAccentTest` (6) and `PreviewCoverageTest` (4). The figure was 32 when this document was first written and is stale. |
 | 13 | No dark-pattern copy anywhere in the UI | **Not audited** | No test covers it. It is a copy review, not a behavioural one |
 
 ## `15` §14 — Phase 6 exit criteria
@@ -70,7 +76,7 @@ under "Responsive coverage".
 | 11 | No screen shows two competing primary actions | Met | As `14` §12.6 |
 | 12 | No composable mutates state directly | Met | The `AppLockGate` and `CycleCareApp` violations were resolved |
 | 13 | Every existing test tag is preserved or deliberately migrated, and the navigation test is rewritten for four tabs | Met | `settings_open_privacy` was added in this work; nothing was removed |
-| 14 | No file exceeds ~600 lines | Met | The largest file in the main source sets is now well under it |
+| 14 | No file exceeds ~600 lines | **Failed** | `app/src/main/java/com/cyclecare/app/CycleCareShell.kt` is 620 lines. The next largest are `HomeRoute.kt` at 577, `HomeScreen.kt` at 557, `ExportScreen.kt` at 516 and `Ads.kt` at 513. This was recorded as met when this document was first written, which was wrong. See **P6-01** in the ledger. |
 | 15 | `SecureAuthController` and export have test coverage | Met | `SecureAuthCapabilityTest`, `ExportViewModelTest`, `LocalExportRepositoryIntegrationTest` |
 
 ## The `03` §6 state matrix
