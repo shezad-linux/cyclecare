@@ -48,6 +48,25 @@ const val PROJECTED_DRIFT_CAP: Double = 3.0
 const val LUTEAL_PHASE_DEFAULT_DAYS: Int = 14
 
 /**
+ * Days before ovulation that the population-typical fertile window opens.
+ *
+ * The window is a population prior, not a measurement: CycleCare does not
+ * collect ovulation observations, so it cannot narrow this.
+ */
+const val FERTILE_WINDOW_LEAD_DAYS: Int = 4
+
+/** Days after ovulation that the population-typical fertile window stays open. */
+const val FERTILE_WINDOW_TRAIL_DAYS: Int = 1
+
+/**
+ * How many recent cycles the "average cycle length" figure covers.
+ *
+ * One number, one window, so that two screens showing the same label
+ * cannot show two different averages.
+ */
+const val AVERAGE_CYCLE_LENGTH_WINDOW: Int = 6
+
+/**
  * Irreducible uncertainty in the luteal prior.
  *
  * Even a user with perfectly regular cycles cannot have a tighter

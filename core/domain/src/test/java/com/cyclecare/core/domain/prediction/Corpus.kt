@@ -74,17 +74,26 @@ object Corpus {
         return Scenario("regular_${mean}_s${sigma}_$cycles", build(lengths), cycles)
     }
 
-    /** Cycles trending steadily longer or shorter. */
+    /**
+     * Cycles trending steadily longer or shorter.
+     *
+     * [noise] is the standard deviation of the jitter added to each
+     * interval. Zero produces a perfectly linear series, whose
+     * regression slope is exactly [slopePerCycle] rather than
+     * approximately so, which is what the drift gate needs to assert
+     * against a known drift.
+     */
     fun drifting(
         cycles: Int = 8,
         mean: Int = 28,
         slopePerCycle: Double = 1.2,
         seed: Long = SEED,
+        noise: Double = 0.6,
     ): Scenario {
         val random = Random(seed + 977L)
         val lengths = List(cycles) { index ->
             val target = mean + slopePerCycle * index
-            (target + random.nextGaussian() * 0.6).toInt().coerceIn(15, 60)
+            (target + random.nextGaussian() * noise).toInt().coerceIn(15, 60)
         }
         return Scenario("drift_${mean}_${slopePerCycle}_$cycles", build(lengths), cycles)
     }
@@ -172,4 +181,18 @@ object Corpus {
         skipped(cycles = 8),
         impossibleGap(),
     )
+
+    /**
+     * The p-th percentile of a sample, by nearest rank.
+     *
+     * Nearest rank rather than an interpolated percentile: the corpus
+     * samples are small, and an interpolated value would be a number no
+     * hold-out case ever produced.
+     */
+    fun percentile(values: List<Double>, percentile: Double): Double {
+        require(values.isNotEmpty()) { "the percentile of an empty sample is undefined" }
+        val sorted = values.sorted()
+        val rank = kotlin.math.ceil(percentile / 100.0 * sorted.size).toInt()
+        return sorted[(rank - 1).coerceIn(0, sorted.size - 1)]
+    }
 }
