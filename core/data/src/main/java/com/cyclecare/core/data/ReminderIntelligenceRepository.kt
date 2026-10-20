@@ -5,6 +5,7 @@ import com.cyclecare.core.database.CycleCareDatabase
 import com.cyclecare.core.domain.AppLogger
 import com.cyclecare.core.domain.NoOpAppLogger
 import com.cyclecare.core.domain.ReminderIntelligenceRepository
+import com.cyclecare.core.domain.notification.ReminderIntelligenceCodec
 import com.cyclecare.core.model.DeferredReminder
 import com.cyclecare.core.model.ReminderAutoDisabled
 import com.cyclecare.core.model.ReminderType
@@ -36,10 +37,11 @@ class RoomReminderIntelligenceRepository(
 ) : ReminderIntelligenceRepository {
 
     override fun observeAutoDisabled(): Flow<List<ReminderAutoDisabled>> =
-        database.appSettingDao().observe(AUTO_DISABLED_KEY).map { encoded -> parseAutoDisabled(encoded) }
+        database.appSettingDao().observe(AUTO_DISABLED_KEY)
+            .map { encoded -> decodeAutoDisabled(encoded) }
 
     override suspend fun isAutoDisabled(type: ReminderType): Boolean =
-        parseAutoDisabled(read(AUTO_DISABLED_KEY)).any { it.type == type }
+        decodeAutoDisabled(read(AUTO_DISABLED_KEY)).any { it.type == type }
 
     override suspend fun disable(
         type: ReminderType,
@@ -47,10 +49,11 @@ class RoomReminderIntelligenceRepository(
         openedCount: Int,
         disabledAtEpochMillis: Long,
     ) {
-        val remaining = parseAutoDisabled(read(AUTO_DISABLED_KEY)).filterNot { it.type == type }
+        val remaining = decodeAutoDisabled(read(AUTO_DISABLED_KEY))
+            .filterNot { it.type == type }
         write(
             AUTO_DISABLED_KEY,
-            encodeAutoDisabled(
+            ReminderIntelligenceCodec.encodeAutoDisabled(
                 remaining + ReminderAutoDisabled(
                     type = type,
                     dismissedCount = dismissedCount,
@@ -62,11 +65,12 @@ class RoomReminderIntelligenceRepository(
     }
 
     override suspend fun reEnable(type: ReminderType) {
-        val remaining = parseAutoDisabled(read(AUTO_DISABLED_KEY)).filterNot { it.type == type }
+        val remaining = decodeAutoDisabled(read(AUTO_DISABLED_KEY))
+            .filterNot { it.type == type }
         if (remaining.isEmpty()) {
             database.appSettingDao().delete(AUTO_DISABLED_KEY)
         } else {
-            write(AUTO_DISABLED_KEY, encodeAutoDisabled(remaining))
+            write(AUTO_DISABLED_KEY, ReminderIntelligenceCodec.encodeAutoDisabled(remaining))
         }
     }
 
@@ -76,25 +80,27 @@ class RoomReminderIntelligenceRepository(
         scheduledAtEpochMillis: Long,
         reason: String,
     ): Int {
-        val remaining = parseDeferred(read(DEFERRED_KEY)).filterNot { it.ruleId == ruleId }.toMutableList()
+        val remaining = ReminderIntelligenceCodec.decodeDeferred(read(DEFERRED_KEY))
+            .filterNot { it.ruleId == ruleId }
+            .toMutableList()
         remaining += DeferredReminder(
             ruleId = ruleId,
             type = type,
             scheduledAtEpochMillis = scheduledAtEpochMillis,
             reason = reason,
         )
-        write(DEFERRED_KEY, encodeDeferred(remaining))
+        write(DEFERRED_KEY, ReminderIntelligenceCodec.encodeDeferred(remaining))
         return remaining.size
     }
 
     override suspend fun takeDeferred(): List<DeferredReminder> {
-        val snapshot = parseDeferred(read(DEFERRED_KEY))
+        val snapshot = ReminderIntelligenceCodec.decodeDeferred(read(DEFERRED_KEY))
         database.appSettingDao().delete(DEFERRED_KEY)
         return snapshot
     }
 
     override suspend fun deferredCount(): Int? {
-        val count = parseDeferred(read(DEFERRED_KEY)).size
+        val count = ReminderIntelligenceCodec.decodeDeferred(read(DEFERRED_KEY)).size
         return count.takeIf { it > 0 }
     }
 
@@ -104,82 +110,31 @@ class RoomReminderIntelligenceRepository(
         database.appSettingDao().put(com.cyclecare.core.database.AppSettingEntity(key = key, value = value))
     }
 
-    private fun parseAutoDisabled(encoded: String?): List<ReminderAutoDisabled> =
-        encoded?.split(ENTRY_SEPARATOR)?.mapNotNull { entry ->
-            entry.split(FIELD_SEPARATOR).takeIf { it.size == 4 }?.let { fields ->
-                val type = toReminderTypeOrNull(fields[0])
-                val dismissed = fields[1].toIntOrNull()
-                val opened = fields[2].toIntOrNull()
-                val at = fields[3].toLongOrNull()
-                if (type != null && dismissed != null && opened != null && at != null) {
-                    ReminderAutoDisabled(
-                        type = type,
-                        dismissedCount = dismissed,
-                        openedCount = opened,
-                        disabledAtEpochMillis = at,
-                    )
-                } else {
-                    logger.warn(
-                        tag = STORE_TAG,
-                        event = "auto_disabled_state_corrupt",
-                        attributes = mapOf("entry" to entry),
-                    )
-                    null
-                }
-            }
-        }.orEmpty()
-
-    private fun encodeAutoDisabled(list: List<ReminderAutoDisabled>): String =
-        list.joinToString(ENTRY_SEPARATOR) { record ->
-            listOf(
-                record.type.name,
-                record.dismissedCount.toString(),
-                record.openedCount.toString(),
-                record.disabledAtEpochMillis.toString(),
-            ).joinToString(FIELD_SEPARATOR)
+    /**
+     * Decodes the auto-disabled types, and says so when an entry was lost.
+     *
+     * A corrupt entry is dropped rather than taking the whole list with
+     * it, but a silent drop would hide a storage problem, so the count is
+     * reported.
+     */
+    private fun decodeAutoDisabled(encoded: String?): List<ReminderAutoDisabled> {
+        val decoded = ReminderIntelligenceCodec.decodeAutoDisabled(encoded)
+        val expected = encoded?.split(';')?.count { it.isNotEmpty() } ?: 0
+        if (decoded.size != expected) {
+            logger.warn(
+                tag = STORE_TAG,
+                event = "auto_disabled_state_corrupt",
+                attributes = mapOf(
+                    "expected" to expected.toString(),
+                    "decoded" to decoded.size.toString(),
+                ),
+            )
         }
-
-    private fun parseDeferred(encoded: String?): List<DeferredReminder> =
-        encoded?.split(ENTRY_SEPARATOR)?.mapNotNull { entry ->
-            entry.split(FIELD_SEPARATOR).takeIf { it.size == 4 }?.let { fields ->
-                val ruleId = fields[0]
-                val type = toReminderTypeOrNull(fields[1])
-                val at = fields[2].toLongOrNull()
-                if (ruleId.isNotEmpty() && type != null && at != null) {
-                    DeferredReminder(
-                        ruleId = ruleId,
-                        type = type,
-                        scheduledAtEpochMillis = at,
-                        reason = fields[3],
-                    )
-                } else {
-                    logger.warn(
-                        tag = STORE_TAG,
-                        event = "deferred_state_corrupt",
-                        attributes = mapOf("entry" to entry),
-                    )
-                    null
-                }
-            }
-        }.orEmpty()
-
-    private fun encodeDeferred(list: List<DeferredReminder>): String =
-        list.joinToString(ENTRY_SEPARATOR) { item ->
-            listOf(
-                item.ruleId,
-                item.type.name,
-                item.scheduledAtEpochMillis.toString(),
-                item.reason,
-            ).joinToString(FIELD_SEPARATOR)
-        }
-
-    private fun toReminderTypeOrNull(raw: String): ReminderType? =
-        runCatching { enumValueOf<ReminderType>(raw) }.getOrNull()
+        return decoded
+    }
 
     companion object {
         private const val STORE_TAG = "ReminderIntelligenceStore"
-        private const val ENTRY_SEPARATOR = ";"
-        private const val FIELD_SEPARATOR = ","
 
         /** app_settings row the auto-disabled types live under. */
         const val AUTO_DISABLED_KEY = "reminder_auto_disabled_types"

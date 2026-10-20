@@ -60,7 +60,7 @@ class ReminderDeliveryGatesTest {
     fun `a clearly relevant candidate delivers`() {
         val outcome = evaluateDeliveryGates(ReminderType.PeriodPrep, input())
 
-        assertThat(outcome).isEqualTo(DeliveryGateOutcome.Deliver)
+        assertThat(outcome).isInstanceOf(DeliveryGateOutcome.Deliver::class.java)
     }
 
     @Test
@@ -101,7 +101,7 @@ class ReminderDeliveryGatesTest {
             input(leadDays = 6, quality = EstimateQuality.LOW, userPinnedTime = true),
         )
 
-        assertThat(outcome).isEqualTo(DeliveryGateOutcome.Deliver)
+        assertThat(outcome).isInstanceOf(DeliveryGateOutcome.Deliver::class.java)
     }
 
     @Test
@@ -120,7 +120,7 @@ class ReminderDeliveryGatesTest {
 
         assertThat(deferred).isInstanceOf(DeliveryGateOutcome.Defer::class.java)
         assertThat((deferred as DeliveryGateOutcome.Defer).reason).isEqualTo("quiet hours")
-        assertThat(late).isEqualTo(DeliveryGateOutcome.Deliver)
+        assertThat(late).isInstanceOf(DeliveryGateOutcome.Deliver::class.java)
     }
 
     @Test
@@ -130,7 +130,7 @@ class ReminderDeliveryGatesTest {
 
         assertThat(deferred).isInstanceOf(DeliveryGateOutcome.Defer::class.java)
         assertThat((deferred as DeliveryGateOutcome.Defer).reason).isEqualTo("do not disturb")
-        assertThat(late).isEqualTo(DeliveryGateOutcome.Deliver)
+        assertThat(late).isInstanceOf(DeliveryGateOutcome.Deliver::class.java)
     }
 
     @Test
@@ -140,7 +140,7 @@ class ReminderDeliveryGatesTest {
 
         assertThat(third).isInstanceOf(DeliveryGateOutcome.Defer::class.java)
         assertThat((third as DeliveryGateOutcome.Defer).reason).isEqualTo("arbitration")
-        assertThat(second).isEqualTo(DeliveryGateOutcome.Deliver)
+        assertThat(second).isInstanceOf(DeliveryGateOutcome.Deliver::class.java)
     }
 
     @Test

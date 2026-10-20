@@ -179,14 +179,18 @@ class ReminderDeliveryWorkerTest {
         val result = buildWorker().doWork()
 
         assertThat(result).isInstanceOf(ListenableWorker.Result.Success::class.java)
-        assertThat(env.notificationClient.postedNotifications).hasSize(1)
-        val posted = env.notificationClient.postedNotifications.single()
+        // Two posts: the member, and the one summary the group needs.
+        assertThat(env.notificationClient.postedNotifications).hasSize(2)
+        val posted = env.notificationClient.postedNotifications.first()
         assertThat(posted.id).isEqualTo(42)
         assertThat(posted.notification.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString())
             .isEqualTo("Cycle reminder")
         assertThat(posted.notification.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString())
             .isEqualTo("Cycle reminder available. Open the app to review it.")
         assertThat(posted.notification.smallIcon.resId).isEqualTo(R.drawable.ic_notification_small)
+        val summary = env.notificationClient.postedNotifications.last()
+        assertThat(summary.id).isEqualTo(ReminderChannels.groupedSummaryNotificationId)
+        assertThat(summary.notification.flags and Notification.FLAG_GROUP_SUMMARY != 0).isTrue()
         assertThat(env.reminderScheduler.refreshCallCount).isEqualTo(1)
     }
 

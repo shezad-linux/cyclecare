@@ -21,7 +21,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,8 +47,11 @@ import com.cyclecare.core.model.ReminderEvent
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -109,18 +114,32 @@ class ReminderCenterViewModel(
             // The rules were switched off when the type was paused, so
             // re-enabling has to switch them back on, clear the pause
             // record, and re-arm what was cancelled.
-            reminderRepository.setRuleTypeEnabled(type, enabled = true)
-            reminderIntelligenceRepository.reEnable(type)
-            reminderScheduler.refreshSchedules()
+            reEnableReminderType(
+                reminderRepository = reminderRepository,
+                intelligence = reminderIntelligenceRepository,
+                scheduler = reminderScheduler,
+                type = type,
+            )
         }
     }
 }
 
 class ReminderCenterViewModelFactory(
-    private val reminderEventsRepository: ReminderEventsRepository,
-    private val reminderIntelligenceRepository: ReminderIntelligenceRepository,
-    private val reminderRepository: com.cyclecare.core.domain.ReminderRepository,
-    private val reminderScheduler: com.cyclecare.core.domain.ReminderScheduler,
+    /**
+     * The event history the centre lists.
+     *
+     * Public because the route reads it back when it builds the factory
+     * it actually uses: the navigation shell owns this call site, and the
+     * intelligence state the auto-disable explanation needs comes from
+     * the app container rather than from the shell.
+     */
+    val reminderEventsRepository: ReminderEventsRepository,
+    private val reminderIntelligenceRepository: ReminderIntelligenceRepository =
+        com.cyclecare.core.domain.NoOpReminderIntelligenceRepository,
+    private val reminderRepository: com.cyclecare.core.domain.ReminderRepository =
+        NoOpReminderRepository,
+    private val reminderScheduler: com.cyclecare.core.domain.ReminderScheduler =
+        NoOpReminderScheduler,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
@@ -132,12 +151,51 @@ class ReminderCenterViewModelFactory(
         ) as T
 }
 
+/**
+ * A reminder repository that changes nothing.
+ *
+ * The default for a centre built without the app container: the pause
+ * record still shows, but there is nothing to re-enable.
+ */
+private object NoOpReminderRepository : com.cyclecare.core.domain.ReminderRepository {
+    override fun observeRules(): Flow<List<com.cyclecare.core.model.ReminderRule>> =
+        MutableStateFlow<List<com.cyclecare.core.model.ReminderRule>>(emptyList()).asStateFlow()
+
+    override suspend fun upsertRule(rule: com.cyclecare.core.model.ReminderRule) = Unit
+
+    override suspend fun setRuleTypeEnabled(
+        type: com.cyclecare.core.model.ReminderType,
+        enabled: Boolean,
+    ) = Unit
+}
+
+/** A scheduler that re-arms nothing. See [NoOpReminderRepository]. */
+private object NoOpReminderScheduler : com.cyclecare.core.domain.ReminderScheduler {
+    override suspend fun refreshSchedules(
+        now: java.time.ZonedDateTime,
+    ): List<com.cyclecare.core.model.ScheduledReminder> = emptyList()
+}
+
 @Composable
 fun ReminderCenterRoute(
     factory: ReminderCenterViewModelFactory,
     onOpenEvent: (ReminderEvent) -> Unit,
 ) {
-    val viewModel: ReminderCenterViewModel = viewModel(factory = factory)
+    val context = LocalContext.current
+    // The pause record and the re-enable need the app container. The
+    // navigation shell owns the call site of this route, so the container
+    // is resolved here rather than threaded through it.
+    val container = remember(context) {
+        (context.applicationContext as CycleCareApplication).appContainer
+    }
+    val viewModel: ReminderCenterViewModel = viewModel(
+        factory = ReminderCenterViewModelFactory(
+            reminderEventsRepository = factory.reminderEventsRepository,
+            reminderIntelligenceRepository = container.reminderIntelligenceRepository,
+            reminderRepository = container.reminderRepository,
+            reminderScheduler = container.reminderScheduler,
+        ),
+    )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     ReminderCenterScreen(
         uiState = uiState,

@@ -35,20 +35,23 @@ class ReminderAutoDisableActionReceiver : BroadcastReceiver() {
         val application = context as CycleCareApplication
         val container = application.appContainer
         runCatching {
-            container.reminderRepository.setRuleTypeEnabled(type, enabled = true)
-            container.reminderIntelligenceRepository.reEnable(type)
-            container.reminderScheduler.refreshSchedules()
+            reEnableReminderType(
+                reminderRepository = container.reminderRepository,
+                intelligence = container.reminderIntelligenceRepository,
+                scheduler = container.reminderScheduler,
+                type = type,
+            )
         }.onSuccess {
             container.appLogger.info(
                 tag = TAG,
                 event = "reminder_type_re_enabled",
-                attributes = mapOf("type" to type.name),
+                attributes = ReminderDeliveryLog.reEnabled(type),
             )
         }.onFailure { error ->
             container.appLogger.warn(
                 tag = TAG,
                 event = "reminder_type_re_enable_failed",
-                attributes = mapOf("type" to type.name),
+                attributes = ReminderDeliveryLog.reEnabled(type),
                 throwable = error,
             )
         }

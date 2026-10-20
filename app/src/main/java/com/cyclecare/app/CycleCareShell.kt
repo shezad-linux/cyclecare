@@ -586,12 +586,7 @@ internal fun AppNavHost(
         }
         composable("reminders") {
             ReminderCenterRoute(
-                factory = ReminderCenterViewModelFactory(
-                    reminderEventsRepository = container.reminderEventsRepository,
-                    reminderIntelligenceRepository = container.reminderIntelligenceRepository,
-                    reminderRepository = container.reminderRepository,
-                    reminderScheduler = container.reminderScheduler,
-                ),
+                factory = ReminderCenterViewModelFactory(container.reminderEventsRepository),
                 onOpenEvent = onOpenReminderEvent,
             )
         }

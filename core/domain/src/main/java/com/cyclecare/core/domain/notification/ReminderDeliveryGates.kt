@@ -84,6 +84,14 @@ data class DeliveryGateInput(
     val sendsInArbitrationWindow: Int,
     val dismissRateForType: Float,
     val openRateForType: Float,
+    /**
+     * Whether this candidate goes out at the user's learned send hour.
+     *
+     * Spec `13` §8: the learned-time bonus never applies to a time the
+     * user pinned, so this is false whenever the time was the user's own
+     * choice.
+     */
+    val sendsLearnedTime: Boolean = false,
     /** The interruption filter at the moment of the attempt. */
     val dndFilter: Int,
     /** The clock at the moment of the attempt. */
@@ -110,13 +118,19 @@ data class DeliveryGateInput(
         sendsLast7d = sendsLast7d,
         dismissRateForType = dismissRateForType,
         openRateForType = openRateForType,
-        sendsLearnedTime = false,
+        sendsLearnedTime = sendsLearnedTime,
     )
 }
 
 sealed class DeliveryGateOutcome {
-    /** Post the notification. */
-    data object Deliver : DeliveryGateOutcome()
+    /**
+     * Post the notification.
+     *
+     * The score and the threshold it cleared travel with the decision, so
+     * the delivery log can record why this candidate was worth an
+     * interruption and not just that it was.
+     */
+    data class Deliver(val score: Int, val threshold: Int) : DeliveryGateOutcome()
 
     /**
      * Post nothing, and schedule no summary on this candidate's behalf —
@@ -155,6 +169,7 @@ fun evaluateDeliveryGates(
     if (!decision.deliver) {
         return DeliveryGateOutcome.Suppress(decision.suppressedBecause ?: "below threshold")
     }
+    val threshold = thresholdFor(input.asRelevanceInput(type, "candidate"))
     if (input.sendsLast7d >= MAX_SENDS_PER_WEEK) {
         return DeliveryGateOutcome.Suppress("weekly budget exhausted")
     }
@@ -171,7 +186,7 @@ fun evaluateDeliveryGates(
             val resumeAt = input.now.plusMinutes(ARBITRATION_WINDOW_MINUTES.toLong())
             DeliveryGateOutcome.Defer("arbitration", resumeAt.toInstant().toEpochMilli())
         }
-        else -> DeliveryGateOutcome.Deliver
+        else -> DeliveryGateOutcome.Deliver(decision.score, threshold)
     }
 }
 

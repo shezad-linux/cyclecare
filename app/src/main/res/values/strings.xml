@@ -52,6 +52,14 @@
         <item quantity="other">%1$d CycleCare reminders waiting.</item>
     </plurals>
 
+    <!-- The one summary that belongs to the reminders group. Spec 13 §10:
+         a group key with no summary is an orphan group. -->
+    <string name="reminder_group_summary_title">Cycle reminders</string>
+    <plurals name="reminder_group_summary_body">
+        <item quantity="one">%1$d CycleCare reminder</item>
+        <item quantity="other">%1$d CycleCare reminders</item>
+    </plurals>
+
     <!-- The one-time explanation after an auto-disable, with a one-tap
          re-enable action. Spec 13 §9 and §13. Copy stays neutral: no
          guilt, no streaks, no false precision. -->

@@ -91,17 +91,11 @@ class CycleCareApplication : Application() {
             context = applicationContext,
             database = database,
             // Wipes must not leave stale reminders armed. The snapshot of
-            // armed rule id happens inside the repository, before the
+            // the armed rule ids happens inside the repository, before the
             // tables go; this callback is the only place that can turn
             // those names into a real alarm cancellation.
             cancelArmedReminders = { ruleAlarmNames ->
-                val alarmFacade = AndroidReminderAlarmFacade(applicationContext)
-                ruleAlarmNames.forEach { name -> alarmFacade.cancel(name) }
-                ReminderDeferralScheduler.cancel(applicationContext)
-                val notificationManager = notificationManagerCompat(applicationContext)
-                notificationManager.cancel(ReminderChannels.groupedSummaryNotificationId)
-                notificationManager.cancel(ReminderChannels.deferredSummaryNotificationId)
-                notificationManager.cancel(ReminderDelivery.autoDisableNoticeNotificationId)
+                ReminderResetCancellation.cancel(applicationContext, ruleAlarmNames)
             },
         )
         val reminderScheduler = ReminderAlarmScheduler(

@@ -116,7 +116,15 @@ data class ReminderTypeEngagement(
     companion object {
         fun of(dismissedCount: Int, openedCount: Int, impressions: Int): ReminderTypeEngagement =
             if (impressions <= 0) {
-                ReminderTypeEngagement(dismissRate = 0f, openRate = 0f)
+                // No impressions means nothing has been measured, and the
+                // fatigue term measures what the user did with the
+                // interruptions they were given. An open rate of zero
+                // would claim the user never opens this type, which no
+                // evidence supports, and the shipped penalty would then
+                // charge every new reminder type twenty points before it
+                // had been shown once — enough to silence the one type
+                // the specification exempts from quiet hours.
+                ReminderTypeEngagement(dismissRate = 0f, openRate = 1f)
             } else {
                 ReminderTypeEngagement(
                     dismissRate = dismissedCount.toFloat() / impressions.toFloat(),

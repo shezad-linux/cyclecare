@@ -45,7 +45,7 @@ class ReminderDeferredSummaryReceiver : BroadcastReceiver() {
             ReminderDeferralScheduler.cancel(context)
             return
         }
-        if (interruptionFilterFor(context) > INTERRUPTION_FILTER_ALL) {
+        if (AndroidInterruptionFilterSource(context).currentInterruptionFilter() > INTERRUPTION_FILTER_ALL) {
             ReminderDeferralScheduler.schedule(
                 context,
                 container.timeProvider.nowEpochMillis() + DND_RETRY_MINUTES,
@@ -84,6 +84,13 @@ class ReminderDeferredSummaryReceiver : BroadcastReceiver() {
         container.reminderNotificationClient.post(
             notificationId = ReminderChannels.deferredSummaryNotificationId,
             notification = notification,
+        )
+        // The group now has a member, so the group's own summary can be
+        // posted beside it instead of leaving an orphan group.
+        ReminderGroupSummary.post(
+            context = context,
+            container = container,
+            channelId = channelId,
         )
         container.appLogger.info(
             tag = TAG,
