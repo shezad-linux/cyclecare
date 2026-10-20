@@ -472,7 +472,9 @@ internal fun EditCycleSheet(
                 OutlinedTextField(
                     value = editor.startDateText,
                     onValueChange = onStartDateChanged,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(HomeTags.EDITOR_START_DATE),
                     label = { Text(stringResource(R.string.start_date_label)) },
                     singleLine = true,
                     isError = editor.startDateError != null,
@@ -485,7 +487,9 @@ internal fun EditCycleSheet(
                 OutlinedTextField(
                     value = editor.endDateText,
                     onValueChange = onEndDateChanged,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(HomeTags.EDITOR_END_DATE),
                     label = { Text(stringResource(R.string.end_date_label)) },
                     singleLine = true,
                     isError = editor.endDateError != null,
@@ -498,7 +502,9 @@ internal fun EditCycleSheet(
                 OutlinedTextField(
                     value = editor.cycleLengthText,
                     onValueChange = onCycleLengthChanged,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(HomeTags.EDITOR_CYCLE_LENGTH),
                     label = { Text(stringResource(R.string.cycle_length_label)) },
                     singleLine = true,
                     isError = editor.cycleLengthError != null,
@@ -524,7 +530,9 @@ internal fun EditCycleSheet(
                 }
                 Button(
                     onClick = onSaveCycle,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(HomeTags.EDITOR_SAVE),
                     enabled = editor.isSaveEnabled,
                 ) {
                     Text(

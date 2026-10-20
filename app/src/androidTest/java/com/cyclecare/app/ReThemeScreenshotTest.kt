@@ -20,6 +20,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performSemanticsAction
@@ -115,6 +116,19 @@ class ReThemeScreenshotTest {
      * see: the settings, the reminder centre, the cycle status and the
      * fertility detail, and the edit sheet over the dashboard.
      */
+    /**
+     * Scrolls a dashboard action fully into view and taps it.
+     *
+     * `performScrollToNode` only guarantees the node exists in the tree; at a
+     * large font scale the hero card is taller than the viewport, so the
+     * action at its bottom can still be off-screen and the tap would land
+     * somewhere else. `performScrollTo` brings the node itself into view.
+     */
+    private fun scrollToAndClick(tag: String) {
+        composeRule.onNodeWithTag(tag).performScrollTo().performClick()
+        composeRule.waitForIdle()
+    }
+
     private fun captureDetailScreens(widthDp: Int, dark: Boolean) {
         render(widthDp, dark, screenContent())
         // The route loop ends on Insights, so the dashboard is put back
@@ -126,8 +140,7 @@ class ReThemeScreenshotTest {
         // scrolled to before it is tapped.
         composeRule.onNodeWithTag("home_dashboard")
             .performScrollToNode(hasTestTag("home_edit_cycle"))
-        composeRule.onNodeWithTag("home_edit_cycle").performClick()
-        composeRule.waitForIdle()
+        scrollToAndClick("home_edit_cycle")
         capture("edit_cycle_sheet", widthDp, dark)
         // The sheet is a modal with no dismiss control of its own, so it is
         // closed the way a person closes it.
@@ -137,8 +150,7 @@ class ReThemeScreenshotTest {
         // The cycle status detail.
         composeRule.onNodeWithTag("home_dashboard")
             .performScrollToNode(hasTestTag("home_cycle_status_cta"))
-        composeRule.onNodeWithTag("home_cycle_status_cta").performClick()
-        composeRule.waitForIdle()
+        scrollToAndClick("home_cycle_status_cta")
         capture("cycle_status", widthDp, dark)
         composeRule.onNodeWithText("Back to dashboard").performClick()
         composeRule.waitForIdle()
@@ -146,8 +158,7 @@ class ReThemeScreenshotTest {
         // The fertility detail.
         composeRule.onNodeWithTag("home_dashboard")
             .performScrollToNode(hasTestTag("home_fertility_detail_cta"))
-        composeRule.onNodeWithTag("home_fertility_detail_cta").performClick()
-        composeRule.waitForIdle()
+        scrollToAndClick("home_fertility_detail_cta")
         capture("fertility_detail", widthDp, dark)
         composeRule.onNodeWithText("Back to dashboard").performClick()
         composeRule.waitForIdle()
@@ -155,8 +166,7 @@ class ReThemeScreenshotTest {
         // The reminder centre, from the dashboard.
         composeRule.onNodeWithTag("home_dashboard")
             .performScrollToNode(hasTestTag("home_reminder_center"))
-        composeRule.onNodeWithTag("home_reminder_center").performClick()
-        composeRule.waitForIdle()
+        scrollToAndClick("home_reminder_center")
         capture("reminder_centre", widthDp, dark)
         pressBackUnconditionally()
         composeRule.waitForIdle()

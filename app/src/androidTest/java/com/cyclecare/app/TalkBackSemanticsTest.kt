@@ -6,13 +6,17 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.cyclecare.app.AppContainer
 import com.cyclecare.core.designsystem.CycleCareTheme
+import com.cyclecare.feature.privacy.SecureAuthController
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -37,14 +41,13 @@ class TalkBackSemanticsTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    private fun renderApp() {
+    private fun renderApp(env: Pair<AppContainer, SecureAuthController> = populatedScreenshotEnvironment()) {
         composeRule.activityRule.scenario.onActivity { activity ->
-            val (container, authController) = populatedScreenshotEnvironment()
             activity.setContent {
                 CycleCareTheme {
                     CycleCareApp(
-                        container = container,
-                        secureAuthController = authController,
+                        container = env.first,
+                        secureAuthController = env.second,
                     )
                 }
             }
@@ -147,5 +150,30 @@ class TalkBackSemanticsTest {
         }
 
         assertThat(withState).isNotEmpty()
+    }
+
+    @Test
+    fun theCalendarRendersAccessiblyUnderTalkBack() {
+        renderApp()
+        composeRule.onNodeWithTag(navTag("calendar")).performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("calendar_scroll").assertIsDisplayed()
+        composeRule.onNodeWithTag("calendar_month_label").assertIsDisplayed()
+    }
+
+    @Test
+    fun theLogSaveButtonAnnouncesItselfAsAButton() {
+        renderApp()
+        composeRule.onNodeWithTag(navTag("log")).performClick()
+        composeRule.waitForIdle()
+        val save = composeRule.onNodeWithText("Save today's entry").fetchSemanticsNode()
+        assertThat(save.config.getOrNull(SemanticsProperties.Role)).isEqualTo(Role.Button)
+    }
+
+    @Test
+    fun theNotificationGateAnnouncesItselfAsAnActionableButton() {
+        renderApp(stateEnvironment(ScreenState.PERMISSION_DENIED))
+        val action = composeRule.onNodeWithTag(NotificationPermissionTags.REQUIRED_ACTION).fetchSemanticsNode()
+        assertThat(action.config.getOrNull(SemanticsProperties.Role)).isEqualTo(Role.Button)
     }
 }

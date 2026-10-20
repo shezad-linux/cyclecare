@@ -88,67 +88,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-internal fun NotificationPermissionRequiredGate(
-    actionLabel: String,
-    onResolveNotificationAccess: () -> Unit,
-) {
-    // No back handler here on purpose.
-    //
-    // Spec 15 §1.3.4: the notification-permission gate "must not trap
-    // back/switch-access users". A handler that swallowed back with an
-    // empty body left someone who pressed back, or who used a switch
-    // device to send the back gesture, with no way out of the app at all.
-    //
-    // Letting the system back through is the real exit: the activity
-    // closes, and the gate is still waiting when the user comes back,
-    // because reminders are enabled and notifications are not permitted.
-    // The alternative, letting the user past the gate, would mean
-    // reminders silently never arrive.
-    Surface(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag(NotificationPermissionTags.REQUIRED_GATE),
-        color = MaterialTheme.colorScheme.background,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(CycleCareSpace.space24),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Notifications,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                text = stringResource(R.string.notifications_required),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(top = CycleCareSpace.space16),
-            )
-            Text(
-                text = stringResource(R.string.notifications_required_subtitle),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = CycleCareSpace.space8),
-            )
-            Button(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = CycleCareSpace.space24)
-                    .testTag(NotificationPermissionTags.REQUIRED_ACTION),
-                onClick = onResolveNotificationAccess,
-            ) {
-                Text(actionLabel)
-            }
-        }
-    }
-}
-
-@Composable
 internal fun MainShell(
     container: AppContainer,
     notificationsCanPost: Boolean,
