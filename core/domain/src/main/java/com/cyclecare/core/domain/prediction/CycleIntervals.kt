@@ -4,6 +4,7 @@ import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import kotlin.math.roundToInt
 
 /**
  * The single definition of a cycle interval, shared by the prediction
@@ -67,6 +68,41 @@ fun usableIntervalLengths(cycles: List<CycleRecord>, limit: Int = MAX_INTERVALS)
         .filter { it.usable }
         .takeLast(limit)
         .map { it.lengthDays }
+
+/**
+ * The recent cycle lengths behind the "average cycle length" figure.
+ *
+ * The last `limit` intervals of the most recent `limit + 1` observed
+ * starts. One extra start is needed because N cycles describe N-1
+ * intervals; sourcing the intervals from the already-truncated list
+ * would shorten the series relative to every other figure on the screen.
+ *
+ * Only the shared extractor is used. The stored `cycleLength` column is
+ * written at logging time from whatever the user last reported and can
+ * drift arbitrarily far from the observed gaps.
+ */
+fun recentCycleLengthsOf(cycles: List<CycleRecord>, limit: Int): List<Int> =
+    extractIntervals(observedStartsOf(cycles).takeLast(limit + 1))
+        .filter { it.usable }
+        .takeLast(limit)
+        .map { it.lengthDays }
+
+/**
+ * The single definition of the "average cycle length" figure.
+ *
+ * Every surface that labels a number "Avg cycle" must use this, so two
+ * screens cannot show two different averages for the same user on the
+ * same day. Null when there is no usable history yet, which is the
+ * caller's cue to show an onboarding baseline rather than a derived
+ * figure.
+ */
+fun averageCycleLengthOf(
+    cycles: List<CycleRecord>,
+    limit: Int = AVERAGE_CYCLE_LENGTH_WINDOW,
+): Int? = recentCycleLengthsOf(cycles, limit)
+    .takeIf { it.isNotEmpty() }
+    ?.average()
+    ?.roundToInt()
 
 /** Days between two dates, used where a plain integer gap is wanted. */
 fun daysBetween(from: LocalDate, to: LocalDate): Int =

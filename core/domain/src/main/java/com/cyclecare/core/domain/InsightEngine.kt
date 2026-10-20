@@ -3,9 +3,12 @@ package com.cyclecare.core.domain
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.domain.prediction.IRREGULAR_MIN_OUTLIERS
 import com.cyclecare.core.domain.prediction.MAD_TO_SIGMA_FACTOR
-import com.cyclecare.core.domain.prediction.extractIntervals
+import com.cyclecare.core.domain.prediction.averageCycleLengthOf
 import com.cyclecare.core.domain.prediction.isOutlier
 import com.cyclecare.core.domain.prediction.observedStartsOf
+import com.cyclecare.core.domain.prediction.ovulationFrom
+import com.cyclecare.core.domain.prediction.recentCycleLengthsOf
+import com.cyclecare.core.domain.prediction.typicalFertileWindow
 import com.cyclecare.core.model.CycleSource
 import com.cyclecare.core.model.DischargeType
 import com.cyclecare.core.model.EnergyLevel
@@ -36,13 +39,11 @@ class InsightEngine {
         // one extra cycle to fill the same window. Sourcing it from the
         // already-truncated list would silently shorten the trend series
         // relative to every other figure on the screen.
-        val intervalSource = observedStartsOf(cycles).takeLast(HISTORY_LIMIT + 1)
-        val recentCycleLengths = extractIntervals(intervalSource)
-            .filter { it.usable }
-            .takeLast(HISTORY_LIMIT)
-            .map { it.lengthDays }
+        val recentCycleLengths = recentCycleLengthsOf(cycles, HISTORY_LIMIT)
         val recentPeriodLengths = historicalCycles.mapNotNull(::periodLength)
-        val averageCycleLength = recentCycleLengths.ifEmpty { listOf(DEFAULT_CYCLE_LENGTH) }.average().roundToInt()
+        // The average is the canonical one, so a second surface that
+        // labels a number "Avg cycle" cannot show a different figure.
+        val averageCycleLength = averageCycleLengthOf(cycles, HISTORY_LIMIT) ?: DEFAULT_CYCLE_LENGTH
         val averagePeriodLength = recentPeriodLengths.ifEmpty { listOf(DEFAULT_PERIOD_LENGTH) }.average().roundToInt()
 
         // Irregularity uses the same sigma-relative rule as the engine,
@@ -182,9 +183,17 @@ class InsightEngine {
         historicalCycles: List<CycleRecord>,
         relevantSymptoms: List<SymptomLog>,
     ): InsightPhaseHighlight? {
+        // The next observed start for each cycle. The retrospective
+        // fertile window is derived from it through the same extractor
+        // and the same ovulation prior the prediction engine uses, so
+        // the two screens cannot disagree about when ovulation was.
+        val nextStartByRecordId: Map<String, LocalDate> = observedStartsOf(historicalCycles)
+            .zipWithNext { from, to -> from.id to to.startDate }
+            .toMap()
         val fertileSymptoms = relevantSymptoms.filter { symptom ->
             historicalCycles.any { cycle ->
-                val fertileWindow = fertileWindowFor(cycle)
+                val fertileWindow = fertileWindowFor(cycle, nextStartByRecordId[cycle.id])
+                    ?: return@any false
                 !symptom.date.isBefore(fertileWindow.first) && !symptom.date.isAfter(fertileWindow.second)
             }
         }
@@ -274,9 +283,24 @@ class InsightEngine {
     /** Null while a period is still in progress. */
     private fun periodLength(cycle: CycleRecord): Int? = cycle.periodLengthDays
 
-    private fun fertileWindowFor(cycle: CycleRecord): Pair<LocalDate, LocalDate> {
-        val ovulationDate = cycle.startDate.plusDays(cycle.cycleLength.toLong() - 14L)
-        return ovulationDate.minusDays(4) to ovulationDate.plusDays(1)
+    /**
+     * The retrospective fertile window of a cycle that has already ended.
+     *
+     * Derived from the next observed start through the shared ovulation
+     * prior, not from the stored `cycleLength` column: that column is
+     * written at logging time from whatever the user last reported, so
+     * treating it as an interval let this screen disagree with the
+     * prediction engine about the same cycle.
+     *
+     * Null when there is no next observed start. The cycle in progress
+     * has no retrospective ovulation date, because ovulation is dated
+     * backwards from the next period and the next period has not
+     * happened.
+     */
+    private fun fertileWindowFor(cycle: CycleRecord, nextStart: LocalDate?): Pair<LocalDate, LocalDate>? {
+        val next = nextStart ?: return null
+        val window = typicalFertileWindow(ovulationFrom(next))
+        return window.start to window.endInclusive
     }
 
     private fun monthYear(date: LocalDate): String = date.format(monthFormatter)

@@ -113,13 +113,19 @@ class CyclePredictionEngineV2 {
 
         val fertileWindow = halfWidth?.let {
             val ovulation = ovulationDate
-            // Widen by the luteal uncertainty: ovulation is a population
-            // prior, not a measurement, so the window cannot be tighter
-            // than the prior's own spread.
-            val span = (LUTEAL_PHASE_DEFAULT_DAYS / 2 + 1) + it
+            // Spec 11 §4.5: the population-typical fertile window is
+            // [ovulation - 4, ovulation + 1], widened by the §4.6
+            // uncertainty and by the irreducible luteal sigma floor.
+            //
+            // The widening is what makes the window honest, because
+            // ovulation is a population prior rather than a
+            // measurement, so even a user with perfectly regular
+            // cycles cannot have a tighter fertile window than the
+            // prior's own spread.
+            val widen = it + LUTEAL_PHASE_SIGMA_DAYS.toInt()
             DateWindow(
-                start = ovulation.minusDays(span.toLong()),
-                endInclusive = ovulation.plusDays(span.toLong()),
+                start = ovulation.minusDays((FERTILE_WINDOW_DAYS_BEFORE_OVULATION + widen).toLong()),
+                endInclusive = ovulation.plusDays((FERTILE_WINDOW_DAYS_AFTER_OVULATION + widen).toLong()),
                 halfWidthDays = it,
             )
         }

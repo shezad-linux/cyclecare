@@ -48,6 +48,25 @@ const val PROJECTED_DRIFT_CAP: Double = 3.0
 const val LUTEAL_PHASE_DEFAULT_DAYS: Int = 14
 
 /**
+ * Days before ovulation that the population-typical fertile window opens.
+ *
+ * The window is a population prior, not a measurement: CycleCare does not
+ * collect ovulation observations, so it cannot narrow this.
+ */
+const val FERTILE_WINDOW_LEAD_DAYS: Int = 4
+
+/** Days after ovulation that the population-typical fertile window stays open. */
+const val FERTILE_WINDOW_TRAIL_DAYS: Int = 1
+
+/**
+ * How many recent cycles the "average cycle length" figure covers.
+ *
+ * One number, one window, so that two screens showing the same label
+ * cannot show two different averages.
+ */
+const val AVERAGE_CYCLE_LENGTH_WINDOW: Int = 6
+
+/**
  * Irreducible uncertainty in the luteal prior.
  *
  * Even a user with perfectly regular cycles cannot have a tighter
@@ -56,6 +75,23 @@ const val LUTEAL_PHASE_DEFAULT_DAYS: Int = 14
  * surge or cervical mucus, so this cannot currently be reduced.
  */
 const val LUTEAL_PHASE_SIGMA_DAYS: Double = 2.0
+
+/**
+ * The population-typical fertile window, in days before ovulation.
+ *
+ * Spec `11` §4.5: the fertile window is `[ovulation - 4, ovulation + 1]`.
+ * It is asymmetric because the days before ovulation are the ones the
+ * app is guessing at, and the day after is the one it is confident
+ * about.
+ */
+const val FERTILE_WINDOW_DAYS_BEFORE_OVULATION: Int = 4
+
+/**
+ * The population-typical fertile window, in days after ovulation.
+ *
+ * Spec `11` §4.5.
+ */
+const val FERTILE_WINDOW_DAYS_AFTER_OVULATION: Int = 1
 
 /** Scales the weighted MAD to estimate sigma for a normal distribution. */
 const val MAD_TO_SIGMA_FACTOR: Double = 1.4826

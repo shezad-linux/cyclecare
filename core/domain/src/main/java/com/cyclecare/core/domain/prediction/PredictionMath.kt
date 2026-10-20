@@ -132,6 +132,25 @@ fun ovulationFrom(estimatedNextPeriodStart: LocalDate): LocalDate =
     estimatedNextPeriodStart.minusDays(LUTEAL_PHASE_DEFAULT_DAYS.toLong())
 
 /**
+ * The population-typical fertile window around an ovulation date.
+ *
+ * This is the window `11` §4.5 defines: `[ovulation - 4, ovulation + 1]`.
+ * Every consumer of a fertile window derives it here, so the
+ * retrospective window the insight engine buckets symptoms by and the
+ * forward-looking window the prediction engine emits are built from one
+ * rule instead of two.
+ *
+ * The half-width is zero because this is the prior itself. The
+ * prediction engine widens it by the estimate's own uncertainty; a
+ * retrospective window has nothing to widen it with.
+ */
+fun typicalFertileWindow(ovulationDate: LocalDate): DateWindow = DateWindow(
+    start = ovulationDate.minusDays(FERTILE_WINDOW_LEAD_DAYS.toLong()),
+    endInclusive = ovulationDate.plusDays(FERTILE_WINDOW_TRAIL_DAYS.toLong()),
+    halfWidthDays = 0,
+)
+
+/**
  * Cycle day, 1 on the anchor date.
  *
  * Continues past the expected cycle length rather than wrapping, so an

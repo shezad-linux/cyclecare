@@ -168,6 +168,27 @@ class PredictionCorpusGateTest {
         assertThat(hits.toDouble() / holds.size).isAtLeast(0.90)
     }
 
+@Test
+    fun G2_irregularHistoryWidensTheWindowRatherThanNarrowingIt() {
+        // The mechanism the gate names: the irregularity flag inflates
+        // sigma, so an irregular history produces a wider window than the
+        // same history without the outliers. A window that narrowed would
+        // be the opposite of over-covering.
+        val withOutliers = engine.predict(inputFor(Corpus.irregular(cycles = 12), 13))
+        val withoutOutliers = engine.predict(inputFor(Corpus.stable(cycles = 12, mean = 28), 13))
+
+        assertThat(withOutliers).isNotNull()
+        assertThat(withoutOutliers).isNotNull()
+        val irregular = requireNotNull(withOutliers)
+        val stable = requireNotNull(withoutOutliers)
+
+        assertThat(irregular.isIrregular).isTrue()
+        assertThat(irregular.dispersionSigma).isGreaterThan(stable.dispersionSigma)
+        assertThat(irregular.nextPeriodWindow!!.halfWidthDays)
+            .isAtLeast(stable.nextPeriodWindow!!.halfWidthDays)
+    }
+
+
     @Test
     fun G5_regularHistoryStaysSharpEnoughToBeUseful() {
         val widths = listOf(
@@ -308,6 +329,47 @@ class PredictionCorpusGateTest {
                 .of(kotlin.math.abs(requireNotNull(corrections[slope])))
         }
     }
+
+@Test
+    fun G10_totalDriftCorrectionStaysWithinThreeDaysAndIsMonotone() {
+        val corrections = mutableListOf<Pair<Double, CyclePrediction>>()
+        listOf(0.0, 1.0, 2.0, 3.0).forEach { step ->
+            val scenario = Corpus.drifting(cycles = 6, mean = 30, slopePerCycle = step, noise = 0.0)
+            corrections += step to requireNotNull(engine.predict(inputFor(scenario, scenario.starts.size)))
+        }
+        listOf(-1.0, -2.0, -3.0).forEach { step ->
+            val scenario = Corpus.drifting(cycles = 6, mean = 30, slopePerCycle = step, noise = 0.0)
+            corrections += step to requireNotNull(engine.predict(inputFor(scenario, scenario.starts.size)))
+        }
+
+        corrections.forEach { (step, prediction) ->
+            // The correction itself is capped, so a runaway trend cannot
+            // move the estimate by weeks.
+            assertThat(kotlin.math.abs(prediction.trendAdjustmentDays)).isAtMost(PROJECTED_DRIFT_CAP)
+            // The total correction, in days of predicted date, is capped
+            // by the same constant.
+            val centreOnly = prediction.anchorDate!!
+                .plusDays(Math.round(prediction.centerCycleLength).toLong())
+            val movement = ChronoUnit.DAYS.between(centreOnly, prediction.nextPeriodDate).toInt()
+            assertThat(kotlin.math.abs(movement)).isAtMost(PROJECTED_DRIFT_CAP.toInt())
+            // The direction of the correction follows the direction of
+            // the drift.
+            if (step != 0.0 && kotlin.math.abs(step) >= TREND_ACTIVATION_DAYS) {
+                assertThat(Math.signum(prediction.trendAdjustmentDays)).isEqualTo(Math.signum(step))
+            }
+        }
+
+        // Monotone in the magnitude of the drift, in both directions.
+        val lengthening = corrections.filter { it.first > 0.0 }.map { it.second.trendAdjustmentDays }
+        lengthening.zipWithNext { earlier, later ->
+            assertThat(later).isGreaterThan(earlier)
+        }
+        val shortening = corrections.filter { it.first < 0.0 }.map { it.second.trendAdjustmentDays }
+        shortening.zipWithNext { earlier, later ->
+            assertThat(later).isLessThan(earlier)
+        }
+    }
+
 
     // ── G12 stability ───────────────────────────────────────────────
 
