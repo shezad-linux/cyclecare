@@ -21,6 +21,11 @@ android {
 kotlin { jvmToolchain(17) }
 
 dependencies {
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+
     implementation(project(":core:model"))
     implementation(project(":core:domain"))
     implementation(project(":core:designsystem"))

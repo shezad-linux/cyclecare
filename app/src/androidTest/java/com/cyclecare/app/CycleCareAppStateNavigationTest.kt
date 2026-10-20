@@ -732,6 +732,7 @@ private class TestAppEnvironment(
         syncAdapter = FakeSyncAdapter(),
         interstitialStatsRepository = FakeInterstitialStatsRepository(),
         draftTracker = InMemoryDraftTracker(),
+        firstRunNudgeRepository = FakeFirstRunNudgeRepository(),
         timeProvider = SystemTimeProvider(),
     )
 

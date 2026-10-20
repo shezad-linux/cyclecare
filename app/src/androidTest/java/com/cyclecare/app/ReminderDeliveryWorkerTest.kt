@@ -252,6 +252,7 @@ private class WorkerTestEnvironment(
         syncAdapter = NoOpSyncAdapterImpl(),
         interstitialStatsRepository = FakeInterstitialStatsRepository(),
         draftTracker = InMemoryDraftTracker(),
+        firstRunNudgeRepository = FakeFirstRunNudgeRepository(),
         timeProvider = SystemTimeProvider(),
         reminderNotificationClient = notificationClient,
         appLogger = NoOpAppLogger,

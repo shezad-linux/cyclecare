@@ -5,6 +5,7 @@
 
 package com.cyclecare.feature.home
 
+import com.cyclecare.core.designsystem.ScreenWidthPreviews
 import com.cyclecare.core.designsystem.text.UiText
 import com.cyclecare.core.designsystem.text.uiText
 import androidx.compose.runtime.Composable
@@ -12,7 +13,7 @@ import androidx.compose.runtime.getValue
 import com.cyclecare.core.designsystem.CycleCareTheme
 import com.cyclecare.core.designsystem.ScreenDebugPreviews
 
-@ScreenDebugPreviews
+@ScreenWidthPreviews
 @Composable
 private fun HomeScreenPreview() {
     CycleCareTheme {

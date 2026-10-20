@@ -88,7 +88,18 @@ internal fun NotificationPermissionRequiredGate(
     actionLabel: String,
     onResolveNotificationAccess: () -> Unit,
 ) {
-    BackHandler(enabled = true) {}
+    // No back handler here on purpose.
+    //
+    // Spec 15 §1.3.4: the notification-permission gate "must not trap
+    // back/switch-access users". A handler that swallowed back with an
+    // empty body left someone who pressed back, or who used a switch
+    // device to send the back gesture, with no way out of the app at all.
+    //
+    // Letting the system back through is the real exit: the activity
+    // closes, and the gate is still waiting when the user comes back,
+    // because reminders are enabled and notifications are not permitted.
+    // The alternative, letting the user past the gate, would mean
+    // reminders silently never arrive.
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -212,6 +223,13 @@ internal fun MainShell(
         request.eventId?.let { container.reminderEventsRepository.markRead(it) }
         container.reminderNavigationCoordinator.clear()
     }
+
+    // The one-time nudge towards Settings. Spec 15 §1.3.4. It is shown
+    // once, after onboarding, and it is a dialog rather than a badge.
+    FirstRunNudge(
+        repository = container.firstRunNudgeRepository,
+        onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
+    )
 
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing,

@@ -14,6 +14,7 @@ import com.cyclecare.core.data.LocalPrivacyRepository
 import com.cyclecare.core.data.LocalReminderChannelSettingsRepository
 import com.cyclecare.core.data.NoOpSyncAdapter
 import com.cyclecare.core.data.RoomCycleRepository
+import com.cyclecare.core.data.RoomFirstRunNudgeRepository
 import com.cyclecare.core.data.RoomProfileRepository
 import com.cyclecare.core.data.RoomReminderEventsRepository
 import com.cyclecare.core.data.RoomReminderRepository
@@ -72,6 +73,7 @@ class CycleCareApplication : Application() {
         val notificationPermissionController = AndroidNotificationPermissionController(applicationContext)
         val interstitialStatsRepository = DataStoreInterstitialStatsRepository(applicationContext)
         val draftTracker = InMemoryDraftTracker()
+        val firstRunNudgeRepository = RoomFirstRunNudgeRepository(database)
         // Each foreground entry is one session. Spec 15 §11.3 condition 2
         // counts them, and the count has to survive the process so the
         // observer reports the transition and the repository persists it.
@@ -125,6 +127,7 @@ class CycleCareApplication : Application() {
             syncAdapter = NoOpSyncAdapter(),
             interstitialStatsRepository = interstitialStatsRepository,
             draftTracker = draftTracker,
+            firstRunNudgeRepository = firstRunNudgeRepository,
             timeProvider = timeProvider,
             reminderNotificationClient = reminderNotificationClient,
             crashReporter = crashReporter,

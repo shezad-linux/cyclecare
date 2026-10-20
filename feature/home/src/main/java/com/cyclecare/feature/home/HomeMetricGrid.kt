@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.cyclecare.core.designsystem.MetricCard
+import com.cyclecare.core.designsystem.ScreenWidthPreviews
 import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.designsystem.metricCardAccents
 
@@ -61,6 +62,7 @@ internal fun HomeReminderButton(
     }
 }
 
+@ScreenWidthPreviews
 @Composable
 internal fun HomeMetricGrid(
     uiState: HomeUiState,

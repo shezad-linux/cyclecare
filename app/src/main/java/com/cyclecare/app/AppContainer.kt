@@ -17,6 +17,7 @@ import com.cyclecare.core.domain.ReminderEventsRepository
 import com.cyclecare.core.domain.ReminderScheduler
 import com.cyclecare.core.domain.SyncAdapter
 import com.cyclecare.core.domain.SymptomRepository
+import com.cyclecare.core.domain.FirstRunNudgeRepository
 import com.cyclecare.core.domain.ads.DraftTracker
 import com.cyclecare.core.domain.ads.InterstitialStatsRepository
 import com.cyclecare.core.domain.time.TimeProvider
@@ -48,6 +49,11 @@ data class AppContainer(
      * condition 4.
      */
     val draftTracker: DraftTracker,
+    /**
+     * Whether the one-time nudge towards Settings still has to be shown.
+     * Spec 15 §1.3.4.
+     */
+    val firstRunNudgeRepository: FirstRunNudgeRepository,
     /**
      * The app's single clock. Injected rather than read ambiently so that
      * time-dependent behaviour such as the interstitial gate is testable.

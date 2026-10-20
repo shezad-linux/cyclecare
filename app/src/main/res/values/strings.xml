@@ -84,5 +84,14 @@
       sentence, but it is still user-facing text.
     -->
     <string name="ad_label">Ad</string>
+
+    <!--
+      The one-time nudge towards Settings, shown once after onboarding.
+      Spec 15 §1.3.4.
+    -->
+    <string name="first_run_nudge_title">Your data stays in your hands</string>
+    <string name="first_run_nudge_body">Export your records, delete everything, and control your reminders from Settings. It is one tap away from here, and you can reach it from any screen.</string>
+    <string name="first_run_nudge_open_settings">Open Settings</string>
+    <string name="first_run_nudge_dismiss">Not now</string>
 </resources>
 

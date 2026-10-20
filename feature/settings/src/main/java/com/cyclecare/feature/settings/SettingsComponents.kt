@@ -2,6 +2,7 @@
 
 package com.cyclecare.feature.settings
 
+import com.cyclecare.core.designsystem.ScreenWidthPreviews
 import com.cyclecare.core.designsystem.text.UiText
 import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.designsystem.token.CycleCareSpace
@@ -26,6 +27,7 @@ import com.cyclecare.core.designsystem.DashboardPill
 import com.cyclecare.core.designsystem.DashboardSectionCard
 import com.cyclecare.core.designsystem.MetricCard
 
+@ScreenWidthPreviews
 @Composable
 internal fun SettingsMetricGrid(
     remindersEnabled: Boolean,

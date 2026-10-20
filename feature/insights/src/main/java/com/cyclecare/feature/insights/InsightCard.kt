@@ -3,6 +3,7 @@
 package com.cyclecare.feature.insights
 
 import com.cyclecare.core.designsystem.DashboardPill
+import com.cyclecare.core.designsystem.ScreenWidthPreviews
 import com.cyclecare.core.designsystem.metricCardAccents
 import com.cyclecare.core.designsystem.token.CycleCareSpace
 import androidx.compose.foundation.layout.Arrangement
@@ -46,6 +47,7 @@ import com.cyclecare.core.model.Mood
 import com.cyclecare.core.model.PainLevel
 import kotlinx.coroutines.flow.map
 
+@ScreenWidthPreviews
 @Composable
 internal fun InsightsMetricGrid(uiState: InsightsUiState) {
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
@@ -167,6 +169,7 @@ internal fun MiniBarChart(
 }
 
 @Composable
+@ScreenWidthPreviews
 internal fun PeriodLengthStrip(items: List<InsightStripItemUi>) {
     // A flowing row wrapped the six chips four and then two, which read as
     // a broken grid rather than as a set of chips. They are laid out on a
