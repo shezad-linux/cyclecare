@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 3,
-    "identityHash": "e2a930a806e23ffebe6e17b5d0b18a7f",
+    "identityHash": "e41fac8a1af4a8b6f57290b294f4600f",
     "entities": [
       {
         "tableName": "user_profile",
@@ -66,7 +66,7 @@
       },
       {
         "tableName": "cycle_records",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `startEpochDay` INTEGER NOT NULL, `endEpochDay` INTEGER, `cycleLength` INTEGER NOT NULL, `source` TEXT NOT NULL, `notes` TEXT, `createdAtEpochMillis` INTEGER NOT NULL, `updatedAtEpochMillis` INTEGER NOT NULL, `deletedAtEpochMillis` INTEGER, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `startEpochDay` INTEGER NOT NULL, `endEpochDay` INTEGER, `cycleLength` INTEGER NOT NULL, `source` TEXT NOT NULL, `notes` TEXT, `createdAtEpochMillis` INTEGER NOT NULL, `updatedAtEpochMillis` INTEGER NOT NULL, `deletedAtEpochMillis` INTEGER, `legacyCycleLength` INTEGER, `createdAtIsBackfilled` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -118,6 +118,18 @@
             "fieldPath": "deletedAtEpochMillis",
             "columnName": "deletedAtEpochMillis",
             "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "legacyCycleLength",
+            "columnName": "legacyCycleLength",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "createdAtIsBackfilled",
+            "columnName": "createdAtIsBackfilled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
           }
         ],
         "primaryKey": {
@@ -140,7 +152,7 @@
       },
       {
         "tableName": "symptom_logs",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `dateEpochDay` INTEGER NOT NULL, `mood` TEXT, `painLevel` TEXT, `energyLevel` TEXT, `dischargeType` TEXT, `medication` TEXT, `notes` TEXT, `createdAtEpochMillis` INTEGER NOT NULL, `updatedAtEpochMillis` INTEGER NOT NULL, `deletedAtEpochMillis` INTEGER, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `dateEpochDay` INTEGER NOT NULL, `mood` TEXT, `painLevel` TEXT, `energyLevel` TEXT, `dischargeType` TEXT, `medication` TEXT, `notes` TEXT, `createdAtEpochMillis` INTEGER NOT NULL, `updatedAtEpochMillis` INTEGER NOT NULL, `deletedAtEpochMillis` INTEGER, `createdAtIsBackfilled` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -200,6 +212,13 @@
             "fieldPath": "deletedAtEpochMillis",
             "columnName": "deletedAtEpochMillis",
             "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "createdAtIsBackfilled",
+            "columnName": "createdAtIsBackfilled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
           }
         ],
         "primaryKey": {
@@ -540,11 +559,94 @@
             "key"
           ]
         }
+      },
+      {
+        "tableName": "migration_log",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `migrationFrom` INTEGER NOT NULL, `migrationTo` INTEGER NOT NULL, `kind` TEXT NOT NULL, `recordId` TEXT, `dateEpochDay` INTEGER, `storedValue` INTEGER, `observedValue` INTEGER, `detail` TEXT, `createdAtEpochMillis` INTEGER NOT NULL, `acknowledgedAtEpochMillis` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "migrationFrom",
+            "columnName": "migrationFrom",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "migrationTo",
+            "columnName": "migrationTo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordId",
+            "columnName": "recordId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "dateEpochDay",
+            "columnName": "dateEpochDay",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "storedValue",
+            "columnName": "storedValue",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "observedValue",
+            "columnName": "observedValue",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "detail",
+            "columnName": "detail",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAtEpochMillis",
+            "columnName": "createdAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "acknowledgedAtEpochMillis",
+            "columnName": "acknowledgedAtEpochMillis",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_migration_log_acknowledgedAtEpochMillis",
+            "unique": false,
+            "columnNames": [
+              "acknowledgedAtEpochMillis"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_migration_log_acknowledgedAtEpochMillis` ON `${TABLE_NAME}` (`acknowledgedAtEpochMillis`)"
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e2a930a806e23ffebe6e17b5d0b18a7f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e41fac8a1af4a8b6f57290b294f4600f')"
     ]
   }
 }

@@ -63,11 +63,11 @@ data class CycleRecordEntity(
     /** Null while a period is still in progress. */
     val endEpochDay: Long?,
     /**
-     * Deprecated. Kept so existing rows survive the migration and so
-     * their original value remains auditable. Nothing may read this as
-     * a cycle length: production data can disagree with the real
-     * start-to-start gap, because v2 never cross-validated the two.
-     * Cycle length is derived from consecutive starts in the domain.
+     * Deprecated for interval reads. For rows migrated from v2 this is
+     * recomputed from the authoritative start-to-start gap. New interval
+     * calculations must use consecutive starts in the domain rather than
+     * this stored field, because production data can disagree with the
+     * real gap. The original v2 value lives in [legacyCycleLength].
      */
     val cycleLength: Int,
     val source: String,
@@ -76,6 +76,19 @@ data class CycleRecordEntity(
     val updatedAtEpochMillis: Long,
     /** Non-null marks a soft-deleted row retained for sync propagation. */
     val deletedAtEpochMillis: Long?,
+    /**
+     * The v2 `cycleLength` exactly as the user or importer stored it.
+     * Null for rows created after the migration, which have no legacy
+     * value to preserve. Never null for a row migrated from v2.
+     */
+    val legacyCycleLength: Int? = null,
+    /**
+     * True when the audit timestamps above are the synthetic migration
+     * backfill rather than the time the user actually recorded the row.
+     * `updatedAtEpochMillis` is synthetic too when this is true.
+     */
+    @ColumnInfo(defaultValue = "0")
+    val createdAtIsBackfilled: Boolean = false,
 )
 
 @Entity(
@@ -95,6 +108,40 @@ data class SymptomLogEntity(
     val createdAtEpochMillis: Long,
     val updatedAtEpochMillis: Long,
     val deletedAtEpochMillis: Long?,
+    /**
+     * True when the audit timestamps above are the synthetic migration
+     * backfill rather than the time the user actually recorded the row.
+     */
+    @ColumnInfo(defaultValue = "0")
+    val createdAtIsBackfilled: Boolean = false,
+)
+
+/**
+ * A durable record of what a migration changed. The migration cannot
+ * show UI itself, so it writes here and the presentation layer reads it
+ * after the database opens. Rows survive the process that migrated the
+ * database and are cleared only by an explicit user reset.
+ */
+@Entity(
+    tableName = "migration_log",
+    indices = [Index(value = ["acknowledgedAtEpochMillis"])],
+)
+data class MigrationLogEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val migrationFrom: Int,
+    val migrationTo: Int,
+    /** CYCLE_LENGTH_DIVERGENCE or DUPLICATE_SYMPTOM_DATE. */
+    val kind: String,
+    val recordId: String?,
+    val dateEpochDay: Long?,
+    /** The value the source database held, before reconciliation. */
+    val storedValue: Long?,
+    /** The value written after reconciliation. */
+    val observedValue: Long?,
+    val detail: String?,
+    val createdAtEpochMillis: Long,
+    /** Non-null once the user has been shown this record. */
+    val acknowledgedAtEpochMillis: Long?,
 )
 
 @Entity(
@@ -265,6 +312,33 @@ interface SymptomLogDao {
 }
 
 @Dao
+interface MigrationLogDao {
+    @Query("SELECT * FROM migration_log ORDER BY createdAtEpochMillis ASC, id ASC")
+    fun observeAll(): Flow<List<MigrationLogEntity>>
+
+    @Query(
+        """
+        SELECT * FROM migration_log
+        WHERE acknowledgedAtEpochMillis IS NULL
+        ORDER BY createdAtEpochMillis ASC, id ASC
+        """,
+    )
+    fun observeUnacknowledged(): Flow<List<MigrationLogEntity>>
+
+    @Query("SELECT * FROM migration_log ORDER BY createdAtEpochMillis ASC, id ASC")
+    suspend fun getAll(): List<MigrationLogEntity>
+
+    @Query("UPDATE migration_log SET acknowledgedAtEpochMillis = :acknowledgedAt WHERE id = :id")
+    suspend fun acknowledge(id: Long, acknowledgedAt: Long): Int
+
+    @Query("UPDATE migration_log SET acknowledgedAtEpochMillis = :acknowledgedAt WHERE acknowledgedAtEpochMillis IS NULL")
+    suspend fun acknowledgeAll(acknowledgedAt: Long): Int
+
+    @Query("SELECT COUNT(*) FROM migration_log WHERE kind = :kind")
+    suspend fun countByKind(kind: String): Int
+}
+
+@Dao
 interface DailySymptomDao {
     @Query("SELECT * FROM daily_symptoms WHERE dailyLogId = :dailyLogId")
     fun observeForLog(dailyLogId: String): Flow<List<DailySymptomEntity>>
@@ -415,6 +489,7 @@ interface AppSettingDao {
         SyncOutboxEntity::class,
         EngagementProfileEntity::class,
         AppSettingEntity::class,
+        MigrationLogEntity::class,
     ],
     version = 3,
     exportSchema = true,
@@ -429,5 +504,6 @@ abstract class CycleCareDatabase : RoomDatabase() {
     abstract fun syncOutboxDao(): SyncOutboxDao
     abstract fun engagementProfileDao(): EngagementProfileDao
     abstract fun appSettingDao(): AppSettingDao
+    abstract fun migrationLogDao(): MigrationLogDao
 }
 

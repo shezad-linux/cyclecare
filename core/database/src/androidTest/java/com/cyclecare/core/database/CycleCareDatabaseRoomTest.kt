@@ -2,6 +2,7 @@ package com.cyclecare.core.database
 
 import androidx.room.Room
 import androidx.room.testing.MigrationTestHelper
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -128,7 +129,7 @@ class CycleCareDatabaseRoomTest {
     }
 
     @Test
-    fun migration2To3_preservesEveryCycleRecordUnchanged() {
+    fun migration2To3_preservesEveryCycleRecordAndOriginalCycleLength() {
         seedV2(
             cycleRecords = listOf(
                 "('jan', 20456, 20460, 28, 'User', 'first note')",
@@ -137,16 +138,65 @@ class CycleCareDatabaseRoomTest {
         )
 
         val rows = migrate2To3AndQuery(
-            "SELECT id, startEpochDay, endEpochDay, cycleLength, source, notes, deletedAtEpochMillis FROM cycle_records ORDER BY id",
+            "SELECT id, startEpochDay, endEpochDay, cycleLength, legacyCycleLength, " +
+                "source, notes, deletedAtEpochMillis, createdAtIsBackfilled FROM cycle_records ORDER BY id",
         )
 
+        // feb (newest) has no following interval and keeps its seed; jan
+        // gains the observed 29-day start-to-start gap. Both original
+        // values survive in legacyCycleLength.
         assertThat(rows.map { it[0] }).containsExactly("feb", "jan").inOrder()
         assertThat(rows.map { it[1] }).containsExactly("20485", "20456").inOrder()
         assertThat(rows.map { it[2] }).containsExactly("20489", "20460").inOrder()
-        assertThat(rows.map { it[4] }).containsExactly("Imported", "User").inOrder()
-        assertThat(rows.last()[5]).isEqualTo("first note")
-        assertThat(rows.first()[5]).isNull()
-        assertThat(rows.map { it[6] }).containsExactly(null, null)
+        assertThat(rows.map { it[3] }).containsExactly("31", "29").inOrder()
+        assertThat(rows.map { it[4] }).containsExactly("31", "28").inOrder()
+        assertThat(rows.map { it[5] }).containsExactly("Imported", "User").inOrder()
+        assertThat(rows.first()[6]).isNull()
+        assertThat(rows.last()[6]).isEqualTo("first note")
+        assertThat(rows.map { it[7] }).containsExactly(null, null)
+        assertThat(rows.map { it[8] }).containsExactly("1", "1")
+    }
+
+    @Test
+    fun migration2To3_keepsOldestSeedAndLogsOnlyDivergencesOverSevenDays() {
+        seedV2(
+            cycleRecords = listOf(
+                "('oldest', 100, 104, 28, 'User', NULL)",
+                "('divergent', 128, 132, 28, 'User', NULL)",
+                "('within-tolerance', 168, 172, 30, 'User', NULL)",
+                "('newest', 196, 200, 29, 'User', NULL)",
+            ),
+        )
+
+        val cycles = migrate2To3AndQuery(
+            "SELECT id, cycleLength, legacyCycleLength FROM cycle_records ORDER BY id",
+        )
+
+        assertThat(cycles.map { it[0] })
+            .containsExactly("divergent", "newest", "oldest", "within-tolerance").inOrder()
+        // 128 -> 168 is a 40-day gap, 12 days away from the stored 28.
+        assertThat(cycles[0][1]).isEqualTo("40")
+        assertThat(cycles[0][2]).isEqualTo("28")
+        // The oldest record has no following interval and keeps its seed.
+        assertThat(cycles[2][1]).isEqualTo("28")
+        assertThat(cycles[2][2]).isEqualTo("28")
+        // Within the seven-day tolerance: recomputed, but not reported.
+        assertThat(cycles[3][1]).isEqualTo("28")
+        assertThat(cycles[3][2]).isEqualTo("30")
+
+        val logs = migrate2To3AndQuery(
+            "SELECT migrationFrom, migrationTo, kind, recordId, dateEpochDay, storedValue, observedValue " +
+                "FROM migration_log WHERE kind = 'CYCLE_LENGTH_DIVERGENCE'",
+        )
+
+        assertThat(logs).hasSize(1)
+        assertThat(logs[0][0]).isEqualTo("2")
+        assertThat(logs[0][1]).isEqualTo("3")
+        assertThat(logs[0][2]).isEqualTo("CYCLE_LENGTH_DIVERGENCE")
+        assertThat(logs[0][3]).isEqualTo("divergent")
+        assertThat(logs[0][4]).isEqualTo("128")
+        assertThat(logs[0][5]).isEqualTo("28")
+        assertThat(logs[0][6]).isEqualTo("40")
     }
 
     @Test
@@ -173,36 +223,101 @@ class CycleCareDatabaseRoomTest {
     }
 
     @Test
-    fun migration2To3_backfillsAuditTimestampsAndNoDeletions() {
+    fun migration2To3_backfillsAuditTimestampsAndLabelsThemSynthetic() {
         seedV2(
             symptomLogs = listOf("('log-a', 20456, 'Stable', 'None', 'Steady', 'None', NULL, NULL)"),
             cycleRecords = listOf("('jan', 20456, 20460, 28, 'User', NULL)"),
         )
 
-        val logs = migrate2To3AndQuery("SELECT createdAtEpochMillis, updatedAtEpochMillis, deletedAtEpochMillis FROM symptom_logs")
-        val cycles = migrate2To3AndQuery("SELECT createdAtEpochMillis, updatedAtEpochMillis, deletedAtEpochMillis FROM cycle_records")
+        val logs = migrate2To3AndQuery(
+            "SELECT createdAtEpochMillis, updatedAtEpochMillis, deletedAtEpochMillis, " +
+                "createdAtIsBackfilled FROM symptom_logs",
+        )
+        val cycles = migrate2To3AndQuery(
+            "SELECT createdAtEpochMillis, updatedAtEpochMillis, deletedAtEpochMillis, " +
+                "createdAtIsBackfilled FROM cycle_records",
+        )
 
         listOf(logs, cycles).forEach { rows ->
             assertThat(rows).hasSize(1)
             assertThat(rows[0][0].toString().toLong()).isGreaterThan(0L)
-            assertThat(rows[0][1].toString().toLong()).isGreaterThan(0L)
+            assertThat(rows[0][1]).isEqualTo(rows[0][0])
             assertThat(rows[0][2]).isNull()
+            assertThat(rows[0][3]).isEqualTo("1")
         }
     }
 
     @Test
-    fun migration2To3_collapsesDuplicateSymptomRowsForOneDate() {
+    fun migration2To3_duplicateDatesBecomeTombstonesAndTheCountIsReported() {
         seedV2(
             symptomLogs = listOf(
-                "('older', 20456, 'Stable', 'None', 'Steady', 'None', NULL, NULL)",
-                "('newer', 20456, 'Low', 'Light', 'High', 'None', NULL, NULL)",
+                "('oldest', 20456, 'Stable', 'None', 'Steady', 'None', NULL, 'old')",
+                "('middle', 20456, 'Low', 'Light', 'High', 'Creamy', NULL, 'middle')",
+                "('newest', 20456, 'High', 'Medium', 'Low', 'None', NULL, 'new')",
+                "('solo', 20457, 'Stable', 'None', 'Steady', 'None', NULL, NULL)",
             ),
         )
 
-        val rows = migrate2To3AndQuery("SELECT id FROM symptom_logs")
+        val rows = migrate2To3AndQuery(
+            "SELECT id, deletedAtEpochMillis FROM symptom_logs ORDER BY id",
+        )
 
-        assertThat(rows).hasSize(1)
-        assertThat(rows[0][0]).isEqualTo("newer")
+        // No source row is deleted: the older duplicates become tombstones
+        // and keep their IDs and payloads.
+        assertThat(rows.map { it[0] })
+            .containsExactly("middle", "newest", "oldest", "solo").inOrder()
+        assertThat(rows[0][1]).isNotNull()
+        assertThat(rows[1][1]).isNull()
+        assertThat(rows[2][1]).isNotNull()
+        assertThat(rows[3][1]).isNull()
+
+        val live = migrate2To3AndQuery(
+            "SELECT id FROM symptom_logs WHERE dateEpochDay = 20456 AND deletedAtEpochMillis IS NULL",
+        )
+        assertThat(live).hasSize(1)
+        assertThat(live[0][0]).isEqualTo("newest")
+
+        val logs = migrate2To3AndQuery(
+            "SELECT kind, dateEpochDay, storedValue, observedValue, detail " +
+                "FROM migration_log WHERE kind = 'DUPLICATE_SYMPTOM_DATE'",
+        )
+        assertThat(logs).hasSize(1)
+        assertThat(logs[0][1]).isEqualTo("20456")
+        assertThat(logs[0][2]).isEqualTo("3")
+        assertThat(logs[0][3]).isEqualTo("1")
+        assertThat(logs[0][4].toString()).contains("2 older row(s) were retained as tombstones")
+    }
+
+    @Test
+    fun migration2To3_preservesRowCountsAndIdsAcrossEveryTable() {
+        seedV2(
+            cycleRecords = listOf(
+                "('jan', 20456, 20460, 28, 'User', NULL)",
+                "('feb', 20485, 20489, 31, 'Imported', NULL)",
+            ),
+            symptomLogs = listOf(
+                "('log-a', 20456, 'Stable', 'None', 'Steady', 'None', NULL, NULL)",
+                "('log-b', 20457, 'Low', 'Light', 'High', 'Creamy', 'Ibuprofen', NULL)",
+            ),
+            reminderRules = listOf(
+                "('PeriodPrep', 'PeriodPrep', 1, -2, 9, 0)",
+                "('Daily', 'DailyLog', 1, 0, 20, 0)",
+            ),
+            reminderEvents = listOf(
+                "('ev-1', 'PeriodPrep', 'PeriodPrep', 'CycleAlerts', 1000, 2000, 't', 'b', 'p', 'Home', NULL, NULL, NULL)",
+            ),
+        )
+
+        assertThat(migrate2To3AndQuery("SELECT id FROM user_profile ORDER BY id").map { it[0] })
+            .containsExactly("1")
+        assertThat(migrate2To3AndQuery("SELECT id FROM cycle_records ORDER BY id").map { it[0] })
+            .containsExactly("feb", "jan").inOrder()
+        assertThat(migrate2To3AndQuery("SELECT id FROM symptom_logs ORDER BY id").map { it[0] })
+            .containsExactly("log-a", "log-b").inOrder()
+        assertThat(migrate2To3AndQuery("SELECT id FROM reminder_rules ORDER BY id").map { it[0] })
+            .containsExactly("Daily", "PeriodPrep").inOrder()
+        assertThat(migrate2To3AndQuery("SELECT id FROM reminder_events ORDER BY id").map { it[0] })
+            .containsExactly("ev-1")
     }
 
     @Test
@@ -237,6 +352,135 @@ class CycleCareDatabaseRoomTest {
         assertThat(migrate2To3AndQuery("SELECT COUNT(*) FROM sync_outbox")[0][0].toString()).isEqualTo("0")
         assertThat(migrate2To3AndQuery("SELECT COUNT(*) FROM app_settings")[0][0].toString()).isEqualTo("0")
         assertThat(migrate2To3AndQuery("SELECT COUNT(*) FROM engagement_profile")[0][0].toString()).isEqualTo("1")
+    }
+
+    @Test
+    fun migration2To3_verificationFailureRollsBackToV2WithoutLoss() {
+        val db = migrationHelper.createDatabase(TEST_DATABASE, 2)
+        try {
+            db.execSQL(
+                "INSERT INTO user_profile (id, ageBand, averageCycleLength, periodLength, " +
+                    "lastPeriodStartEpochDay, trackingGoal, remindersEnabled, privacyModeEnabled) " +
+                    "VALUES (1, 'Twenties', 28, 5, 20456, 'PeriodPrep', 1, 1)",
+            )
+            db.execSQL("INSERT INTO cycle_records VALUES ('jan', 20456, 20460, 28, 'User', 'kept')")
+            db.execSQL("INSERT INTO cycle_records VALUES ('feb', 20485, 20489, 31, 'Imported', NULL)")
+            db.execSQL("INSERT INTO symptom_logs VALUES ('log-a', 20456, 'Stable', 'None', 'Steady', 'None', NULL, 'kept')")
+
+            db.beginTransaction()
+            val failure = try {
+                migrateV2ToV3(
+                    database = db,
+                    verifySnapshot = { migratedDb, snapshot ->
+                        val cycles = snapshot.tables.getValue("cycle_records")
+                        verifyV2ToV3Snapshot(
+                            migratedDb,
+                            snapshot.copy(
+                                tables = snapshot.tables + (
+                                    "cycle_records" to cycles.copy(rows = cycles.rows - "jan")
+                                    ),
+                            ),
+                        )
+                    },
+                )
+                null
+            } catch (error: IllegalStateException) {
+                error
+            } finally {
+                db.endTransaction()
+            }
+
+            assertThat(failure).isNotNull()
+            assertThat(failure?.message).contains("verification failed")
+
+            // The rollback restores the v2 schema and every source row.
+            val cycles = queryRows(db, "SELECT id, startEpochDay, cycleLength, notes FROM cycle_records ORDER BY id")
+            assertThat(cycles.map { it[0] }).containsExactly("feb", "jan").inOrder()
+            assertThat(cycles[0][2]).isEqualTo("31")
+            assertThat(cycles[1][2]).isEqualTo("28")
+            assertThat(cycles[1][3]).isEqualTo("kept")
+            assertThat(queryRows(db, "SELECT COUNT(*) FROM symptom_logs")[0][0]).isEqualTo("1")
+            assertThat(queryRows(db, "SELECT COUNT(*) FROM user_profile")[0][0]).isEqualTo("1")
+
+            val newTables = queryRows(
+                db,
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN " +
+                    "('migration_log', 'sync_outbox', 'app_settings')",
+            )
+            assertThat(newTables).isEmpty()
+            val cycleColumns = queryRows(db, "PRAGMA table_info(cycle_records)")
+            assertThat(cycleColumns.map { it[1] }).doesNotContain("legacyCycleLength")
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun migration2To3_reopeningThroughRoomKeepsLiveRowsAndTombstones() = runTest {
+        seedV2(
+            cycleRecords = listOf(
+                "('jan', 20456, 20460, 28, 'User', NULL)",
+                "('feb', 20485, 20489, 31, 'Imported', NULL)",
+            ),
+            symptomLogs = listOf(
+                "('older', 20456, 'Stable', 'None', 'Steady', 'None', NULL, 'old')",
+                "('newer', 20456, 'Low', 'Light', 'High', 'None', NULL, 'new')",
+            ),
+        )
+
+        migrationHelper.runMigrationsAndValidate(
+            TEST_DATABASE, 3, true, migration1To2, migration2To3,
+        ).close()
+
+        val reopened = Room.databaseBuilder(context, CycleCareDatabase::class.java, TEST_DATABASE)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            assertThat(reopened.cycleRecordDao().count()).isEqualTo(2)
+            assertThat(reopened.cycleRecordDao().latest()?.id).isEqualTo("feb")
+
+            // Repository-style reads see only the live duplicate row.
+            assertThat(reopened.symptomLogDao().count()).isEqualTo(1)
+            assertThat(reopened.symptomLogDao().observeLatestForDate(20456).first()?.id).isEqualTo("newer")
+            assertThat(reopened.symptomLogDao().findById("older")?.deletedAtEpochMillis).isNotNull()
+            assertThat(reopened.symptomLogDao().findById("newer")?.deletedAtEpochMillis).isNull()
+
+            assertThat(reopened.migrationLogDao().countByKind("DUPLICATE_SYMPTOM_DATE")).isEqualTo(1)
+            assertThat(reopened.migrationLogDao().observeUnacknowledged().first()).hasSize(1)
+            assertThat(reopened.migrationLogDao().acknowledgeAll(4321L)).isEqualTo(1)
+            assertThat(reopened.migrationLogDao().observeUnacknowledged().first()).isEmpty()
+        } finally {
+            reopened.close()
+        }
+    }
+
+    @Test
+    fun newRowsAreNotMarkedAsBackfilledAndHaveNoLegacyValue() = runTest {
+        database.cycleRecordDao().upsert(
+            cycleEntity(id = "new", start = LocalDate.of(2026, 3, 10), end = LocalDate.of(2026, 3, 14)),
+        )
+        database.symptomLogDao().upsert(
+            SymptomLogEntity(
+                id = "new-log",
+                dateEpochDay = LocalDate.of(2026, 3, 10).toEpochDay(),
+                mood = "Stable",
+                painLevel = null,
+                energyLevel = null,
+                dischargeType = null,
+                medication = null,
+                notes = null,
+                createdAtEpochMillis = 1234L,
+                updatedAtEpochMillis = 1234L,
+                deletedAtEpochMillis = null,
+            ),
+        )
+
+        val cycle = database.cycleRecordDao().getAllForBackup().single()
+        val log = database.symptomLogDao().getAllForBackup().single()
+        assertThat(cycle.createdAtIsBackfilled).isFalse()
+        assertThat(cycle.legacyCycleLength).isNull()
+        assertThat(log.createdAtIsBackfilled).isFalse()
     }
 
     @Test
@@ -386,12 +630,13 @@ class CycleCareDatabaseRoomTest {
     private fun migrate2To3AndQuery(sql: String): List<List<Any?>> =
         migrationHelper.runMigrationsAndValidate(
             TEST_DATABASE, 3, true, migration1To2, migration2To3,
-        ).use { db ->
-            db.query(sql).use { cursor ->
-                buildList {
-                    while (cursor.moveToNext()) {
-                        add((0 until cursor.columnCount).map { cursor.getString(it) })
-                    }
+        ).use { db -> queryRows(db, sql) }
+
+    private fun queryRows(database: SupportSQLiteDatabase, sql: String): List<List<Any?>> =
+        database.query(sql).use { cursor ->
+            buildList {
+                while (cursor.moveToNext()) {
+                    add((0 until cursor.columnCount).map { cursor.getString(it) })
                 }
             }
         }
