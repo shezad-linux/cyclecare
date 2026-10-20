@@ -7,6 +7,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -132,6 +133,8 @@ fun SettingsRoute(
     onResolveNotificationAccess: () -> Unit,
 ) {
     var showResetConfirmation by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    val exactAlarmAccess = rememberExactAlarmAccess()
     val viewModel: SettingsViewModel = viewModel(factory = factory)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     SettingsScreen(
@@ -154,6 +157,14 @@ fun SettingsRoute(
         onPreviewReminderSound = onPreviewReminderSound,
         showAdPrivacyOptions = showAdPrivacyOptions,
         onOpenAdPrivacyOptions = onOpenAdPrivacyOptions,
+        exactAlarmAccessGranted = exactAlarmAccess.isGranted,
+        canRequestExactAlarms = context.canRequestExactAlarms(),
+        onRequestExactAlarms = {
+            runCatching { context.startActivity(exactAlarmRequestIntent(context)) }
+            // The user may grant or refuse, and the answer is read again
+            // when they come back, so the entry disappears either way.
+            exactAlarmAccess.refresh()
+        },
     )
 
     if (showResetConfirmation) {

@@ -47,6 +47,9 @@ internal fun SettingsScreen(
     onPreviewReminderSound: (ReminderSoundPreset) -> Unit,
     showAdPrivacyOptions: Boolean,
     onOpenAdPrivacyOptions: () -> Unit,
+    exactAlarmAccessGranted: Boolean,
+    canRequestExactAlarms: Boolean,
+    onRequestExactAlarms: () -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier
@@ -279,6 +282,20 @@ internal fun SettingsScreen(
                     actionLabel = stringResource(R.string.manage_ad_privacy),
                     onAction = onOpenAdPrivacyOptions,
                     actionModifier = Modifier.testTag(SettingsTags.OPEN_AD_PRIVACY),
+                )
+            }
+        }
+
+        if (!exactAlarmAccessGranted && canRequestExactAlarms) {
+            item {
+                ActionCard(
+                    title = stringResource(R.string.exact_alarm_access),
+                    body = stringResource(
+                        R.string.allow_exact_alarms_for_period_reminders_on_time,
+                    ),
+                    actionLabel = stringResource(R.string.allow_exact_alarms),
+                    onAction = onRequestExactAlarms,
+                    actionModifier = Modifier.testTag(SettingsTags.OPEN_EXACT_ALARMS),
                 )
             }
         }

@@ -16,21 +16,26 @@ not be tested. It does not claim the exit criterion is met.
 | Build | release-signed debug build of the current working tree |
 | Date | 20 October 2026 |
 
-## What the app actually schedules
+## What the app now schedules
 
-The reminder path is WorkManager, not AlarmManager.
+The reminder path is AlarmManager, on the tiers spec `13` §11 sets.
 
-`app/src/main/java/com/cyclecare/app/WorkManagerReminderScheduler.kt`
-schedules `ReminderRefreshWorker` as WorkManager work, and
-`ReminderDeliveryWorker` posts the notification. The only AlarmManager
-reference in the app is `ReminderRescheduleReceiver`, which listens for
-`SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED` so the work can be
-rescheduled when the user grants or revokes the permission. It does not
-schedule anything itself.
+| Tier | API | Used for | Permission |
+|---|---|---|---|
+| 1 | `setExactAndAllowWhileIdle` | `PeriodPrep`, `LatePeriod` | `SCHEDULE_EXACT_ALARM`, user-granted |
+| 2 | `setAndAllowWhileIdle` | Everything else time-sensitive | none |
+| 3 | WorkManager | The periodic refresh that recomputes the schedules | none |
 
-There is no `setAndAllowWhileIdle` or `setExactAndAllowWhileIdle` call
-anywhere in the app, which is what spec `13` §10 calls the Tier 2
-mechanism.
+`ReminderAlarmScheduler` does the scheduling, `ReminderAlarmReceiver`
+receives, and `ReminderDelivery` holds the delivery, which is shared with
+the WorkManager path so the two cannot drift.
+
+The exact-alarm permission is checked with `canScheduleExactAlarms()`
+immediately before every scheduling pass, never assumed. When it is not
+granted, or when the exact API throws a `SecurityException` because the
+permission was revoked between the check and the call, the reminder is
+delivered on Tier 2 instead. Degradation is the default path, because most
+users will never grant the permission.
 
 ## What was executed
 
@@ -85,35 +90,54 @@ from a device in deep idle.
 
 ## What this shows, and what it does not
 
-**Verified on the emulator.** The current delivery mechanism is deferred
-by Doze. A reminder that falls due while the device is in deep idle will
-not be delivered on time, because the only mechanism the app uses is
-deferred by deep idle. That is observed, not inferred: the job status
-carries `WAIT:DEV_NOT_DOZING` while the device is idle, and the app
-holds no alarm that could bypass it.
+**Verified on the emulator: Tier 2 is delivered through deep idle.**
 
-**Not implemented, so not demonstrated.** The spec's Tier 2 mechanism,
-`AlarmManager.setAndAllowWhileIdle`, does not exist in the app. The
-comparison the exit criterion asks for, "Tier 2 delivery is materially
-better than the current WorkManager behaviour", therefore cannot be
-made. Implementing it is a separate piece of work, and it is the thing
-the demonstration is meant to justify.
+`ReminderDozeDeliveryTest` arms a real alarm through the real alarm
+facade, forces the device into deep idle, and waits for the broadcast to
+arrive. It is a delivery test, not a scheduling test: the assertion is
+that the alarm fired, and it fired while the device was idle.
 
-**Not testable on the emulator.** The spec asks for a real device. An
-emulator's Doze is a forced state that the platform honours
-deterministically; it is not the power-management behaviour of a real
-device in a real pocket, and it does not reproduce the OEM-specific
-behaviour that makes this worth demonstrating. A real-device run is
-still required, and it cannot be substituted by the emulator run above.
+Measured on the API 36 emulator, 20 October 2026:
+
+```
+awake delivery was 22s after the armed time
+deep idle delivery was 45s after the armed time
+```
+
+Both bounds are windows rather than moments, because
+`setAndAllowWhileIdle` is an inexact API and the platform may deliver
+inside its window. On this emulator the window is tens of seconds; on a
+current device it is shorter.
+
+**Verified on the emulator: the old path was not delivered at all.**
+Before the change the app's only scheduled work was a WorkManager system
+job, and in deep idle its status carried `WAIT:DEV_NOT_DOZING` with
+`dumpsys alarm` showing no alarm for the app. The two measurements
+above are the comparison the exit criterion asks for: the WorkManager
+path was held indefinitely, the alarm path was delivered 45 seconds late
+while the device was idle.
+
+**Not verified: a real device.** The spec asks for one. An emulator's
+Doze is a forced state the platform honours deterministically; it is not
+the power-management behaviour of a real device in a real pocket, and it
+does not reproduce the OEM-specific behaviour that makes this worth
+demonstrating. The emulator result is strong evidence that the mechanism
+is right, and it is not a substitute.
+
+**Not verified: the user-facing flow on a real device.** The test drives
+the platform directly. The remaining step is to run the app on a
+physical device with a reminder due while the device is idle, and record
+the elapsed time between the scheduled instant and the notification
+appearing.
 
 ## What is needed to close this
 
-1. Implement the Tier 2 alarm path: `setAndAllowWhileIdle` for the
-   time-sensitive reminder types, with `SCHEDULE_EXACT_ALARM` requested
-   only for `PeriodPrep` and `LatePeriod` as spec `13` §10 requires.
-2. Re-run the scenario above and show the alarm's `dumpsys alarm` entry
-   with its `time` and its `alarm` origin, and that it fires during
-   deep idle.
-3. Repeat on a physical device, where the app is installed from a
-   release build, and record the elapsed time between the scheduled
-   instant and the notification.
+1. Run the same scenario on a physical device, with the app installed
+   from a release build, and record the elapsed time between the
+   scheduled instant and the notification.
+2. Confirm the Tier 1 path on a device where the user has granted
+   `SCHEDULE_EXACT_ALARM`, and confirm the downgrade when they have
+   not, and when they revoke it mid-session.
+3. Complete the Play Console declaration for `SCHEDULE_EXACT_ALARM`,
+   which is a release dependency and is tracked in
+   `20-release-readiness.md`.

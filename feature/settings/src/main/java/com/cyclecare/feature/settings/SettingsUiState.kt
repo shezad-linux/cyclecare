@@ -52,6 +52,7 @@ internal object SettingsTags {
     const val NOTIFICATION_RECOVERY = "settings_notification_recovery"
     const val OPEN_REMINDER_CENTER = "settings_open_reminder_center"
     const val OPEN_AD_PRIVACY = "settings_open_ad_privacy"
+    const val OPEN_EXACT_ALARMS = "settings_open_exact_alarms"
 }
 
 internal fun ReminderType.displayTitle(): UiText = when (this) {

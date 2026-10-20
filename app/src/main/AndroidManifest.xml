@@ -52,6 +52,16 @@
             </intent-filter>
         </receiver>
 
+        <!--
+          Delivers a reminder when its alarm fires. Not exported: the alarm
+          is a PendingIntent owned by the app, and nothing else should be
+          able to trigger a delivery.
+        -->
+        <receiver
+            android:name=".ReminderAlarmReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

@@ -38,7 +38,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class WorkManagerReminderSchedulerTest {
+class ReminderAlarmSchedulerTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private lateinit var workManager: WorkManager
     private lateinit var profileRepository: TestProfileRepository
@@ -47,7 +47,8 @@ class WorkManagerReminderSchedulerTest {
     private lateinit var reminderRepository: TestReminderRepository
     private lateinit var reminderChannelSettingsRepository: TestReminderChannelSettingsRepository
     private lateinit var privacyRepository: TestPrivacyRepository
-    private lateinit var scheduler: WorkManagerReminderScheduler
+    private lateinit var scheduler: ReminderAlarmScheduler
+    private val fakeAlarmFacade = FakeReminderAlarmFacade()
 
     @Before
     fun setUp() {
@@ -95,16 +96,8 @@ class WorkManagerReminderSchedulerTest {
                 appLockEnabled = false,
             ),
         )
-        scheduler = WorkManagerReminderScheduler(
-            context = context,
-            profileRepository = profileRepository,
-            cycleRepository = cycleRepository,
-            predictionRepository = predictionRepository,
-            reminderRepository = reminderRepository,
-            reminderChannelSettingsRepository = reminderChannelSettingsRepository,
-            privacyRepository = privacyRepository,
-            planner = ReminderSchedulePlanner(),
-        )
+        scheduler = buildScheduler(fakeAlarmFacade)
+        Unit
     }
 
     @After
@@ -112,6 +105,7 @@ class WorkManagerReminderSchedulerTest {
         workManager.cancelAllWork().result.get()
         workManager.pruneWork().result.get()
         WorkManagerTestInitHelper.closeWorkDatabase()
+        Unit
     }
 
     @Test
@@ -119,9 +113,12 @@ class WorkManagerReminderSchedulerTest {
         val schedules = scheduler.refreshSchedules(now = now())
 
         assertThat(schedules.map { it.ruleId }).containsExactly("fertile", "daily", "period").inOrder()
-        assertThat(activeWorkFor(reminderUniqueWorkName("period"))).hasSize(1)
-        assertThat(activeWorkFor(reminderUniqueWorkName("fertile"))).hasSize(1)
-        assertThat(activeWorkFor(reminderUniqueWorkName("daily"))).hasSize(1)
+        assertThat(fakeAlarmFacade.armed).containsExactly(
+            "period", ReminderDeliveryTier.EXACT,
+            "fertile", ReminderDeliveryTier.INEXACT_WHILE_IDLE,
+            "daily", ReminderDeliveryTier.INEXACT_WHILE_IDLE,
+        )
+        Unit
     }
 
     @Test
@@ -132,7 +129,8 @@ class WorkManagerReminderSchedulerTest {
         val schedules = scheduler.refreshSchedules(now = now())
 
         assertThat(schedules).isEmpty()
-        assertThat(activeWorkByTag()).isEmpty()
+        assertThat(fakeAlarmFacade.cancelledNames).hasSize(3)
+        Unit
     }
 
     @Test
@@ -145,9 +143,13 @@ class WorkManagerReminderSchedulerTest {
         val schedules = scheduler.refreshSchedules(now = now())
 
         assertThat(schedules.map { it.ruleId }).containsExactly("daily", "period").inOrder()
-        assertThat(activeWorkFor(reminderUniqueWorkName("fertile"))).isEmpty()
-        assertThat(activeWorkFor(reminderUniqueWorkName("period"))).hasSize(1)
-        assertThat(activeWorkFor(reminderUniqueWorkName("daily"))).hasSize(1)
+        // The disabled rule's alarm is cancelled, and the other two are
+        // still armed.
+        assertThat(fakeAlarmFacade.cancelledNames).containsExactly(
+            "cyclecare-reminder-rule-fertile",
+        )
+        assertThat(fakeAlarmFacade.armed.keys).containsExactly("period", "daily")
+        Unit
     }
 
     @Test
@@ -155,10 +157,14 @@ class WorkManagerReminderSchedulerTest {
         scheduler.refreshSchedules(now = now())
         scheduler.refreshSchedules(now = now())
 
-        assertThat(activeWorkFor(reminderUniqueWorkName("period"))).hasSize(1)
-        assertThat(activeWorkFor(reminderUniqueWorkName("fertile"))).hasSize(1)
-        assertThat(activeWorkFor(reminderUniqueWorkName("daily"))).hasSize(1)
-        assertThat(activeWorkByTag()).hasSize(3)
+        // Scheduling the same reminder again replaces its alarm rather
+        // than adding a second one, so the counts do not grow.
+        assertThat(fakeAlarmFacade.armed).containsExactly(
+            "period", ReminderDeliveryTier.EXACT,
+            "fertile", ReminderDeliveryTier.INEXACT_WHILE_IDLE,
+            "daily", ReminderDeliveryTier.INEXACT_WHILE_IDLE,
+        )
+        Unit
     }
 
     @Test
@@ -180,7 +186,85 @@ class WorkManagerReminderSchedulerTest {
             .isNotEqualTo(firstSchedules.first { it.ruleId == "period" }.scheduledAt)
         assertThat(secondSchedules.first { it.ruleId == "fertile" }.scheduledAt)
             .isNotEqualTo(firstSchedules.first { it.ruleId == "fertile" }.scheduledAt)
-        assertThat(activeWorkByTag()).hasSize(3)
+        // The new dates are the ones the alarm now carries.
+        assertThat(fakeAlarmFacade.armed).containsExactly(
+            "period", ReminderDeliveryTier.EXACT,
+            "fertile", ReminderDeliveryTier.INEXACT_WHILE_IDLE,
+            "daily", ReminderDeliveryTier.INEXACT_WHILE_IDLE,
+        )
+        Unit
+    }
+
+
+    // ── the failure cases ───────────────────────────────────────────
+
+    @Test
+    fun refreshSchedules_whenExactAlarmsNotGranted_fallsBackToTheInexactTier() = runBlocking {
+        // The default path for most users, who never grant the permission.
+        val facade = FakeReminderAlarmFacade(exactAlarmsAllowed = false)
+        scheduler = buildScheduler(alarmFacade = facade)
+
+        scheduler.refreshSchedules(now = now())
+
+        // Everything is delivered on Tier 2, which needs no permission.
+        assertThat(facade.armed.values.toSet())
+            .containsExactly(ReminderDeliveryTier.INEXACT_WHILE_IDLE)
+        assertThat(facade.armed).hasSize(3)
+        Unit
+    }
+
+    @Test
+    fun refreshSchedules_whenTheExactApiRefuses_downgradesRatherThanCrashing() = runBlocking {
+        // The permission can be revoked between the check and the call.
+        val facade = FakeReminderAlarmFacade(exactAlarmsAllowed = true).apply {
+            exactThrowsSecurityException = true
+        }
+        scheduler = buildScheduler(alarmFacade = facade)
+
+        scheduler.refreshSchedules(now = now())
+
+        // The exact call was attempted and refused, and the reminder was
+        // still delivered, on Tier 2.
+        assertThat(facade.armed["period"]).isEqualTo(ReminderDeliveryTier.INEXACT_WHILE_IDLE)
+        Unit
+    }
+
+    @Test
+    fun thePeriodAndLatePeriodTypesAreTheOnlyOnesOnTheExactTier() {
+        assertThat(tierFor(ReminderType.PeriodPrep)).isEqualTo(ReminderDeliveryTier.EXACT)
+        assertThat(tierFor(ReminderType.LatePeriod)).isEqualTo(ReminderDeliveryTier.EXACT)
+        assertThat(tierFor(ReminderType.FertileWindowStart))
+            .isEqualTo(ReminderDeliveryTier.INEXACT_WHILE_IDLE)
+        assertThat(tierFor(ReminderType.OvulationEstimate))
+            .isEqualTo(ReminderDeliveryTier.INEXACT_WHILE_IDLE)
+        assertThat(tierFor(ReminderType.DailyLog))
+            .isEqualTo(ReminderDeliveryTier.INEXACT_WHILE_IDLE)
+        Unit
+    }
+
+    @Test
+    fun refreshSchedules_armsTheAlarmForThePlannedTime() = runBlocking {
+        val schedules = scheduler.refreshSchedules(now = now())
+
+        // The alarm is armed for exactly the time the planner chose, not
+        // for a rounded or a recomputed one.
+        val period = schedules.first { it.ruleId == "period" }
+        assertThat(fakeAlarmFacade.exactTriggerTimes.single())
+            .isEqualTo(period.scheduledAt.toInstant().toEpochMilli())
+        assertThat(period.scheduledAt).isGreaterThan(now())
+        Unit
+    }
+
+    @Test
+    fun refreshSchedules_whenGlobalRemindersDisabled_cancelsTheArmedAlarms() = runBlocking {
+        scheduler.refreshSchedules(now = now())
+        fakeAlarmFacade.cancelledNames.clear()
+
+        profileRepository.updateRemindersEnabled(false)
+        scheduler.refreshSchedules(now = now())
+
+        assertThat(fakeAlarmFacade.cancelledNames).hasSize(3)
+        Unit
     }
 
     @Test
@@ -191,6 +275,7 @@ class WorkManagerReminderSchedulerTest {
 
         assertThat(infos).isNotEmpty()
         assertThat(infos.any { it.state != WorkInfo.State.CANCELLED }).isTrue()
+        Unit
     }
 
     @Test
@@ -200,13 +285,21 @@ class WorkManagerReminderSchedulerTest {
         val infos = workManager.getWorkInfosForUniqueWork(ReminderRefreshWorker.immediateWorkName).get()
 
         assertThat(infos).isEmpty()
+        Unit
     }
 
-    private fun activeWorkFor(uniqueName: String): List<WorkInfo> =
-        workManager.getWorkInfosForUniqueWork(uniqueName).get().filter(WorkInfo::isActive)
-
-    private fun activeWorkByTag(): List<WorkInfo> =
-        workManager.getWorkInfosByTag(reminderWorkTag).get().filter(WorkInfo::isActive)
+    private fun buildScheduler(alarmFacade: ReminderAlarmFacade): ReminderAlarmScheduler =
+        ReminderAlarmScheduler(
+            context = context,
+            profileRepository = profileRepository,
+            cycleRepository = cycleRepository,
+            predictionRepository = predictionRepository,
+            reminderRepository = reminderRepository,
+            reminderChannelSettingsRepository = reminderChannelSettingsRepository,
+            privacyRepository = privacyRepository,
+            planner = ReminderSchedulePlanner(),
+            alarmFacade = alarmFacade,
+        )
 
     private fun now(): ZonedDateTime = ZonedDateTime.parse("2026-03-10T08:00:00+05:30[Asia/Kolkata]")
 
@@ -233,6 +326,57 @@ class WorkManagerReminderSchedulerTest {
         ),
         nextPeriodHalfWidthDays = 1,
     )
+}
+
+/**
+ * Records the alarms the scheduler arms.
+ *
+ * The model is the armed state rather than the call history, because the
+ * behaviour that matters is whether a reminder ends up with one alarm or
+ * two. Re-scheduling the same reminder replaces its alarm, so the armed
+ * set does not grow.
+ */
+private class FakeReminderAlarmFacade(
+    private val exactAlarmsAllowed: Boolean = true,
+) : ReminderAlarmFacade {
+    /** The alarms currently armed, by rule. */
+    val armed = linkedMapOf<String, ReminderDeliveryTier>()
+
+    /** The unique name each armed alarm was scheduled under. */
+    private val namesByRule = linkedMapOf<String, String>()
+
+    /** The unique names of the alarms that were cancelled. */
+    val cancelledNames = mutableListOf<String>()
+
+    /** The trigger times of the exact alarms, in the order they were set. */
+    val exactTriggerTimes = mutableListOf<Long>()
+
+    /** Set to make the exact API throw, as a revoked permission would. */
+    var exactThrowsSecurityException = false
+
+    override fun canScheduleExactAlarms(): Boolean = exactAlarmsAllowed
+
+    override fun setExactAndAllowWhileIdle(triggerAtMillis: Long, request: ReminderAlarmRequest) {
+        if (exactThrowsSecurityException) throw SecurityException("exact alarms not permitted")
+        armed[request.ruleId] = ReminderDeliveryTier.EXACT
+        namesByRule[request.ruleId] = request.uniqueName
+        exactTriggerTimes.add(triggerAtMillis)
+    }
+
+    override fun setAndAllowWhileIdle(triggerAtMillis: Long, request: ReminderAlarmRequest) {
+        armed[request.ruleId] = ReminderDeliveryTier.INEXACT_WHILE_IDLE
+        namesByRule[request.ruleId] = request.uniqueName
+    }
+
+    override fun cancel(uniqueName: String) {
+        cancelledNames.add(uniqueName)
+        // Cancelling addresses the alarm by its unique name, so the armed
+        // entry it removes is found the same way.
+        namesByRule.entries.firstOrNull { it.value == uniqueName }?.let { (rule, _) ->
+            armed.remove(rule)
+            namesByRule.remove(rule)
+        }
+    }
 }
 
 private class TestProfileRepository(

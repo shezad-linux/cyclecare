@@ -97,4 +97,13 @@
     <string name="sound_gentle_bell">Gentle bell</string>
     <string name="sound_soft_chime">Soft chime</string>
     <string name="sound_water_drop">Water drop</string>
+
+    <!--
+      Exact alarm access. The app works without it, on the inexact tier,
+      so the copy says what is being asked for rather than implying the
+      feature is broken without it.
+    -->
+    <string name="exact_alarm_access">Precise reminder timing</string>
+    <string name="allow_exact_alarms_for_period_reminders_on_time">Allow exact alarms so your period reminders arrive on time, even when the phone is idle. Reminders still work without this, but they can be delayed by a few minutes.</string>
+    <string name="allow_exact_alarms">Allow</string>
 </resources>

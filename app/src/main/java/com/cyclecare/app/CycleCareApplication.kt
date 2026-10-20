@@ -87,7 +87,7 @@ class CycleCareApplication : Application() {
             context = applicationContext,
             database = database,
         )
-        val reminderScheduler = WorkManagerReminderScheduler(
+        val reminderScheduler = ReminderAlarmScheduler(
             context = applicationContext,
             profileRepository = profileRepository,
             cycleRepository = cycleRepository,

@@ -218,7 +218,14 @@ class ReminderSchedulePlanner(
     ): ZonedDateTime = ZonedDateTime.of(date, LocalTime.of(rule.hourOfDay, rule.minute), now.zone)
 }
 
-internal fun reminderWorkName(ruleId: String): String = "cyclecare-reminder-rule-${ruleId.lowercase()}"
+/**
+ * The stable identity of a rule's scheduled reminder.
+ *
+ * Public because it is a cross-module contract: the app has to be able to
+ * address the same reminder when it cancels one that is no longer wanted,
+ * and the name has to be produced in exactly one place.
+ */
+fun reminderWorkName(ruleId: String): String = "cyclecare-reminder-rule-${ruleId.lowercase()}"
 
 fun reminderTypeChannelKey(type: ReminderType): ReminderChannelKey = when (type) {
     ReminderType.PeriodPrep,
