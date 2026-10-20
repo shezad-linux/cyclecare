@@ -15,6 +15,7 @@ import com.cyclecare.core.data.LocalReminderChannelSettingsRepository
 import com.cyclecare.core.data.NoOpSyncAdapter
 import com.cyclecare.core.data.RoomCycleRepository
 import com.cyclecare.core.data.RoomFirstRunNudgeRepository
+import com.cyclecare.core.data.RoomMigrationDivergenceRepository
 import com.cyclecare.core.data.RoomProfileRepository
 import com.cyclecare.core.data.RoomReminderEventsRepository
 import com.cyclecare.core.data.RoomReminderRepository
@@ -132,6 +133,7 @@ class CycleCareApplication : Application() {
             reminderNotificationClient = reminderNotificationClient,
             crashReporter = crashReporter,
             appLogger = appLogger,
+            migrationDivergenceRepository = RoomMigrationDivergenceRepository(database),
         )
 
         ReminderRefreshWorker.enqueuePeriodic(this)

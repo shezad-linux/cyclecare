@@ -27,6 +27,14 @@ data class SettingsUiState(
     val remindersEnabled: Boolean = true,
     val reminderItems: List<SettingsReminderItem> = emptyList(),
     val channelItems: List<SettingsChannelItem> = emptyList(),
+    /**
+     * How many records the last schema migration wrote.
+     *
+     * The entry into the record is only offered when there is
+     * something to read: a user whose data was never carried over has
+     * no record to see.
+     */
+    val migrationRecordCount: Int = 0,
 )
 
 data class SettingsReminderItem(
@@ -54,6 +62,7 @@ internal object SettingsTags {
     const val OPEN_AD_PRIVACY = "settings_open_ad_privacy"
     const val OPEN_EXACT_ALARMS = "settings_open_exact_alarms"
     const val OPEN_PRIVACY = "settings_open_privacy"
+    const val OPEN_MIGRATION_RECORD = "settings_open_migration_record"
 }
 
 internal fun ReminderType.displayTitle(): UiText = when (this) {

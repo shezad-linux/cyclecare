@@ -43,6 +43,7 @@ internal fun SettingsScreen(
     onOpenPrivacy: () -> Unit,
     onOpenExport: () -> Unit,
     onOpenReminderCenter: () -> Unit,
+    onOpenMigrationRecord: () -> Unit,
     unreadReminderCount: Int,
     onPreviewReminderSound: (ReminderSoundPreset) -> Unit,
     showAdPrivacyOptions: Boolean,
@@ -310,6 +311,21 @@ internal fun SettingsScreen(
                 actionLabel = stringResource(R.string.open_export),
                 onAction = onOpenExport,
             )
+        }
+
+        // Only offered when the last migration actually wrote a record.
+        // A user whose data was never carried over has nothing to read,
+        // and an entry that always leads to an empty screen is noise.
+        if (uiState.migrationRecordCount > 0) {
+            item {
+                ActionCard(
+                    title = stringResource(R.string.data_migration_record),
+                    body = stringResource(R.string.data_migration_record_body),
+                    actionLabel = stringResource(R.string.open_migration_record),
+                    onAction = onOpenMigrationRecord,
+                    actionModifier = Modifier.testTag(SettingsTags.OPEN_MIGRATION_RECORD),
+                )
+            }
         }
 
         item {

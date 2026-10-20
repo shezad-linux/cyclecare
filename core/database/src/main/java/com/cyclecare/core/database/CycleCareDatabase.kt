@@ -117,6 +117,19 @@ data class SymptomLogEntity(
 )
 
 /**
+ * The kinds of divergence a migration records.
+ *
+ * They are constants rather than literals because two modules read
+ * them: the migration that writes them and the data layer that maps
+ * them back for the user-facing record. A record whose kind is not
+ * recognised is still shown, so a later build's kind never breaks an
+ * earlier one.
+ */
+const val MIGRATION_LOG_KIND_CYCLE_LENGTH_DIVERGENCE = "CYCLE_LENGTH_DIVERGENCE"
+const val MIGRATION_LOG_KIND_DUPLICATE_SYMPTOM_DATE = "DUPLICATE_SYMPTOM_DATE"
+const val MIGRATION_LOG_KIND_HISTORY_CARRIED_OVER = "HISTORY_CARRIED_OVER"
+
+/**
  * A durable record of what a migration changed. The migration cannot
  * show UI itself, so it writes here and the presentation layer reads it
  * after the database opens. Rows survive the process that migrated the
@@ -130,7 +143,7 @@ data class MigrationLogEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val migrationFrom: Int,
     val migrationTo: Int,
-    /** CYCLE_LENGTH_DIVERGENCE or DUPLICATE_SYMPTOM_DATE. */
+    /** One of the `MIGRATION_LOG_KIND_` constants. */
     val kind: String,
     val recordId: String?,
     val dateEpochDay: Long?,

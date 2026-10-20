@@ -21,6 +21,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cyclecare.core.domain.AppResetRepository
+import com.cyclecare.core.domain.MigrationDivergenceRepository
 import com.cyclecare.core.domain.PrivacyRepository
 import com.cyclecare.core.domain.ProfileRepository
 import com.cyclecare.core.domain.ReminderChannelSettingsRepository
@@ -42,18 +43,21 @@ class SettingsViewModel(
     private val reminderChannelSettingsRepository: ReminderChannelSettingsRepository,
     private val reminderScheduler: ReminderScheduler,
     private val appResetRepository: AppResetRepository,
+    private val migrationDivergenceRepository: MigrationDivergenceRepository,
 ) : ViewModel() {
     val uiState: StateFlow<SettingsUiState> = combine(
         profileRepository.observeProfile(),
         privacyRepository.observeConsent(),
         reminderRepository.observeRules(),
         reminderChannelSettingsRepository.observeChannelSettings(),
-    ) { profile, consent, reminders, channelSettings ->
+        migrationDivergenceRepository.observeDivergences(),
+    ) { profile, consent, reminders, channelSettings, divergences ->
         SettingsUiState(
             consentState = consent,
             remindersEnabled = profile?.remindersEnabled ?: false,
             reminderItems = buildReminderItems(reminders),
             channelItems = buildChannelItems(channelSettings),
+            migrationRecordCount = divergences.size,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
@@ -105,6 +109,7 @@ class SettingsViewModelFactory(
     private val reminderChannelSettingsRepository: ReminderChannelSettingsRepository,
     private val reminderScheduler: ReminderScheduler,
     private val appResetRepository: AppResetRepository,
+    private val migrationDivergenceRepository: MigrationDivergenceRepository,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
@@ -115,6 +120,7 @@ class SettingsViewModelFactory(
             reminderChannelSettingsRepository = reminderChannelSettingsRepository,
             reminderScheduler = reminderScheduler,
             appResetRepository = appResetRepository,
+            migrationDivergenceRepository = migrationDivergenceRepository,
         ) as T
 }
 
@@ -124,6 +130,7 @@ fun SettingsRoute(
     onOpenPrivacy: () -> Unit,
     onOpenExport: () -> Unit,
     onOpenReminderCenter: () -> Unit,
+    onOpenMigrationRecord: () -> Unit,
     notificationsCanPost: Boolean,
     notificationRecoveryActionLabel: String?,
     unreadReminderCount: Int,
@@ -153,6 +160,7 @@ fun SettingsRoute(
         onOpenPrivacy = onOpenPrivacy,
         onOpenExport = onOpenExport,
         onOpenReminderCenter = onOpenReminderCenter,
+        onOpenMigrationRecord = onOpenMigrationRecord,
         unreadReminderCount = unreadReminderCount,
         onPreviewReminderSound = onPreviewReminderSound,
         showAdPrivacyOptions = showAdPrivacyOptions,

@@ -106,4 +106,30 @@
     <string name="exact_alarm_access">Precise reminder timing</string>
     <string name="allow_exact_alarms_for_period_reminders_on_time">Allow exact alarms so your period reminders arrive on time, even when the phone is idle. Reminders still work without this, but they can be delayed by a few minutes.</string>
     <string name="allow_exact_alarms">Allow</string>
+
+    <!--
+      The migration record. The wording is deliberately plain and never
+      says that anything was corrected, because nothing was: where two
+      values disagreed, both were kept exactly as they were recorded.
+    -->
+    <string name="data_migration_record">Data migration record</string>
+    <string name="data_migration_record_body">See what changed when your history was carried over to this version of the app.</string>
+    <string name="open_migration_record">View record</string>
+    <string name="migration_record_title">Data migration record</string>
+    <string name="migration_record_subtitle">A record of what happened to your data when this version of the app was installed.</string>
+    <string name="migration_record_intro">Nothing in your history was changed. Where two values disagreed, both were kept exactly as you recorded them, and they are listed below.</string>
+    <string name="migration_record_empty_title">Nothing to show</string>
+    <string name="migration_record_empty_body">Your data was not carried over from an earlier version of the app, so there is no migration record.</string>
+    <string name="migration_record_duplicates_title">Duplicate entries</string>
+    <string name="migration_record_cycle_length_title">Cycle length differences</string>
+    <string name="migration_record_carried_over_title">Carried over history</string>
+    <string name="migration_record_eyebrow">Record</string>
+    <plurals name="n_duplicate_entries">
+        <item quantity="one">%d entry was recorded twice for the same day. The entry added later was kept.</item>
+        <item quantity="other">%d entries were recorded twice for the same day. The entry added later was kept in each case.</item>
+    </plurals>
+    <plurals name="n_cycle_length_differences">
+        <item quantity="one">%d period start has a stored cycle length that differs from the gap to the next one.</item>
+        <item quantity="other">%d period starts have a stored cycle length that differs from the gap to the next one.</item>
+    </plurals>
 </resources>

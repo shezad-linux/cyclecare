@@ -78,10 +78,14 @@ import com.cyclecare.feature.logging.LoggingViewModelFactory
 import com.cyclecare.feature.privacy.PrivacyRoute
 import com.cyclecare.feature.privacy.SecureAuthController
 import com.cyclecare.feature.privacy.PrivacyViewModelFactory
+import com.cyclecare.feature.settings.MigrationNotesRoute
+import com.cyclecare.feature.settings.MigrationNotesViewModelFactory
 import com.cyclecare.feature.settings.SettingsRoute
 import com.cyclecare.feature.settings.SettingsViewModelFactory
 import java.time.LocalDate
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 internal fun NotificationPermissionRequiredGate(
@@ -264,7 +268,29 @@ internal fun MainShell(
                                     // routes that map onto an allowed tab.
                                     currentRoute = currentRoute,
                                     adsConsentGranted = canRequestAds,
-                                    onFinished = { navController.navigateToTopLevel(route) },
+                                    // The gate reads persisted state, so
+                                    // this callback can arrive on whichever
+                                    // dispatcher that read resumed on. A
+                                    // navigation has to be driven from the
+                                    // main thread, and the scope's
+                                    // dispatcher is the main one, so the
+                                    // navigation is posted back onto it.
+                                    // Without this, tapping a tab can
+                                    // throw "setCurrentState must be
+                                    // called on the main thread" from
+                                    // inside Navigation.
+                                    onFinished = {
+                                        scope.launch {
+                                            // Explicitly the Android main
+                                            // thread. The composition's
+                                            // own dispatcher is not
+                                            // guaranteed to be it, and
+                                            // Navigation requires it.
+                                            withContext(Dispatchers.Main.immediate) {
+                                                navController.navigateToTopLevel(route)
+                                            }
+                                        }
+                                    },
                                 )
                             }
                         } else {
@@ -569,10 +595,12 @@ internal fun AppNavHost(
                     reminderChannelSettingsRepository = container.reminderChannelSettingsRepository,
                     appResetRepository = container.appResetRepository,
                     reminderScheduler = container.reminderScheduler,
+                    migrationDivergenceRepository = container.migrationDivergenceRepository,
                 ),
                 onOpenPrivacy = { navController.navigate("privacy") },
                 onOpenExport = { navController.navigate("export") },
                 onOpenReminderCenter = onOpenReminderCenter,
+                onOpenMigrationRecord = { navController.navigate("migration-notes") },
                 notificationsCanPost = notificationsCanPost,
                 notificationRecoveryActionLabel = notificationRecoveryActionLabel,
                 unreadReminderCount = unreadReminderCount,
@@ -598,6 +626,11 @@ internal fun AppNavHost(
         }
         composable("export") {
             ExportRoute(factory = ExportViewModelFactory(container.exportRepository))
+        }
+        composable("migration-notes") {
+            MigrationNotesRoute(
+                factory = MigrationNotesViewModelFactory(container.migrationDivergenceRepository),
+            )
         }
     }
 }

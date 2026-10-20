@@ -1,5 +1,6 @@
 package com.cyclecare.app
 
+import com.cyclecare.core.data.EmptyMigrationDivergenceRepository
 import com.cyclecare.core.domain.AppLogger
 import com.cyclecare.core.domain.CrashReporter
 import com.cyclecare.core.domain.CycleRepository
@@ -18,6 +19,7 @@ import com.cyclecare.core.domain.ReminderScheduler
 import com.cyclecare.core.domain.SyncAdapter
 import com.cyclecare.core.domain.SymptomRepository
 import com.cyclecare.core.domain.FirstRunNudgeRepository
+import com.cyclecare.core.domain.MigrationDivergenceRepository
 import com.cyclecare.core.domain.ads.DraftTracker
 import com.cyclecare.core.domain.ads.InterstitialStatsRepository
 import com.cyclecare.core.domain.time.TimeProvider
@@ -63,4 +65,12 @@ data class AppContainer(
     val reminderNotificationClient: ReminderNotificationClient = NoOpReminderNotificationClient,
     val crashReporter: CrashReporter = NoOpCrashReporter,
     val appLogger: AppLogger = NoOpAppLogger,
+    /**
+     * The durable record of what the last schema migration did.
+     *
+     * Spec 02 §9.10.4 requires a divergence to be surfaced to the user
+     * rather than silently corrected, so the record has to be readable
+     * from the app long after the migration that wrote it ran.
+     */
+    val migrationDivergenceRepository: MigrationDivergenceRepository = EmptyMigrationDivergenceRepository(),
 )

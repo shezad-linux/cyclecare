@@ -385,7 +385,7 @@ internal fun migrateV2ToV3(
             insertMigrationLog(
                 database = database,
                 migratedAt = migratedAt,
-                kind = "CYCLE_LENGTH_DIVERGENCE",
+                kind = MIGRATION_LOG_KIND_CYCLE_LENGTH_DIVERGENCE,
                 recordId = recordId,
                 dateEpochDay = startEpochDay,
                 storedValue = legacy.toLong(),
@@ -447,7 +447,7 @@ internal fun migrateV2ToV3(
         insertMigrationLog(
             database = database,
             migratedAt = migratedAt,
-            kind = "DUPLICATE_SYMPTOM_DATE",
+            kind = MIGRATION_LOG_KIND_DUPLICATE_SYMPTOM_DATE,
             recordId = null,
             dateEpochDay = duplicate.dateEpochDay,
             storedValue = duplicate.rowCount.toLong(),
@@ -517,8 +517,40 @@ internal fun migrateV2ToV3(
         """.trimIndent(),
     )
 
+    // What was carried over is itself a record the user can read.
+    //
+    // Spec 02 §9.10.4 requires divergences to be surfaced to the user,
+    // and the count of what survived is the plainest statement of it.
+    // It is written before the verification so that a verification
+    // failure rolls the record back with everything else.
+    val carriedCycles = countRows(database, "cycle_records")
+    val carriedSymptomLogs = countRows(database, "symptom_logs")
+    insertMigrationLog(
+        database = database,
+        migratedAt = migratedAt,
+        kind = MIGRATION_LOG_KIND_HISTORY_CARRIED_OVER,
+        recordId = null,
+        dateEpochDay = null,
+        storedValue = carriedCycles.toLong(),
+        observedValue = carriedSymptomLogs.toLong(),
+        detail = "$carriedCycles cycle records and $carriedSymptomLogs symptom logs " +
+            "were carried over from an earlier version of CycleCare.",
+    )
+
     verifySnapshot(database, before)
 }
+
+/**
+ * How many rows a table holds.
+ *
+ * Used to say what the migration carried over. It counts the table as
+ * it stands after the migration has written it, so it is the number
+ * that actually survived rather than the number that was read.
+ */
+private fun countRows(database: SupportSQLiteDatabase, table: String): Int =
+    database.query("SELECT COUNT(*) FROM $table").use { cursor ->
+        if (cursor.moveToFirst()) cursor.getInt(0) else 0
+    }
 
 val migration2To3 = object : Migration(2, 3) {
     override fun migrate(database: SupportSQLiteDatabase) = migrateV2ToV3(database)

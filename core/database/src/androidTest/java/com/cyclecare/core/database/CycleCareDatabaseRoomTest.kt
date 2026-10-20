@@ -447,8 +447,13 @@ class CycleCareDatabaseRoomTest {
             assertThat(reopened.symptomLogDao().findById("newer")?.deletedAtEpochMillis).isNull()
 
             assertThat(reopened.migrationLogDao().countByKind("DUPLICATE_SYMPTOM_DATE")).isEqualTo(1)
-            assertThat(reopened.migrationLogDao().observeUnacknowledged().first()).hasSize(1)
-            assertThat(reopened.migrationLogDao().acknowledgeAll(4321L)).isEqualTo(1)
+
+            // Two records, not one: the collapsed duplicate, and the
+            // summary of what was carried over. Both are the user's to
+            // read, and both start unacknowledged.
+            assertThat(reopened.migrationLogDao().countByKind("HISTORY_CARRIED_OVER")).isEqualTo(1)
+            assertThat(reopened.migrationLogDao().observeUnacknowledged().first()).hasSize(2)
+            assertThat(reopened.migrationLogDao().acknowledgeAll(4321L)).isEqualTo(2)
             assertThat(reopened.migrationLogDao().observeUnacknowledged().first()).isEmpty()
         } finally {
             reopened.close()
