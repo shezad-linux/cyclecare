@@ -172,6 +172,27 @@ class RoomRepositoriesIntegrationTest {
         assertThat(stored?.trackingGoal).isEqualTo(TrackingGoal.PeriodPrep)
     }
 
+    @Test
+    fun reminderRuleUserPinnedTime_roundTripsThroughTheMapper() = runBlocking {
+        val repository = RoomReminderRepository(database)
+        val pinned = com.cyclecare.core.model.ReminderRule(
+            id = "period-prep",
+            type = com.cyclecare.core.model.ReminderType.PeriodPrep,
+            enabled = true,
+            daysBefore = 2,
+            hourOfDay = 9,
+            minute = 15,
+            userPinnedTime = true,
+        )
+
+        repository.upsertRule(pinned)
+        val stored = repository.observeRules().first().first { it.id == "period-prep" }
+
+        assertThat(stored.userPinnedTime).isTrue()
+        assertThat(stored.hourOfDay).isEqualTo(9)
+        assertThat(stored.minute).isEqualTo(15)
+    }
+
     private fun profile(
         averageCycleLength: Int,
         lastPeriodStart: LocalDate,

@@ -86,9 +86,10 @@ internal fun ReminderRule.toEntity() = ReminderRuleEntity(
     offsetDays = daysBefore,
     hourOfDay = hourOfDay,
     minute = minute,
-    // Any time reaching the database before v3 came from a seed, never
-    // from the user, so nothing is marked pinned yet.
-    userPinnedTime = false,
+    // Pinned-ness is carried through untouched. Restoring an export or
+    // upserting an unchanged rule must not silently un-pin a time the
+    // user chose, and must never pin a rule that a seed produced.
+    userPinnedTime = userPinnedTime,
 )
 
 internal fun ReminderRuleEntity.toModel(logger: AppLogger) = ReminderRule(
@@ -98,6 +99,7 @@ internal fun ReminderRuleEntity.toModel(logger: AppLogger) = ReminderRule(
     daysBefore = offsetDays,
     hourOfDay = hourOfDay,
     minute = minute,
+    userPinnedTime = userPinnedTime,
 )
 
 internal fun ReminderEvent.toEntity() = ReminderEventEntity(

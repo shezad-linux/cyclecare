@@ -2,13 +2,16 @@ package com.cyclecare.core.domain
 
 import com.cyclecare.core.model.ConsentState
 import com.cyclecare.core.model.CycleRecord
+import com.cyclecare.core.model.DeferredReminder
 import com.cyclecare.core.model.ExportArtifact
 import com.cyclecare.core.model.ExportFormat
 import com.cyclecare.core.model.InsightSnapshot
 import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.model.ReminderAutoDisabled
 import com.cyclecare.core.model.ReminderChannelSettings
 import com.cyclecare.core.model.ReminderEvent
 import com.cyclecare.core.model.ReminderRule
+import com.cyclecare.core.model.ReminderType
 import com.cyclecare.core.model.ScheduledReminder
 import com.cyclecare.core.model.SymptomLog
 import com.cyclecare.core.model.UserProfile
@@ -46,6 +49,16 @@ interface InsightRepository {
 interface ReminderRepository {
     fun observeRules(): Flow<List<ReminderRule>>
     suspend fun upsertRule(rule: ReminderRule)
+
+    /**
+     * Enables or disables every rule of one type at once.
+     *
+     * Spec `13` §9 silences a reminder type rather than an individual
+     * rule: auto-disable is a reaction to how the type has been received,
+     * and half-measures would let the same interruption continue through
+     * another rule with a different id.
+     */
+    suspend fun setRuleTypeEnabled(type: ReminderType, enabled: Boolean)
 }
 
 interface ReminderChannelSettingsRepository {
@@ -72,6 +85,81 @@ interface ReminderEventsRepository {
      * interstitial would be shown.
      */
     suspend fun latestDeliveryAtSince(sinceEpochMillis: Long): Long?
+
+    /**
+     * Inserts the event only when no event with this id exists, and
+     * returns whether it was newly inserted.
+     *
+     * Spec `13` §12: a retried delivery must never post again. The insert
+     * is the lock — the caller inserts first and posts only when this
+     * returns true, so a crash between insert and post loses one
+     * notification instead of duplicating one.
+     */
+    suspend fun insertIfAbsent(event: ReminderEvent): Boolean
+
+    /**
+     * Deliveries inside the half-open window [fromEpochMillis, toEpochMillis).
+     *
+     * Spec `13` §7 daily and weekly budgets and §10 arbitration all need
+     * "how many sends happened in the recent past" at delivery time.
+     */
+    suspend fun countDeliveredBetween(fromEpochMillis: Long, toEpochMillis: Long): Int
+
+    /** Lifetime impressions of one reminder type. Spec `13` §9. */
+    suspend fun countDeliveredForType(type: ReminderType): Int
+
+    /** Lifetime dismissals of one reminder type. Spec `13` §9. */
+    suspend fun countDismissedForType(type: ReminderType): Int
+
+    /** Lifetime opens of one reminder type. Spec `13` §9. */
+    suspend fun countOpenedForType(type: ReminderType): Int
+}
+
+/**
+ * The state the notification intelligence needs but that no other
+ * repository owns: auto-disabled reminder types, and the candidates that
+ * were deferred past quiet hours or an arbitration window.
+ */
+interface ReminderIntelligenceRepository {
+    /** The types currently auto-disabled, with the counts that explain them. */
+    fun observeAutoDisabled(): Flow<List<ReminderAutoDisabled>>
+
+    /** Whether [type] is currently auto-disabled. */
+    suspend fun isAutoDisabled(type: ReminderType): Boolean
+
+    /**
+     * Records that [type] was auto-disabled at [disabledAtEpochMillis]
+     * because of these lifetime counts.
+     */
+    suspend fun disable(
+        type: ReminderType,
+        dismissedCount: Int,
+        openedCount: Int,
+        disabledAtEpochMillis: Long,
+    )
+
+    /** Undoes an auto-disable after the user has asked for the type back. */
+    suspend fun reEnable(type: ReminderType)
+
+    /**
+     * Adds a candidate to the deferred set. Returns the total number of
+     * distinct candidates waiting, so the caller can log the deferral.
+     */
+    suspend fun defer(
+        ruleId: String,
+        type: ReminderType,
+        scheduledAtEpochMillis: Long,
+        reason: String,
+    ): Int
+
+    /**
+     * Removes everything from the deferred set and returns it, oldest
+     * first. The summaries are posted from what this returns.
+     */
+    suspend fun takeDeferred(): List<DeferredReminder>
+
+    /** How many distinct candidates are currently deferred, or null when none. */
+    suspend fun deferredCount(): Int?
 }
 
 interface PrivacyRepository {

@@ -62,6 +62,26 @@
             android:enabled="true"
             android:exported="false" />
 
+        <!--
+          Posts the coalesced summary of candidates that were deferred
+          into quiet hours, DND or an arbitration fold. Only the app's own
+          alarm can wake it, so it is not exported.
+        -->
+        <receiver
+            android:name=".ReminderDeferredSummaryReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!--
+          The one-tap re-enable behind the auto-disable notice. The
+          PendingIntent is built by the app itself, so it does not need to
+          be exported either.
+        -->
+        <receiver
+            android:name=".ReminderAutoDisableActionReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

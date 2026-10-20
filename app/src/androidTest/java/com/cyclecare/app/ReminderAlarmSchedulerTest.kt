@@ -433,6 +433,12 @@ private class TestReminderRepository(
     override suspend fun upsertRule(rule: ReminderRule) {
         state.value = state.value.filterNot { it.id == rule.id } + rule
     }
+
+    override suspend fun setRuleTypeEnabled(type: ReminderType, enabled: Boolean) {
+        state.value = state.value.map { rule ->
+            if (rule.type == type) rule.copy(enabled = enabled) else rule
+        }
+    }
 }
 
 private class TestReminderChannelSettingsRepository(

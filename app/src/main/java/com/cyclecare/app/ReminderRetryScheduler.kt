@@ -20,7 +20,15 @@ internal object ReminderRetryScheduler {
 
     private const val RETRY_DELAY_MILLIS = 5 * 60 * 1000L
 
-    fun reschedule(context: Context, payload: ReminderAlarmPayload) {
+    /**
+     * [nowMillis] exists so tests can pin the clock; every real caller
+     * uses the default.
+     */
+    fun reschedule(
+        context: Context,
+        payload: ReminderAlarmPayload,
+        nowMillis: Long = System.currentTimeMillis(),
+    ) {
         val intent = payload.writeTo(Intent(context, ReminderAlarmReceiver::class.java))
         val pendingIntent = PendingIntent.getBroadcast(
             context,
@@ -33,7 +41,7 @@ internal object ReminderRetryScheduler {
         // delivery only has to happen reasonably soon.
         alarmManager.setAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
-            System.currentTimeMillis() + RETRY_DELAY_MILLIS,
+            nowMillis + RETRY_DELAY_MILLIS,
             pendingIntent,
         )
     }

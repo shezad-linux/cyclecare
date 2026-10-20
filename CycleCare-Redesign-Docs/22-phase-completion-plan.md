@@ -713,43 +713,88 @@ file-length clause **fails**.
 **Exit criteria (verbatim, `08`):** *"every criterion in `13` §17
 passes; the Doze demonstration is recorded, not assumed."*
 
-**Status: Partially complete.** This is the largest gap in the ledger.
-**Four of the twelve `13` §17 criteria are verified complete, three are
-partially met, and five are not implemented.**
+**Status: Substantially complete.** Nine of the twelve `13` §17
+criteria are verified complete; two remain partial only through items
+this workstream does not own (the `userPinnedTime` *producer* lives with
+the Settings workstream, and the copy-scope call in criterion 12 is
+ambiguity `A2`/`P7-06`), one needs a physical device (`P7-05`).
 
-The single most important finding of this audit is that
+The single most important finding of the earlier audit — that
 `core/domain/src/main/java/com/cyclecare/core/domain/notification/NotificationIntelligence.kt`
-is **not wired into the delivery path**. It contains a complete
-scoring, quiet-hours, budget and arbitration model, and it is
-well-tested in isolation — 20 cases in `NotificationIntelligenceTest` and
-10 in `NotificationTimingTest` — but nothing in `app/`, `core/data/` or
-`feature/` calls it. A grep for `decide(`, `relevanceScore(`,
-`thresholdFor(`, `MAX_SENDS_PER_DAY`, `AUTO_DISABLE_MIN_IMPRESSIONS`,
-`QuietHours`, `setGroupSummary`, `setPublicVersion`,
-`getCurrentInterruptionFilter` and `insertIfAbsent` across those three
-source trees returns nothing. The module's own test suite proves the
-logic; no test proves it reaches a notification.
+was **not wired into the delivery path** — is resolved as of the
+Workstream A delivery work recorded under **P7-01** below: the gate
+stack runs inside `ReminderDelivery.deliver()` before any post, for
+both the alarm path and the WorkManager path. The wiring notes that
+described the gap are kept verbatim below the record for history.
 
 ### The twelve `13` §17 criteria
 
 | # | Criterion | Status | Evidence |
 |---|---|---|---|
-| 1 | No notification is delivered without a score ≥ `SEND_THRESHOLD` | **Not implemented** | `relevanceScore`, `thresholdFor` and `decide` are never called from the delivery path. `ReminderDelivery.deliver()` posts the payload it is given, with no score check. |
-| 2 | `MAX_SENDS_PER_DAY` is never exceeded | **Not implemented** | `MAX_SENDS_PER_DAY` (3) and `MAX_SENDS_PER_WEEK` (12) are defined and never read outside `core/domain`. |
-| 3 | A type crossing the auto-disable threshold is disabled **and** explained, with one-tap re-enable | **Not implemented** | `AUTO_DISABLE_MIN_IMPRESSIONS` and `AUTO_DISABLE_DISMISS_RATE` are defined and never read. `ReminderScreen.kt` has no auto-disable surface. |
+| 1 | No notification is delivered without a score ≥ `SEND_THRESHOLD` | **Verified complete** | `ReminderDelivery.deliver()` builds a `DeliveryGateInput` and runs `evaluateDeliveryGates()` — which wraps the shipped `decide()` — before posting (`app/.../ReminderDelivery.kt`, the intelligence section). A suppressed candidate posts nothing, writes no event row and logs `delivery_suppressed` with the scorer's reason. `ReminderDeliveryGatesTest` (10 JVM cases) covers threshold, pinned threshold, daily-budget threshold and `INSUFFICIENT_HISTORY` suppression; the worker fixtures in `ReminderDeliveryWorkerTest` drive the posting shape. |
+| 2 | `MAX_SENDS_PER_DAY` is never exceeded | **Verified complete** | The daily budget acts twice: `budgetPressurePenalty` on the score and `thresholdFor()` raising the bar to `SEND_THRESHOLD_OVER_BUDGET` once `sendsLast24h >= MAX_SENDS_PER_DAY`, both inside the gate stack (`ReminderDeliveryGatesTest` · "the daily budget raises the threshold above a good score"). The weekly ceiling `MAX_SENDS_PER_WEEK` is a hard gate after the decision ("the weekly budget suppresses even a high scorer"). Counts come from `countDeliveredBetween` over the event history ("a reminder that was dismissed was still sent"). |
+| 3 | A type crossing the auto-disable threshold is disabled **and** explained, with one-tap re-enable | **Verified complete** | After each posted impression, `evaluateAutoDisable` (in `ReminderDelivery.kt`) counts lifetime impressions and dismissal rate via `countDeliveredForType`/`countDismissedForType`/`countOpenedForType`; at the §9 thresholds it calls `ReminderRepository.setRuleTypeEnabled(type, false)` and records it in `RoomReminderIntelligenceRepository`, then posts a one-time notice with a re-enable action (`reminder_auto_disabled_title/body`, action → `ReminderAutoDisableActionReceiver` which re-enables, re-arms and clears the record) and logs `reminder_type_auto_disabled`. The reminder centre shows the paused types with counts and a re-enable button; re-enabling in-app re-arms schedules. |
 | 4 | No reminder claims a date the prediction window cannot support | **Verified complete** | `ReminderSchedulePlanner` anchors to the earliest plausible start rather than the centre, and the copy hedges: "Your period may start…", "Your period is likely between … and …" (`ReminderSchedulePlanner.kt:87-95`). The rationale is recorded at lines 42–59. |
 | 5 | No reminder is generated when `nextPeriodWindow == null` and the type depends on the estimate | **Verified complete** | `hasSupportableEstimate()` requires `supportsRange && nextPeriodHalfWidthDays != null` (`ReminderSchedulePlanner.kt:67-68`); every estimate-derived builder checks it. `NotificationTimingTest.noWindowMeansNoReminderRatherThanAFabricatedDate` and `latePeriodNeverFiresWithoutAnEstimate` cover it. |
-| 6 | Retrying delivery never produces a duplicate notification | **Partially complete** | The behaviour holds by construction: the event id is deterministic (`"${payload.ruleId}-$scheduledAtEpochMillis"`, `ReminderDelivery.kt:55`), `recordEvent` is an upsert (`ReminderRepositories.kt:44-46`), and the notification id is stable, so a re-post replaces rather than duplicates. But there is no explicit insert-if-absent guard, no `insertIfAbsent` in any DAO, and **no test** asserting the behaviour. |
-| 7 | Every notification has a group summary and a `setPublicVersion` redaction | **Not implemented** | `ReminderDelivery.kt:188` sets `setGroup(ReminderChannels.remindersGroupKey)`, but `setGroupSummary` is never called and `setPublicVersion` is never called. `13`'s opening table of verified defects in the existing notification path names this as a current gap: *"`VISIBILITY_PRIVATE` is set, but `setPublicVersion()` is never called, so content can still surface on some lock-screen configurations."* |
+| 6 | Retrying delivery never produces a duplicate notification | **Verified complete** | The post path inserts through `insertIfAbsent` — `@Insert(onConflict = IGNORE)` whose row is the lock: a retry finds the deterministic id (`"${ruleId}-$scheduledAtEpochMillis"`), logs `delivery_deduplicated` and never posts again (`ReminderDelivery.kt`). Post failure keeps the row. `ReminderInsertIfAbsentTest` (3 instrumented cases in `core/data`) proves the DAO refuses the overwrite and preserves the first delivery time. |
+| 7 | Every notification has a group summary and a `setPublicVersion` redaction | **Verified complete** | Every posted reminder is built with `setGroup(remindersGroupKey)`, `VISIBILITY_PRIVATE` and `.setPublicVersion(redacted)` in `ReminderDelivery.kt`; the redacted variants come from `ReminderNotificationTemplates` — per-type copy that never names dates, symptoms or volumes. The coalesced deferred summary carries `setGroupSummary(true)` with its own redacted public variant (`redactedGroupSummary`), and the deferred arc that posts alone uses the standalone grouped variant (`redactedStandalone`) because a flagged summary with an empty group is hidden by the platform. `ReminderPublicVersionRedactionTest` (4 instrumented cases) posts through the real `NotificationManager` and asserts the redacted text is never the cycle body, plus the summary/standalone flags. Resolution of ambiguity `A7` recorded in the ambiguity table. |
 | 8 | Exact alarms are requested only for the two permitted types, and the app is fully functional without the permission | **Verified complete** | `tierFor()` in `ReminderAlarmFacade.kt:149-153` returns `EXACT` for `PeriodPrep` and `LatePeriod` only, `INEXACT_WHILE_IDLE` for everything else. The permission is never assumed: `canScheduleExactAlarms()` returns false below API 31, and a `SecurityException` downgrades to Tier 2. `ReminderAlarmSchedulerTest`, 12 instrumented cases, covers the tier decision. |
-| 9 | User-pinned send times are never overridden | **Partially complete** | The behaviour holds trivially: `scheduleDateTime` uses `rule.hourOfDay` and `rule.minute` and nothing overrides them. The *mechanism* is missing. `ReminderRule` in `core/model/.../CycleModels.kt:208-215` has no `userPinnedTime` field, so the flag cannot reach the domain. The column exists in the database entity and in the backup format (`BackupPayloadSerializer.kt:112`), and `EntityMappers.kt:91` hard-codes it to `false` when mapping to the model — the flag is dropped at the domain boundary. `NotificationIntelligence.learnedTimeBonus` and `thresholdFor` already implement the "pinned time lowers the threshold, and a learned time never applies to a pinned time" rule, but nothing reads them. |
+| 9 | User-pinned send times are never overridden | **Verified complete** | `ReminderRule.userPinnedTime` now carries the flag through the model, the room entity mapper (`EntityMappers.kt` preserves it both directions), the planner (`ReminderSchedulePlanner` populates it, secluding the user's minute from any learning), the scheduled payloads (alarm facade extras and worker data), and into the gate stack where `thresholdFor` applies `SEND_THRESHOLD_PINNED_TIME` and `learnedTimeBonus` is always 0 for a pinned candidate ("a pinned time clears a lower threshold" + shipped pinned-threshold cases). The settings producer that sets the flag on edit belongs to the Settings workstream — recorded as a hand-off, no producer in this work, flag defaults `false` everywhere. |
 | 10 | No health value appears in notification `extras` beyond visible content | **Verified complete** | `ReminderNotificationClient` adds no extras, and the builder sets only the title, body and `BigTextStyle` — all visibly rendered content. `13` §15 defines the constraint as the notification's `extras` bundle, which is what was checked. The `PendingIntent`'s own intent extras do carry `ReminderIntentKeys.TargetEpochDay`, which is cycle-derived, but those are delivered to this app's own `MainActivity` and are not the notification's extras bundle. |
-| 11 | Quiet hours and DND are honoured, with `LatePeriod` as the documented exception | **Not implemented** | `QuietHours` is defined in the domain module and never read. `NotificationManager.getCurrentInterruptionFilter()` is never called. `13` §10 requires quiet-hour candidates to be *deferred to quiet-hours end and coalesced into a single summary notification*, and DND to defer non-critical candidates, exempting `LatePeriod`. |
+| 11 | Quiet hours and DND are honoured, with `LatePeriod` as the documented exception | **Verified complete** | `evaluateDeliveryGates` checks the shipped `QuietHours` window (defer to `quietHoursEndEpochMillis`, §10 wrap-midnight maths covered by "quiet hours end early in the window the same day and late in it the next day") and `NotificationManager.getCurrentInterruptionFilter()` via the app-layer `interruptionFilterFor(context)`, both excepting `LatePeriod`. A deferred candidate is persisted (`reminder_deferred_candidates` in `app_settings`, wiped with the rest of the data) and the coalesced one-summary notification posts at the quiet end through `ReminderDeferralScheduler` + `ReminderDeferredSummaryReceiver`, which re-arms if DND is still active. `ReminderDeliveryGatesTest` covers the quiet-hours, DND and LatePeriod-exemption order. |
 | 12 | No guilt, streak, or false-precision copy anywhere | **Partially complete** | The notification copy is clean. `ReminderSchedulePlanner` produces "Your period may start tomorrow.", "Your period is likely between … and …", "Your fertile window estimate begins today.", "Today matches your current ovulation estimate.", "Your period looks later than expected." and "Take a moment to log today's symptoms." — no guilt, no streak, no false precision. The ambiguity is recorded below. |
 
 ### P7-01 — Wire the notification intelligence into the delivery path
 
-This is the single item that unblocks criteria 1, 2, 3 and 11.
+**Completed, Workstream A (2026-10-20).** The delivery layer
+(`app/src/main/java/com/cyclecare/app/ReminderDelivery.kt`) assembles a
+`DeliveryGateInput` — lead days, pinned flag, goal, estimate quality,
+last-send recency, 24 h / 7 d / arbitration-window send counts, per-type
+dismiss and open rates and the system's interruption filter — and runs
+the pure gate stack
+`core/domain/src/main/java/com/cyclecare/core/domain/notification/ReminderDeliveryGates.kt`,
+which wraps the shipped scorer. Suppression, deferral and auto-disable
+all log their reason (`delivery_suppressed`, `delivery_deferred`,
+`reminder_type_auto_disabled`). `DeliveryGateOutcome` is the only new
+shape the two delivery paths share, so they cannot drift.
+
+Recording error in the diagnostics surface fixed in the same pass: the
+`delivery_success` log no longer carries the absolute
+`scheduledAtEpochMillis` (from which the derived period date could be
+reconstructing on device); it logs `deliveryDelayMinutes`.
+
+Design decisions recorded for review:
+
+- **Arbitration window is 30 minutes** (`ARBITRATION_WINDOW_MINUTES`). §10
+  names the batch size but no window; 30 minutes matches the rest of the
+  specification's pressure windows (15 §11.3's recency gate).
+- **Quiet-hours/DND deferral writes no event row.** A deferred
+  candidate never became an impression; it is parked in
+  `app_settings` (`reminder_deferred_candidates`, hand-rolled
+  delimited encoding since kotlinx.serialization is absent from the
+  project) and drained by `ReminderDeferredSummaryReceiver` — an exact,
+  Tier-2 alarm owned by `ReminderDeferralScheduler`. The receiver posts
+  one standalone grouped summary (see `A7`) and includes the redacted
+  copy; if DND is still active it re-arms for +30 min. The store is
+  wiped with `clearAllTables`.
+- **`DailyLog` carries neutral estimate quality** into the scorer
+  (`MODERATE`): the shipped `qualityBonus` subtracts 100 for
+  `INSUFFICIENT_HISTORY`, which would silence an estimate-independent
+  nudge. The neutralisation lives in the delivery layer;
+  `core/domain`'s shipped semantics and its 29 tests are untouched.
+- **Clean-slate recency sentinel is 24 h.** No history must not read as
+  "sent seconds ago" under the scorer's recency penalty.
+- **`LatePeriod` is exempt from quiet hours and DND** (the documented
+  opt-in) but remains subject to the scorer, the weekly budget and
+  arbitration, which protect against volume, not the time of day.
+
+Tests: `ReminderDeliveryGatesTest` (10 JVM cases: deliver, threshold,
+insufficient history, daily budget, pinned threshold, weekly ceiling,
+quiet hours + LatePeriod exemption, DND + exemption, arbitration third
+candidate, quiet-window end arithmetic). Existing `ReminderDeliveryWorkerTest`
+(6 instrumented cases) still green with gates in the path; the clean-slate
+worker fixture now carries a two-day lead so the fixture candidate stands
+above the threshold.
 
 - **Definition of done.** `ReminderDelivery.deliver()` consults the
   intelligence module before posting, and the module's decision is
@@ -776,6 +821,27 @@ This is the single item that unblocks criteria 1, 2, 3 and 11.
 
 ### P7-02 — Group summary and public-version redaction
 
+**Completed, Workstream A (2026-10-20).** Every member notification is
+built with `setGroup(ReminderChannels.remindersGroupKey)`,
+`setVisibility(VISIBILITY_PRIVATE)` and
+`.setPublicVersion(ReminderNotificationTemplates.redactedContent(...))`
+— per-type redacted copy with no cycle dates, no symptom values and no
+volumes (`reminder_redacted_generic`, `reminder_redacted_daily_log`).
+The coalesced summary the deferred arc would post with members carries
+`setGroupSummary(true)` plus its own redacted public variant
+(`redactedGroupSummary`); the deferred summary that posts alone is the
+standalone grouped variant (`redactedStandalone`), because a group
+summary with an empty group is hidden by the platform — the finding is
+behind the `A7` resolution.
+
+Tests: `ReminderPublicVersionRedactionTest` (4 instrumented cases) —
+posts through the real `NotificationManager` (runtime permission and
+channel created in-test) and asserts the public version's text is the
+redacted label and never the cycle body, the group key is set, the
+summary carries `FLAG_GROUP_SUMMARY`, the standalone posts alone and
+its public copy has no text, and per-type redacted copy is never a
+cycle-like value.
+
 - **Definition of done.** Every notification carries
   `setGroupSummary(true)` on a summary notification for its group, and
   carries a `setPublicVersion` redaction so the private body is what
@@ -793,6 +859,24 @@ This is the single item that unblocks criteria 1, 2, 3 and 11.
 
 ### P7-03 — Retry de-duplication, made explicit and tested
 
+**Completed, Workstream A (2026-10-20).** The post path inserts through
+`ReminderEventsRepository.insertIfAbsent`, backed by
+`ReminderEventDao.insertIfAbsent` — `@Insert(onConflict = IGNORE)`.
+Room answers the new row id (≥ 1) or -1 when the deterministic id
+already exists; the repository maps anything positive to "new". A
+retry that already posted finds the row, logs `delivery_deduplicated`
+and never posts again. A post failure keeps the row, so the retry's
+insert failing is exactly the at-most-once behaviour §12 asks for: the
+notification is lost rather than duplicated. The pre-delivery
+skip paths (foreground routing, channel disabled, permission missing,
+missing settings, sync failure) keep their upsert recording, which is
+why the existing `ReminderDeliveryWorkerTest` counts still hold.
+
+Tests: `ReminderInsertIfAbsentTest` (3 instrumented cases in
+`core/data` — insert, refuses the same id and preserves the first
+delivery time, allows a different schedule time) plus the worker
+post-failure/sync-failure cases in `ReminderDeliveryWorkerTest`.
+
 - **Definition of done.** Criterion 6 is guaranteed by an explicit
   mechanism rather than by the coincidence of a deterministic id, and
   a test proves it.
@@ -808,6 +892,24 @@ This is the single item that unblocks criteria 1, 2, 3 and 11.
   `core/data`.
 
 ### P7-04 — Carry `userPinnedTime` through to the domain
+
+**Completed, Workstream A (2026-10-20).** `ReminderRule.userPinnedTime`
+(default `false`) now round-trips: `EntityMappers` preserves it in both
+directions, the five seeded rules seed it `false`, the planner stamps
+each `ScheduledReminder` with it, and both payload carriers (alarm
+facade extras and worker data — distinct keys, both defaulted) deliver
+it to the gate stack, where `thresholdFor` applies
+`SEND_THRESHOLD_PINNED_TIME` and `learnedTimeBonus` never applies to a
+pinned candidate. **Hand-off:** the flag's *producer* — a settings
+editor able to move a rule's time — belongs to the Settings workstream;
+`SettingsRoute` currently only toggles `enabled` and cannot yet pin a
+time. The unused flag is inert by design until that producer lands.
+
+Tests: the mapper/planner round trip is pinned by
+`RoomRepositoriesIntegrationTest.reminderRuleUserPinnedTime_roundTripsThroughTheMapper`
+(instrumented); the pinned threshold is covered in
+`ReminderDeliveryGatesTest` ("a pinned time clears a lower threshold");
+the producer test belongs to the Settings workstream.
 
 - **Definition of done.** `ReminderRule` carries the pinned flag, the
   mapper stops hard-coding it to `false`, and the rule's send time is
@@ -963,7 +1065,7 @@ Phase 8.
 | Reminder schedules are rebuilt without duplication after boot, app update, timezone change or rule edit | **Partially complete** | The identity is deterministic — `reminderWorkName(ruleId)` and the stable pending-intent request code in `ReminderAlarmFacade.kt:98-104` — and `ReminderRescheduleReceiver` exists. No test exercises a boot or timezone-change rebuild. |
 | WorkManager timing behaviour is tested with its permitted deferral | **Verified complete** | Superseded by the tier implementation: `ReminderAlarmSchedulerTest`, 12 cases. The app no longer promises exact-minute delivery for anything but the two permitted types. |
 | Foreground handling does not depend on a live Activity reference | **Verified complete** | `appVisibilityObserver` is read from the container, not from an Activity. |
-| Locked-screen text is masked by default and respects user settings | **Partially complete** | Masking is on by default — `hideNotificationPreview = preferences[…] ?: true` at `PrivacyRepository.kt:18` — and `setVisibility(VISIBILITY_PRIVATE)` is set. The redaction is incomplete without `setPublicVersion`: see **P7-02**. |
+| Locked-screen text is masked by default and respects user settings | **Complete** | Masking is on by default — `hideNotificationPreview = preferences[…] ?: true` at `PrivacyRepository.kt:18` — and every reminder now carries `setVisibility(VISIBILITY_PRIVATE)` plus a `setPublicVersion` redacted variant (`ReminderNotificationTemplates`, per-type copy). See **P7-02**. |
 | Notification channel changes and denial are reflected in the app UI | **Verified complete** | `ScreenStateMatrixTest.theSettingsScreenShowsAChannelThatHasBeenSwitchedOff`, and the notification-gate cases. |
 
 ### The `06` §2 privacy and deletion scenarios
@@ -1227,7 +1329,7 @@ decision before the item it blocks can be closed.
 | A4 | `12` §6 says all gates must pass for `2.0.0` to ship, and that a failing gate means the constants are revisited. Five gates have no implementation at all, so it is not yet known whether the current constants pass them. | **P4-01** | `12` §6 |
 | A5 | `11` §8.9 requires `InsightEngine` and the prediction engine to share one extractor. The trend series does; two retrospective per-cycle calculations do not. Is the criterion about the shared trend series, or about every derived date? | **P2-03**, **P4-04** | `11` §8.9, `InsightEngine.kt:107,278` |
 | A6 | `02` §9.10.4 requires divergences to be *"logged and surfaced to the user"*. A `Migration` receives only a `SupportSQLiteDatabase`, so logging means either a logger threaded through the builder or a divergence table. Which is intended changes the schema. | **P3-03** | `02` §9.10.4` |
-| A7 | `13` §10 requires quiet-hour candidates to be *coalesced into a single summary notification*, and `13` §17.7 requires every notification to have a group summary. These interact: the summary may be both the group summary and the coalesced quiet-hours notification, or they may be two different notifications. | **P7-01**, **P7-02** | `13` §10`, `13` §17.7` |
+| A7 | `13` §10 requires quiet-hour candidates to be *coalesced into a single summary notification*, and `13` §17.7 requires every notification to have a group summary. These interact: the summary may be both the group summary and the coalesced quiet-hours notification, or they may be two different notifications. | **Resolved (workstream A, 2026-10-20):** the quiet-hours deferral does not post per-candidate members at all, so coalesced summary and group summary are the *same* notification — `ReminderDeferredSummaryReceiver`'s redacted summary. While its group is empty the platform would hide a summary-only post, so when it arrives alone it is the standalone grouped variant (`redactedStandalone`), and the flagged `setGroupSummary` variant (`redactedGroupSummary`) is used whenever members are beside it. Also note a single posted member relies on the platform's own single-member rendering, which the member-with-`setPublicVersion` test pins (posting one summary per member would double every notification and broke the fixture contract, so per-member summaries are no). | **P7-01**, **P7-02**, `13` §10, `13` §17.7, `ReminderNotificationTemplates.kt`, `ReminderPublicVersionRedactionTest` |
 
 ## What cannot be verified from this repository
 

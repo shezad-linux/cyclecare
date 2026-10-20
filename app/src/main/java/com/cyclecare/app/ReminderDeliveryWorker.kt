@@ -42,6 +42,9 @@ class ReminderDeliveryWorker(
         const val keyDeepLinkTarget = "deep_link_target"
         const val keyTargetEpochDay = "target_epoch_day"
         const val keyScheduledAtEpochMillis = "scheduled_at_epoch_millis"
+        const val keyLeadDays = "lead_days"
+        const val keyWindowHalfWidthDays = "window_half_width_days"
+        const val keyUserPinnedTime = "user_pinned_time"
 
         /** The same payload an alarm carries, read out of worker data. */
         internal fun payloadFrom(data: Data): ReminderAlarmPayload? {
@@ -69,6 +72,9 @@ class ReminderDeliveryWorker(
                 deepLinkTarget = deepLinkTarget,
                 targetEpochDay = epochDay.takeIf { it != Long.MIN_VALUE },
                 scheduledAtEpochMillis = scheduledAt,
+                leadDays = data.getInt(keyLeadDays, 0),
+                windowHalfWidthDays = data.getInt(keyWindowHalfWidthDays, 0),
+                userPinnedTime = data.getBoolean(keyUserPinnedTime, false),
             )
         }
     }

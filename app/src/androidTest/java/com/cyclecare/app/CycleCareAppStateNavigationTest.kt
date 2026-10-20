@@ -1093,6 +1093,14 @@ private class FakeReminderRepository(
         }
     }
 
+    override suspend fun setRuleTypeEnabled(type: ReminderType, enabled: Boolean) {
+        state.update { current ->
+            current.map { rule ->
+                if (rule.type == type) rule.copy(enabled = enabled) else rule
+            }
+        }
+    }
+
     suspend fun clear() {
         state.value = emptyList()
     }
@@ -1173,6 +1181,27 @@ private class FakeReminderEventsRepository : ReminderEventsRepository {
         state.value
             .filter { it.deliveredAt.toInstant().toEpochMilli() >= sinceEpochMillis }
             .maxOfOrNull { it.deliveredAt.toInstant().toEpochMilli() }
+
+    override suspend fun insertIfAbsent(event: ReminderEvent): Boolean {
+        val exists = state.value.any { it.id == event.id }
+        if (!exists) recordEvent(event)
+        return !exists
+    }
+
+    override suspend fun countDeliveredBetween(fromEpochMillis: Long, toEpochMillis: Long): Int =
+        state.value.count {
+            val millis = it.deliveredAt.toInstant().toEpochMilli()
+            millis >= fromEpochMillis && millis < toEpochMillis
+        }
+
+    override suspend fun countDeliveredForType(type: ReminderType): Int =
+        state.value.count { it.type == type }
+
+    override suspend fun countDismissedForType(type: ReminderType): Int =
+        state.value.count { it.type == type && it.dismissedAtEpochMillis != null }
+
+    override suspend fun countOpenedForType(type: ReminderType): Int =
+        state.value.count { it.type == type && it.readAtEpochMillis != null }
 }
 
 private class FakeAppVisibilityObserver : AppVisibilityObserver {

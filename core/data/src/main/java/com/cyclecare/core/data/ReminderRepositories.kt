@@ -13,6 +13,7 @@ import com.cyclecare.core.model.ReminderChannelSettings
 import com.cyclecare.core.model.ReminderEvent
 import com.cyclecare.core.model.ReminderRule
 import com.cyclecare.core.model.ReminderSoundPreset
+import com.cyclecare.core.model.ReminderType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -26,7 +27,23 @@ class RoomReminderRepository(
     override suspend fun upsertRule(rule: ReminderRule) {
         database.reminderRuleDao().upsert(rule.toEntity())
     }
+
+    override suspend fun setRuleTypeEnabled(type: ReminderType, enabled: Boolean) {
+        val updated = database.reminderRuleDao().setTypeEnabled(type.name, enabled)
+        if (updated > 0) {
+            logger.debug(
+                tag = REMINDER_REPO_TAG,
+                event = if (enabled) "rule_type_enabled" else "rule_type_disabled",
+                attributes = mapOf(
+                    "type" to type.name,
+                    "rules" to updated.toString(),
+                ),
+            )
+        }
+    }
 }
+
+private const val REMINDER_REPO_TAG = "ReminderRepository"
 
 class RoomReminderEventsRepository(
     private val database: CycleCareDatabase,
@@ -59,6 +76,26 @@ class RoomReminderEventsRepository(
 
     override suspend fun latestDeliveryAtSince(sinceEpochMillis: Long): Long? =
         database.reminderEventDao().latestDeliveryAtSince(sinceEpochMillis)
+
+    /**
+     * Room's IGNORE insert returns the new row id when the row went in
+     * (any positive value, not just 1 — ids grow with the table) and -1
+     * when the deterministic id already existed.
+     */
+    override suspend fun insertIfAbsent(event: ReminderEvent): Boolean =
+        database.reminderEventDao().insertIfAbsent(event.toEntity()) >= 1L
+
+    override suspend fun countDeliveredBetween(fromEpochMillis: Long, toEpochMillis: Long): Int =
+        database.reminderEventDao().countDeliveredBetween(fromEpochMillis, toEpochMillis)
+
+    override suspend fun countDeliveredForType(type: ReminderType): Int =
+        database.reminderEventDao().countDeliveredForType(type.name)
+
+    override suspend fun countDismissedForType(type: ReminderType): Int =
+        database.reminderEventDao().countDismissedForType(type.name)
+
+    override suspend fun countOpenedForType(type: ReminderType): Int =
+        database.reminderEventDao().countOpenedForType(type.name)
 }
 
 class LocalReminderChannelSettingsRepository(

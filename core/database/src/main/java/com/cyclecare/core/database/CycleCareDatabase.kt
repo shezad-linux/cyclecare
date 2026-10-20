@@ -292,6 +292,17 @@ interface ReminderRuleDao {
 
     @Query("SELECT * FROM reminder_rules")
     suspend fun getAllForBackup(): List<ReminderRuleEntity>
+
+    /**
+     * Enables or disables every rule of one type at once.
+     *
+     * Spec `13` §9 silences a reminder type, not an individual rule — a
+     * user dismissing a check-in is fatigue with the interruption, and
+     * every rule of that type shares the same fate. The set of affected
+     * rows is returned so the caller can report what changed.
+     */
+    @Query("UPDATE reminder_rules SET enabled = :enabled WHERE type = :type")
+    suspend fun setTypeEnabled(type: String, enabled: Boolean): Int
 }
 
 @Dao
@@ -330,6 +341,44 @@ interface ReminderEventDao {
         """,
     )
     suspend fun latestDeliveryAtSince(sinceEpochMillis: Long): Long?
+
+    /**
+     * How many deliveries happened inside [fromEpochMillis]…[toEpochMillis].
+     *
+     * Spec `13` §7 daily and weekly budgets and §10 arbitration all count
+     * prior sends in a window. A sliding window over delivered rows is the
+     * honest measure: a reminder that was dismissed was still sent.
+     */
+    @Query(
+        """
+        SELECT COUNT(*) FROM reminder_events
+        WHERE deliveredAtEpochMillis >= :fromEpochMillis
+            AND deliveredAtEpochMillis < :toEpochMillis
+        """,
+    )
+    suspend fun countDeliveredBetween(fromEpochMillis: Long, toEpochMillis: Long): Int
+
+    /** Lifetime impressions of one reminder type. */
+    @Query("SELECT COUNT(*) FROM reminder_events WHERE type = :type")
+    suspend fun countDeliveredForType(type: String): Int
+
+    /** Lifetime dismissals of one reminder type. */
+    @Query(
+        """
+        SELECT COUNT(*) FROM reminder_events
+        WHERE type = :type AND dismissedAtEpochMillis IS NOT NULL
+        """,
+    )
+    suspend fun countDismissedForType(type: String): Int
+
+    /** Lifetime opens of one reminder type. */
+    @Query(
+        """
+        SELECT COUNT(*) FROM reminder_events
+        WHERE type = :type AND readAtEpochMillis IS NOT NULL
+        """,
+    )
+    suspend fun countOpenedForType(type: String): Int
 
     @Query(
         """
@@ -400,8 +449,14 @@ interface AppSettingDao {
     @Query("SELECT value FROM app_settings WHERE `key` = :key")
     suspend fun get(key: String): String?
 
+    @Query("SELECT value FROM app_settings WHERE `key` = :key")
+    fun observe(key: String): Flow<String?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun put(setting: AppSettingEntity)
+
+    @Query("DELETE FROM app_settings WHERE `key` = :key")
+    suspend fun delete(key: String): Int
 }
 
 @Database(

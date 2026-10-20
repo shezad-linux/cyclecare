@@ -17,6 +17,7 @@ import com.cyclecare.core.data.RoomCycleRepository
 import com.cyclecare.core.data.RoomFirstRunNudgeRepository
 import com.cyclecare.core.data.RoomProfileRepository
 import com.cyclecare.core.data.RoomReminderEventsRepository
+import com.cyclecare.core.data.RoomReminderIntelligenceRepository
 import com.cyclecare.core.data.RoomReminderRepository
 import com.cyclecare.core.data.RoomSymptomRepository
 import com.cyclecare.core.database.CycleCareDatabase
@@ -69,6 +70,7 @@ class CycleCareApplication : Application() {
         val reminderRepository = RoomReminderRepository(database, appLogger)
         val reminderChannelSettingsRepository = LocalReminderChannelSettingsRepository(applicationContext, appLogger)
         val reminderEventsRepository = RoomReminderEventsRepository(database, appLogger)
+        val reminderIntelligenceRepository = RoomReminderIntelligenceRepository(database, appLogger)
         val privacyRepository = LocalPrivacyRepository(applicationContext)
         val notificationPermissionController = AndroidNotificationPermissionController(applicationContext)
         val interstitialStatsRepository = DataStoreInterstitialStatsRepository(applicationContext)
@@ -88,6 +90,19 @@ class CycleCareApplication : Application() {
         val appResetRepository = LocalAppResetRepository(
             context = applicationContext,
             database = database,
+            // Wipes must not leave stale reminders armed. The snapshot of
+            // armed rule id happens inside the repository, before the
+            // tables go; this callback is the only place that can turn
+            // those names into a real alarm cancellation.
+            cancelArmedReminders = { ruleAlarmNames ->
+                val alarmFacade = AndroidReminderAlarmFacade(applicationContext)
+                ruleAlarmNames.forEach { name -> alarmFacade.cancel(name) }
+                ReminderDeferralScheduler.cancel(applicationContext)
+                val notificationManager = notificationManagerCompat(applicationContext)
+                notificationManager.cancel(ReminderChannels.groupedSummaryNotificationId)
+                notificationManager.cancel(ReminderChannels.deferredSummaryNotificationId)
+                notificationManager.cancel(ReminderDelivery.autoDisableNoticeNotificationId)
+            },
         )
         val reminderScheduler = ReminderAlarmScheduler(
             context = applicationContext,
@@ -110,6 +125,7 @@ class CycleCareApplication : Application() {
             reminderRepository = reminderRepository,
             reminderChannelSettingsRepository = reminderChannelSettingsRepository,
             reminderEventsRepository = reminderEventsRepository,
+            reminderIntelligenceRepository = reminderIntelligenceRepository,
             privacyRepository = privacyRepository,
             exportRepository = LocalExportRepository(
                 context = applicationContext,

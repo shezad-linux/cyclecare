@@ -103,6 +103,9 @@ class ReminderSchedulePlanner(
             body = body,
             privateBody = "Cycle reminder available. Open the app to review it.",
             deepLinkTarget = ReminderDeepLinkTarget.Home,
+            leadDays = leadDays,
+            windowHalfWidthDays = halfWidth,
+            userPinnedTime = rule.userPinnedTime,
         )
     }
 
@@ -117,6 +120,11 @@ class ReminderSchedulePlanner(
         val scheduledAt = scheduleDateTime(targetDate, rule, now)
         if (!scheduledAt.isAfter(now)) return null
 
+        // The fertile window is derived from the same estimate as the
+        // period, so its uncertainty is expressed by the period window's
+        // half width. There is no separate fertility uncertainty in the
+        // engine's output.
+        val halfWidth = predictionSnapshot.nextPeriodHalfWidthDays ?: 0
         return ScheduledReminder(
             uniqueWorkName = reminderWorkName(rule.id),
             ruleId = rule.id,
@@ -128,6 +136,9 @@ class ReminderSchedulePlanner(
             privateBody = "Cycle reminder available. Open the app to review it.",
             deepLinkTarget = ReminderDeepLinkTarget.Calendar,
             targetEpochDay = targetDate.toEpochDay(),
+            leadDays = rule.daysBefore.absoluteValue,
+            windowHalfWidthDays = halfWidth,
+            userPinnedTime = rule.userPinnedTime,
         )
     }
 
@@ -152,6 +163,11 @@ class ReminderSchedulePlanner(
             privateBody = "Cycle reminder available. Open the app to review it.",
             deepLinkTarget = ReminderDeepLinkTarget.Calendar,
             targetEpochDay = targetDate.toEpochDay(),
+            leadDays = rule.daysBefore.absoluteValue,
+            // See buildFertileWindow: the estimate's uncertainty is the
+            // period window's half width.
+            windowHalfWidthDays = predictionSnapshot.nextPeriodHalfWidthDays ?: 0,
+            userPinnedTime = rule.userPinnedTime,
         )
     }
 
@@ -171,6 +187,11 @@ class ReminderSchedulePlanner(
             body = "Take a moment to log today's symptoms.",
             privateBody = "Cycle reminder available. Open the app to review it.",
             deepLinkTarget = ReminderDeepLinkTarget.Log,
+            // Not anchored to any estimate, so the scorer gets zero width
+            // and zero lead.
+            leadDays = 0,
+            windowHalfWidthDays = 0,
+            userPinnedTime = rule.userPinnedTime,
         )
     }
 
@@ -208,6 +229,9 @@ class ReminderSchedulePlanner(
             body = "Your period looks later than expected. Open CycleCare to update your cycle if it started.",
             privateBody = "Cycle reminder available. Open the app to review it.",
             deepLinkTarget = ReminderDeepLinkTarget.Home,
+            leadDays = rule.daysBefore.absoluteValue,
+            windowHalfWidthDays = predictionSnapshot.nextPeriodHalfWidthDays ?: 0,
+            userPinnedTime = rule.userPinnedTime,
         )
     }
 

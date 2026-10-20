@@ -19,6 +19,58 @@ object ReminderChannels {
     private const val currentChannelSchemaVersion = 2
     private var previewPlayer: MediaPlayer? = null
 
+    /**
+     * The id a reposted group summary is posted under, distinct from the
+     * per-reminder ids so a summary cannot overwrite a reminder.
+     */
+    val groupedSummaryNotificationId = "cyclecare-reminder-group-ed-summary".hashCode()
+
+    /**
+     * The id the coalesced summary of deferred candidates posts under.
+     * One id for the whole batch, because that is the point.
+     */
+    val deferredSummaryNotificationId = "cyclecare-reminder-deferred-summary".hashCode()
+
+    /**
+     * The channel the coalesced summary of [types] posts on: the most
+     * urgent channel among the deferred candidates, and never a channel
+     * that has not been synced.
+     */
+    fun summaryChannelId(
+        types: List<com.cyclecare.core.model.ReminderType>,
+        settings: List<ReminderChannelSettings>,
+    ): String {
+        val channelKeys = types.distinct().map { com.cyclecare.core.domain.reminderTypeChannelKey(it) }
+        val priorityOrder = listOf(
+            ReminderChannelKey.CycleAlerts,
+            ReminderChannelKey.FertilityAlerts,
+            ReminderChannelKey.DailyCheckIn,
+        )
+        val chosenKey = priorityOrder.firstOrNull { it in channelKeys }
+            ?: return channelIdForChannelKey(ReminderChannelKey.CycleAlerts, settings)
+        return channelIdForChannelKey(chosenKey, settings)
+    }
+
+    /**
+     * The physical channel id for [channelKey] as the settings created it.
+     * Falls back to the default config when no settings exist for it, so
+     * a summary posted before a first channel sync still has a channel.
+     */
+    fun channelIdForChannelKey(
+        channelKey: ReminderChannelKey,
+        settings: List<ReminderChannelSettings>,
+    ): String {
+        val matching = settings.firstOrNull { it.channelKey == channelKey }
+            ?: ReminderChannelSettings(
+                channelKey = channelKey,
+                enabled = true,
+                soundEnabled = true,
+                soundPreset = ReminderSoundPreset.entries.first(),
+                vibrationEnabled = true,
+            )
+        return channelId(matching)
+    }
+
     fun sync(
         context: Context,
         settings: List<ReminderChannelSettings>,

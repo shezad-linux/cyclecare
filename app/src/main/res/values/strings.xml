@@ -40,6 +40,36 @@
     <string name="channel_daily_check_in_description">Daily symptom logging reminders.</string>
     <string name="reminder_notification_title">Cycle reminder</string>
 
+    <!-- Lock-screen redaction. Spec 13 §13: per-type copy, no dates, no
+         symptoms, no notes. -->
+    <string name="reminder_redacted_generic">CycleCare has an update for you.</string>
+    <string name="reminder_redacted_daily_log">Ready to check in when you are.</string>
+
+    <!-- The coalesced summary of deferred reminders. Spec 13 §10. -->
+    <string name="reminder_deferred_summary_title">Cycle reminders</string>
+    <plurals name="reminder_deferred_summary_body">
+        <item quantity="one">%1$d CycleCare reminder waiting.</item>
+        <item quantity="other">%1$d CycleCare reminders waiting.</item>
+    </plurals>
+
+    <!-- The one-time explanation after an auto-disable, with a one-tap
+         re-enable action. Spec 13 §9 and §13. Copy stays neutral: no
+         guilt, no streaks, no false precision. -->
+    <string name="reminder_auto_disabled_title">Reminders paused</string>
+    <string name="reminder_auto_disabled_body">CycleCare paused these reminders for now, based on how you interact with them. You can turn them back on any time.</string>
+    <string name="reminder_action_re_enable">Turn back on</string>
+
+    <!-- Reminder center: the in-app version of the auto-disable
+         explanation, with the same one-tap re-enable. -->
+    <string name="reminder_auto_disabled_card_title">Reminders you haven\'t been opening</string>
+    <string name="reminder_auto_disabled_card_body">CycleCare paused %1$s reminders for now. The history that led here is kept private to your device.</string>
+    <string name="reminder_auto_disabled_card_counts">%1$d dismissed, %2$d opened</string>
+    <string name="reminder_type_label_period_prep">Period reminders</string>
+    <string name="reminder_type_label_fertile_window">Fertile window reminders</string>
+    <string name="reminder_type_label_ovulation">Ovulation reminders</string>
+    <string name="reminder_type_label_daily_log">Daily check-ins</string>
+    <string name="reminder_type_label_late_period">Late period reminders</string>
+
     <!-- Notification permission recovery -->
     <string name="allow_notifications">Allow notifications</string>
     <string name="open_notification_settings">Open notification settings</string>

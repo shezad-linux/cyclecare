@@ -16,6 +16,9 @@ object ReminderDefaults {
             daysBefore = -2,
             hourOfDay = 9,
             minute = 0,
+            // Seeded from an assumption, never from a user choice, so none
+            // of these are pinned.
+            userPinnedTime = false,
         ),
         ReminderRule(
             id = ReminderType.FertileWindowStart.name,
@@ -24,6 +27,7 @@ object ReminderDefaults {
             daysBefore = 0,
             hourOfDay = 9,
             minute = 0,
+            userPinnedTime = false,
         ),
         ReminderRule(
             id = ReminderType.OvulationEstimate.name,
@@ -32,6 +36,7 @@ object ReminderDefaults {
             daysBefore = 0,
             hourOfDay = 9,
             minute = 0,
+            userPinnedTime = false,
         ),
         ReminderRule(
             id = ReminderType.DailyLog.name,
@@ -40,6 +45,7 @@ object ReminderDefaults {
             daysBefore = 0,
             hourOfDay = 20,
             minute = 0,
+            userPinnedTime = false,
         ),
         ReminderRule(
             id = ReminderType.LatePeriod.name,
@@ -48,6 +54,7 @@ object ReminderDefaults {
             daysBefore = 3,
             hourOfDay = 9,
             minute = 0,
+            userPinnedTime = false,
         ),
     )
 }

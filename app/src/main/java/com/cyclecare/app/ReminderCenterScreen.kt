@@ -38,6 +38,8 @@ import com.cyclecare.core.designsystem.MetricCard
 import com.cyclecare.core.designsystem.metricCardAccents
 import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.domain.ReminderEventsRepository
+import com.cyclecare.core.domain.ReminderIntelligenceRepository
+import com.cyclecare.core.model.ReminderAutoDisabled
 import com.cyclecare.core.model.ReminderDeepLinkTarget
 import com.cyclecare.core.model.ReminderEvent
 import java.time.LocalDate
@@ -52,6 +54,8 @@ import kotlinx.coroutines.launch
 data class ReminderCenterUiState(
     val unreadCount: Int = 0,
     val groups: List<ReminderEventGroup> = emptyList(),
+    /** Types the app paused on its own, with the counts that explain it. */
+    val autoDisabled: List<ReminderAutoDisabled> = emptyList(),
 )
 
 data class ReminderEventGroup(
@@ -65,11 +69,15 @@ private val reminderTimeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale
 
 class ReminderCenterViewModel(
     private val reminderEventsRepository: ReminderEventsRepository,
+    private val reminderIntelligenceRepository: ReminderIntelligenceRepository,
+    private val reminderRepository: com.cyclecare.core.domain.ReminderRepository,
+    private val reminderScheduler: com.cyclecare.core.domain.ReminderScheduler,
 ) : ViewModel() {
     val uiState: StateFlow<ReminderCenterUiState> = combine(
         reminderEventsRepository.observeRecent(limit = 50),
         reminderEventsRepository.observeUnreadCount(),
-    ) { events, unreadCount ->
+        reminderIntelligenceRepository.observeAutoDisabled(),
+    ) { events, unreadCount, autoDisabled ->
         ReminderCenterUiState(
             unreadCount = unreadCount,
             groups = events.groupBy { it.deliveredAt.toLocalDate() }
@@ -80,6 +88,7 @@ class ReminderCenterViewModel(
                         items = items,
                     )
                 },
+            autoDisabled = autoDisabled,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReminderCenterUiState())
 
@@ -94,14 +103,33 @@ class ReminderCenterViewModel(
     fun dismiss(id: String) {
         viewModelScope.launch { reminderEventsRepository.dismiss(id) }
     }
+
+    fun reEnable(type: com.cyclecare.core.model.ReminderType) {
+        viewModelScope.launch {
+            // The rules were switched off when the type was paused, so
+            // re-enabling has to switch them back on, clear the pause
+            // record, and re-arm what was cancelled.
+            reminderRepository.setRuleTypeEnabled(type, enabled = true)
+            reminderIntelligenceRepository.reEnable(type)
+            reminderScheduler.refreshSchedules()
+        }
+    }
 }
 
 class ReminderCenterViewModelFactory(
     private val reminderEventsRepository: ReminderEventsRepository,
+    private val reminderIntelligenceRepository: ReminderIntelligenceRepository,
+    private val reminderRepository: com.cyclecare.core.domain.ReminderRepository,
+    private val reminderScheduler: com.cyclecare.core.domain.ReminderScheduler,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        ReminderCenterViewModel(reminderEventsRepository) as T
+        ReminderCenterViewModel(
+            reminderEventsRepository = reminderEventsRepository,
+            reminderIntelligenceRepository = reminderIntelligenceRepository,
+            reminderRepository = reminderRepository,
+            reminderScheduler = reminderScheduler,
+        ) as T
 }
 
 @Composable
@@ -119,6 +147,7 @@ fun ReminderCenterRoute(
             onOpenEvent(it)
         },
         onDismiss = viewModel::dismiss,
+        onReEnable = viewModel::reEnable,
     )
 }
 
@@ -128,6 +157,7 @@ private fun ReminderCenterScreen(
     onMarkAllRead: () -> Unit,
     onOpenEvent: (ReminderEvent) -> Unit,
     onDismiss: (String) -> Unit,
+    onReEnable: (com.cyclecare.core.model.ReminderType) -> Unit,
 ) {
     val totalEvents = uiState.groups.sumOf { it.items.size }
     LazyColumn(
@@ -183,6 +213,49 @@ private fun ReminderCenterScreen(
             }
         }
 
+        if (uiState.autoDisabled.isNotEmpty()) {
+            item {
+                DashboardSectionCard(
+                    title = stringResource(R.string.reminder_auto_disabled_card_title),
+                    eyebrow = stringResource(R.string.reminder_auto_disabled_title),
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
+                    ) {
+                        uiState.autoDisabled.forEach { paused ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            ) {
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4),
+                                ) {
+                                    Text(
+                                        text = reminderTypeDisplayName(paused.type),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                    Text(
+                                        text = stringResource(
+                                            R.string.reminder_auto_disabled_card_counts,
+                                            paused.dismissedCount,
+                                            paused.openedCount,
+                                        ),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                OutlinedButton(onClick = { onReEnable(paused.type) }) {
+                                    Text(stringResource(R.string.reminder_action_re_enable))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         if (uiState.groups.isEmpty()) {
             item {
                 DashboardSectionCard(
@@ -285,3 +358,23 @@ private fun ReminderEventCard(
         }
     }
 }
+
+@Composable
+private fun reminderTypeDisplayName(type: com.cyclecare.core.model.ReminderType): String =
+    when (type) {
+        com.cyclecare.core.model.ReminderType.PeriodPrep ->
+            stringResource(R.string.reminder_type_label_period_prep)
+        com.cyclecare.core.model.ReminderType.FertileWindowStart ->
+            stringResource(R.string.reminder_type_label_fertile_window)
+        com.cyclecare.core.model.ReminderType.OvulationEstimate ->
+            stringResource(R.string.reminder_type_label_ovulation)
+        com.cyclecare.core.model.ReminderType.DailyLog ->
+            stringResource(R.string.reminder_type_label_daily_log)
+        com.cyclecare.core.model.ReminderType.LatePeriod ->
+            stringResource(R.string.reminder_type_label_late_period)
+        // Never generated; the label keeps the compiler exhaustive.
+        com.cyclecare.core.model.ReminderType.Hydration ->
+            stringResource(R.string.reminder_type_label_daily_log)
+        com.cyclecare.core.model.ReminderType.Pill ->
+            stringResource(R.string.reminder_type_label_daily_log)
+    }
