@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Alignment
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.cyclecare.core.designsystem.token.CycleCareShapes
 import androidx.compose.material3.Button
@@ -34,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
+import com.cyclecare.core.designsystem.LocalIsDarkTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.geometry.Offset
@@ -78,7 +78,7 @@ fun MetricPill(
     modifier: Modifier = Modifier,
     tone: MetricPillTone = MetricPillTone.Neutral,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalIsDarkTheme.current
     val containerColor = when (tone) {
         MetricPillTone.Neutral -> MaterialTheme.colorScheme.surface.copy(alpha = if (isDark) 0.90f else 0.82f)
         MetricPillTone.Highlight -> if (isDark) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)

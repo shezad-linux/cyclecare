@@ -5,6 +5,7 @@
 
 package com.cyclecare.feature.home
 
+import com.cyclecare.core.designsystem.LocalIsDarkTheme
 import com.cyclecare.core.designsystem.token.CycleCareSpace
 import com.cyclecare.core.designsystem.metricCardAccents
 import com.cyclecare.core.designsystem.text.uiText
@@ -32,7 +33,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -270,7 +270,7 @@ internal fun CycleStatusHeroCard(
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val useStackedLayout = maxWidth < 360.dp || LocalDensity.current.fontScale > 1.15f
         val heroMode = if (uiState.hasCurrentCycle) PeriodHeroMode.Active else PeriodHeroMode.Predicted
-        val isDark = isSystemInDarkTheme()
+        val isDark = LocalIsDarkTheme.current
         val heroGradientColors = if (uiState.hasCurrentCycle) {
             PeriodActiveGradientColors()
         } else {
@@ -350,7 +350,7 @@ internal fun CycleStatusHeroText(
     uiState: HomeUiState,
     progress: Float,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalIsDarkTheme.current
     val heroTextColor = if (isDark) MaterialTheme.colorScheme.onSurface else Color.White
     val progressStateDescriptionText = progressStateDescription(uiState.cycleDay, uiState.cycleLength).resolve()
     Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {

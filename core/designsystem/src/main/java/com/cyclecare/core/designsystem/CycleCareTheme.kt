@@ -120,6 +120,21 @@ data class CycleCareSpacing(
 
 val LocalCycleCareSpacing = staticCompositionLocalOf { CycleCareSpacing() }
 
+/**
+ * Whether the theme currently in use is the dark one.
+ *
+ * The design system used to read `isSystemInDarkTheme()` directly, which
+ * is the system setting rather than the theme the app is actually
+ * rendering. When the two disagree, a component picks a light gradient and
+ * then a dark scheme's text colour, and ends up painting dark text on a
+ * dark surface. The app-lock header did exactly that, and the text was
+ * unreadable.
+ *
+ * Reading the flag the theme was built with keeps the surfaces and the text
+ * on them in the same scheme.
+ */
+val LocalIsDarkTheme = staticCompositionLocalOf { false }
+
 @Composable
 fun CycleCareTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -127,7 +142,10 @@ fun CycleCareTheme(
 ) {
     val extended = if (darkTheme) DarkExtendedColors else LightExtendedColors
 
-    CompositionLocalProvider(LocalExtendedColors provides extended) {
+    CompositionLocalProvider(
+        LocalExtendedColors provides extended,
+        LocalIsDarkTheme provides darkTheme,
+    ) {
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
         typography = CycleCareTypography.all,
@@ -142,7 +160,7 @@ fun CycleCareTheme(
 
 @Composable
 fun PeriodActiveGradientColors(): List<Color> {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = LocalIsDarkTheme.current
     return if (darkTheme) {
         listOf(
             CycleCareColor.DarkPeriodActiveStart,
@@ -160,7 +178,7 @@ fun PeriodActiveGradientColors(): List<Color> {
 
 @Composable
 fun PeriodActiveContainerColor(): Color =
-    if (isSystemInDarkTheme()) CycleCareColor.DarkPeriodActiveContainer else CycleCareColor.LightPeriodActiveContainer
+    if (LocalIsDarkTheme.current) CycleCareColor.DarkPeriodActiveContainer else CycleCareColor.LightPeriodActiveContainer
 
 /**
  * Fill colour for chart bars.
@@ -171,16 +189,16 @@ fun PeriodActiveContainerColor(): Color =
  */
 @Composable
 fun ChartFillColor(): Color =
-    if (isSystemInDarkTheme()) CycleCareColor.DarkChartFill else CycleCareColor.LightChartFill
+    if (LocalIsDarkTheme.current) CycleCareColor.DarkChartFill else CycleCareColor.LightChartFill
 
 @Composable
 fun PeriodActiveAccentColor(): Color =
-    if (isSystemInDarkTheme()) CycleCareColor.DarkPeriodActiveAccent else CycleCareColor.LightPeriodActiveAccent
+    if (LocalIsDarkTheme.current) CycleCareColor.DarkPeriodActiveAccent else CycleCareColor.LightPeriodActiveAccent
 
 val HeaderOnGradientColor: Color
     @Composable
     @ReadOnlyComposable
-    get() = if (isSystemInDarkTheme()) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary
+    get() = if (LocalIsDarkTheme.current) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary
 
 @Composable
 fun GradientHeaderCard(
@@ -203,7 +221,7 @@ fun GradientHeaderCard(
             val useStackedTrailing = stackTrailingOnCompact &&
                 trailing != null &&
                 (maxWidth < 340.dp || LocalDensity.current.fontScale > 1.15f)
-            val isDark = isSystemInDarkTheme()
+            val isDark = LocalIsDarkTheme.current
             // A large surface uses the softened hero gradient rather than
             // the saturated primary, so the card does not dominate the
             // screen. The saturated teal stays on actions, selection and

@@ -1275,7 +1275,40 @@ private class FakeAppResetRepository(
  * consumes, which keeps the screenshots and the assertions on one source of
  * truth without leaking the test doubles.
  */
+/**
+ * The app in the states the review harness needs.
+ *
+ * Each returns only the public types the harness consumes, because the
+ * fakes behind them are private to this file.
+ */
+
+/** A populated profile, for the ordinary screens. */
 internal fun populatedScreenshotEnvironment(): Pair<AppContainer, SecureAuthController> {
     val environment = TestAppEnvironment.populated()
+    return environment.container to environment.secureAuthController
+}
+
+/** No profile at all, which is what the onboarding flow starts from. */
+internal fun emptyScreenshotEnvironment(): Pair<AppContainer, SecureAuthController> {
+    val environment = TestAppEnvironment.empty()
+    return environment.container to environment.secureAuthController
+}
+
+/** A PIN is set and the app lock is on, which shows the lock gate. */
+internal suspend fun appLockScreenshotEnvironment(): Pair<AppContainer, SecureAuthController> {
+    val environment = TestAppEnvironment.populated()
+    environment.privacyRepository.seedPin(pin = "1234", appLockEnabled = true)
+    return environment.container to environment.secureAuthController
+}
+
+/** Reminders are on and notifications are blocked, which shows the gate. */
+internal suspend fun notificationGateScreenshotEnvironment(): Pair<AppContainer, SecureAuthController> {
+    val environment = TestAppEnvironment.populated()
+    environment.profileRepository.updateRemindersEnabled(true)
+    environment.notificationPermissionController.currentStatus =
+        environment.notificationPermissionController.currentStatus.copy(
+            runtimePermissionGranted = false,
+            notificationsEnabled = false,
+        )
     return environment.container to environment.secureAuthController
 }

@@ -5,6 +5,7 @@
 
 package com.cyclecare.feature.home
 
+import com.cyclecare.core.designsystem.LocalIsDarkTheme
 import com.cyclecare.core.designsystem.token.CycleCareShapes
 import com.cyclecare.core.designsystem.token.CycleCareSpace
 import com.cyclecare.core.designsystem.text.UiText
@@ -53,7 +54,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.graphics.Color
@@ -236,7 +236,7 @@ internal fun HomeScreen(
                             )
                         }
                     }
-                    val isDark = isSystemInDarkTheme()
+                    val isDark = LocalIsDarkTheme.current
                     val headerTextColor = if (isDark) MaterialTheme.colorScheme.onSurface else Color.White
                     Text(
                         text = uiState.cycleSourceSummary.resolve(),
@@ -274,7 +274,7 @@ internal fun HomeScreen(
                     }
                 },
                 trailing = {
-                    val isDark = isSystemInDarkTheme()
+                    val isDark = LocalIsDarkTheme.current
                     OutlinedButton(
                         onClick = onOpenEditCycle,
                         modifier = Modifier

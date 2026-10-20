@@ -269,6 +269,7 @@ internal fun SettingsScreen(
                 body = stringResource(R.string.set_or_update_your_pin_before_sensitive_screens_open),
                 actionLabel = stringResource(R.string.open_privacy_lock),
                 onAction = onOpenPrivacy,
+                actionModifier = Modifier.testTag(SettingsTags.OPEN_PRIVACY),
             )
         }
 

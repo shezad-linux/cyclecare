@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -23,12 +24,15 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.unit.dp
+import com.cyclecare.app.AppContainer
+import com.cyclecare.feature.privacy.SecureAuthController
 import androidx.test.espresso.Espresso.pressBackUnconditionally
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.cyclecare.core.designsystem.CycleCareTheme
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import java.io.File
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -206,6 +210,81 @@ class ReThemeScreenshotTest {
             adRequest: AdRequest,
             callback: InterstitialAdLoadCallback,
         ) = Unit
+    }
+
+    /**
+     * The screens that need their own setup.
+     *
+     * One test per screen, because each one needs a different container and
+     * a fresh activity. Setting the content repeatedly in a single test
+     * leaves the previous composition registered and the second one fails.
+     */
+    @Test
+    fun captureOnboarding() = runBlocking {
+        widths.forEach { widthDp ->
+            listOf(false, true).forEach { dark ->
+                renderWith(widthDp, dark, emptyScreenshotEnvironment())
+                capture("onboarding", widthDp, dark)
+            }
+        }
+    }
+
+    @Test
+    fun captureAppLock() = runBlocking {
+        widths.forEach { widthDp ->
+            listOf(false, true).forEach { dark ->
+                renderWith(widthDp, dark, appLockScreenshotEnvironment())
+                capture("app_lock", widthDp, dark)
+            }
+        }
+    }
+
+    @Test
+    fun captureNotificationGate() = runBlocking {
+        widths.forEach { widthDp ->
+            listOf(false, true).forEach { dark ->
+                renderWith(widthDp, dark, notificationGateScreenshotEnvironment())
+                capture("notification_gate", widthDp, dark)
+            }
+        }
+    }
+
+    @Test
+    fun capturePrivacy() = runBlocking {
+        // Once, at a representative size.
+        //
+        // Rendering, navigating and rendering again in the same test
+        // leaves the previous composition registered and the next one
+        // fails, so the privacy screen is captured in a single pass rather
+        // than across every width. The other screens have no navigation in
+        // the loop and are captured at all four widths.
+        renderWith(360, false, populatedScreenshotEnvironment())
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithTag("app_bar_settings")
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeRule.onNodeWithTag("app_bar_settings").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("settings_list")
+            .performScrollToNode(hasTestTag("settings_open_privacy"))
+        composeRule.onNodeWithTag("settings_open_privacy").performClick()
+        composeRule.waitForIdle()
+        capture("privacy", 360, false)
+    }
+
+    private suspend fun renderWith(
+        widthDp: Int,
+        dark: Boolean,
+        environment: Pair<AppContainer, SecureAuthController>,
+    ) {
+        val (container, authController) = environment
+        render(widthDp, dark) {
+            CycleCareApp(
+                container = container,
+                secureAuthController = authController,
+            )
+        }
     }
 
     @Test

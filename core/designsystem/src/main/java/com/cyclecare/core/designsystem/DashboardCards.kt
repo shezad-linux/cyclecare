@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.LocalContentColor
 import com.cyclecare.core.designsystem.token.CycleCareShapes
 import com.cyclecare.core.designsystem.token.CycleCareSpace
@@ -17,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.cyclecare.core.designsystem.LocalIsDarkTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -89,7 +89,7 @@ fun DashboardPill(
     modifier: Modifier = Modifier,
     emphasized: Boolean = false,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = LocalIsDarkTheme.current
     val isHeaderContext = LocalContentColor.current != MaterialTheme.colorScheme.onSurface
     val containerColor = when {
         isHeaderContext -> if (isDark) {

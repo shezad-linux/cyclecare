@@ -44,7 +44,7 @@ the information needed to complete them is prepared below.
 | Store listing | No listing, no screenshots, no localised copy. The design review images produced for the re-theme cover Today, Calendar, Log and Insights at four widths in both schemes, and can seed the listing once the remaining screens have been reviewed. |
 | Device matrix | Fresh install, upgrade from v2, migration path, permission denial, backup and restore, process death, foldable, RTL and 320dp have not been exercised as a matrix. The 320dp and 1.5x font scale cases are covered by the screenshot harness and the navigation label test. |
 | Doze demonstration | Recorded in `19-doze-verification.md`. The current mechanism is demonstrably deferred by Doze; the Tier 2 mechanism that would fix it is not implemented, and a real device is still required. |
-| Visual sign-off | The re-theme is approved as a direction but not for release. The screens listed in the review have not all been reviewed. |
+| Visual sign-off | The re-theme is approved as a direction but not for release. 13 screens have been captured and inspected at four widths in both schemes: Today, Calendar, Log, Insights, cycle status, fertility detail, the edit sheet, the reminder centre, Settings, onboarding, the app lock, the notification gate and privacy. Still not reviewed: the empty, error, loading and unavailable states of each screen, and the 320dp privacy capture. |
 
 ## Explicitly deferred
 
