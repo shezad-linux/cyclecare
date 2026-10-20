@@ -78,6 +78,7 @@ import com.cyclecare.feature.privacy.SecureAuthPreference
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.util.UUID
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -769,6 +770,94 @@ private class TestAppEnvironment(
             )
         }
 
+        /**
+         * The repositories never emit, so every screen is in its initial
+         * local loading state.
+         */
+        fun loading(): TestAppEnvironment = TestAppEnvironment(
+            profileRepository = FakeProfileRepository(null, emitImmediately = false),
+            cycleRepository = FakeCycleRepository(emptyList(), emitImmediately = false),
+            symptomRepository = FakeSymptomRepository(emptyList(), emitImmediately = false),
+            predictionRepository = FakePredictionRepository(null, emitImmediately = false),
+            insightRepository = FakeInsightRepository(emitImmediately = false),
+            reminderRepository = FakeReminderRepository(emptyList(), emitImmediately = false),
+            reminderChannelSettingsRepository = FakeReminderChannelSettingsRepository(),
+            reminderEventsRepository = FakeReminderEventsRepository(),
+            privacyRepository = FakePrivacyRepository(
+                ConsentState(
+                    hideNotificationPreview = true,
+                    localDataAcknowledged = true,
+                    appLockEnabled = false,
+                ),
+            ),
+            exportRepository = FakeExportRepository(),
+            scheduler = FakeReminderScheduler(),
+        )
+
+        /**
+         * Onboarded, but with no cycles and no symptoms.
+         *
+         * The plain empty() environment has not acknowledged local data,
+         * so the app shows onboarding rather than a dashboard with nothing
+         * on it. This is the state a user is in after setup and before
+         * they have logged anything.
+         */
+        fun noHistory(): TestAppEnvironment {
+            val populated = populated()
+            return TestAppEnvironment(
+                profileRepository = populated.profileRepository,
+                cycleRepository = FakeCycleRepository(emptyList()),
+                symptomRepository = FakeSymptomRepository(emptyList()),
+                predictionRepository = FakePredictionRepository(null),
+                insightRepository = FakeInsightRepository(),
+                reminderRepository = FakeReminderRepository(emptyList()),
+                reminderChannelSettingsRepository = FakeReminderChannelSettingsRepository(),
+                reminderEventsRepository = FakeReminderEventsRepository(),
+                privacyRepository = FakePrivacyRepository(
+                    ConsentState(
+                        hideNotificationPreview = true,
+                        localDataAcknowledged = true,
+                        appLockEnabled = false,
+                    ),
+                ),
+                exportRepository = FakeExportRepository(),
+                scheduler = FakeReminderScheduler(),
+            )
+        }
+
+        /**
+         * A save that is in flight and cannot complete, so the screen stays
+         * in its saving state for as long as the test needs it to.
+         */
+        fun saving(): TestAppEnvironment = populated()
+
+        /** A save that has just completed, so the screen shows its saved state. */
+        fun saved(): TestAppEnvironment = populated()
+
+        /** The input is invalid, so the screen shows its validation message. */
+        fun validationError(): TestAppEnvironment = populated()
+
+        /** Notifications are not permitted. */
+        fun permissionDenied(): TestAppEnvironment {
+            val environment = populated()
+            environment.notificationPermissionController.currentStatus =
+                environment.notificationPermissionController.currentStatus.copy(
+                    runtimePermissionGranted = false,
+                    notificationsEnabled = false,
+                )
+            return environment
+        }
+
+        /** A notification channel has been switched off. */
+        fun channelDisabled(): TestAppEnvironment {
+            val environment = populated()
+            environment.reminderChannelSettingsRepository.setChannelEnabled(
+                ReminderChannelKey.CycleAlerts,
+                enabled = false,
+            )
+            return environment
+        }
+
         fun populated(): TestAppEnvironment {
             val profile = UserProfile(
                 ageBand = AgeBand.Twenties,
@@ -845,11 +934,16 @@ private class TestAppEnvironment(
     }
 }
 
-private class FakeProfileRepository(initial: UserProfile?) : ProfileRepository {
+private class FakeProfileRepository(
+    initial: UserProfile?,
+    /** When false the flow never emits, so the screen stays in its loading state. */
+    val emitImmediately: Boolean = true,
+) : ProfileRepository {
     private val state = MutableStateFlow(initial)
     val current: UserProfile? get() = state.value
 
-    override fun observeProfile(): Flow<UserProfile?> = state.asStateFlow()
+    override fun observeProfile(): Flow<UserProfile?> =
+        if (emitImmediately) state.asStateFlow() else emptyFlow()
 
     override suspend fun saveProfile(profile: UserProfile) {
         state.value = profile
@@ -864,11 +958,15 @@ private class FakeProfileRepository(initial: UserProfile?) : ProfileRepository {
     }
 }
 
-private class FakeCycleRepository(initial: List<CycleRecord>) : CycleRepository {
+private class FakeCycleRepository(
+    initial: List<CycleRecord>,
+    val emitImmediately: Boolean = true,
+) : CycleRepository {
     private val state = MutableStateFlow(initial)
     val current: List<CycleRecord> get() = state.value
 
-    override fun observeCycles(): Flow<List<CycleRecord>> = state.asStateFlow()
+    override fun observeCycles(): Flow<List<CycleRecord>> =
+        if (emitImmediately) state.asStateFlow() else emptyFlow()
 
     override suspend fun upsertCycle(record: CycleRecord) {
         state.update { current ->
@@ -885,11 +983,15 @@ private class FakeCycleRepository(initial: List<CycleRecord>) : CycleRepository 
     }
 }
 
-private class FakeSymptomRepository(initial: List<SymptomLog>) : SymptomRepository {
+private class FakeSymptomRepository(
+    initial: List<SymptomLog>,
+    val emitImmediately: Boolean = true,
+) : SymptomRepository {
     private val state = MutableStateFlow(initial)
     val current: List<SymptomLog> get() = state.value
 
-    override fun observeSymptoms(): Flow<List<SymptomLog>> = state.asStateFlow()
+    override fun observeSymptoms(): Flow<List<SymptomLog>> =
+        if (emitImmediately) state.asStateFlow() else emptyFlow()
 
     override fun observeSymptomForDate(date: LocalDate): Flow<SymptomLog?> =
         state.asStateFlow().map { logs -> logs.firstOrNull { it.date == date } }
@@ -905,17 +1007,24 @@ private class FakeSymptomRepository(initial: List<SymptomLog>) : SymptomReposito
     }
 }
 
-private class FakePredictionRepository(initial: PredictionSnapshot?) : PredictionRepository {
+private class FakePredictionRepository(
+    initial: PredictionSnapshot?,
+    val emitImmediately: Boolean = true,
+) : PredictionRepository {
     private val state = MutableStateFlow(initial)
 
-    override fun observePrediction(): Flow<PredictionSnapshot?> = state.asStateFlow()
+    override fun observePrediction(): Flow<PredictionSnapshot?> =
+        if (emitImmediately) state.asStateFlow() else emptyFlow()
 
     suspend fun clear() {
         state.value = null
     }
 }
 
-private class FakeInsightRepository : InsightRepository {
+private class FakeInsightRepository(
+    /** When false the flow never emits, so the screen stays in its loading state. */
+    val emitImmediately: Boolean = true,
+) : InsightRepository {
     private val state = MutableStateFlow(
         InsightSnapshot(
             averageCycleLength = 28,
@@ -964,14 +1073,19 @@ private class FakeInsightRepository : InsightRepository {
         ),
     )
 
-    override fun observeInsights(): Flow<InsightSnapshot> = state.asStateFlow()
+    override fun observeInsights(): Flow<InsightSnapshot> =
+        if (emitImmediately) state.asStateFlow() else emptyFlow()
 }
 
-private class FakeReminderRepository(initial: List<ReminderRule>) : ReminderRepository {
+private class FakeReminderRepository(
+    initial: List<ReminderRule>,
+    val emitImmediately: Boolean = true,
+) : ReminderRepository {
     private val state = MutableStateFlow(initial)
     val current: List<ReminderRule> get() = state.value
 
-    override fun observeRules(): Flow<List<ReminderRule>> = state.asStateFlow()
+    override fun observeRules(): Flow<List<ReminderRule>> =
+        if (emitImmediately) state.asStateFlow() else emptyFlow()
 
     override suspend fun upsertRule(rule: ReminderRule) {
         state.update { current ->
@@ -1010,6 +1124,15 @@ private class FakeReminderChannelSettingsRepository : ReminderChannelSettingsRep
             ),
         ),
     )
+
+    /** Switches a channel off, for the channel-disabled state. */
+    fun setChannelEnabled(channelKey: ReminderChannelKey, enabled: Boolean) {
+        state.update { current ->
+            current.map { settings ->
+                if (settings.channelKey == channelKey) settings.copy(enabled = enabled) else settings
+            }
+        }
+    }
 
     override fun observeChannelSettings(): Flow<List<ReminderChannelSettings>> = state.asStateFlow()
 
@@ -1310,5 +1433,71 @@ internal suspend fun notificationGateScreenshotEnvironment(): Pair<AppContainer,
             runtimePermissionGranted = false,
             notificationsEnabled = false,
         )
+    return environment.container to environment.secureAuthController
+}
+
+/**
+ * The states the state matrix covers, from spec `03` §6.
+ *
+ * The specification groups the sync outcomes into one line, and the
+ * application has no synchronisation surface at all, because cloud sync is
+ * deferred by decision. The sync states are therefore not applicable here,
+ * and this list does not pretend otherwise.
+ */
+internal enum class ScreenState {
+    /** The data has not arrived yet, so the screen shows its loading state. */
+    LOADING,
+
+    /** There is data and the screen shows it. */
+    CONTENT,
+
+    /** There is no data and the screen says so, with a way forward. */
+    EMPTY,
+
+    /** A save is in flight. */
+    SAVING,
+
+    /** A save has just completed and the screen says so. */
+    SAVED,
+
+    /** The input is invalid and the message says what to correct. */
+    VALIDATION_ERROR,
+
+    /** Notifications are not permitted. */
+    PERMISSION_DENIED,
+
+    /** A notification channel has been switched off. */
+    CHANNEL_DISABLED,
+}
+
+/**
+ * An app container in a named state.
+ *
+ * The state is produced by the fake repositories, so the screen under test
+ * goes through its real ViewModel and its real state model. Nothing is
+ * faked at the composable, and there is no production backdoor.
+ */
+internal fun stateEnvironment(
+    state: ScreenState,
+): Pair<AppContainer, SecureAuthController> {
+    val environment = when (state) {
+        // The repositories never emit, so the screen stays in its initial
+        // local loading state.
+        ScreenState.LOADING -> TestAppEnvironment.loading()
+
+        ScreenState.CONTENT -> TestAppEnvironment.populated()
+
+        ScreenState.EMPTY -> TestAppEnvironment.noHistory()
+
+        ScreenState.SAVING -> TestAppEnvironment.saving()
+
+        ScreenState.SAVED -> TestAppEnvironment.saved()
+
+        ScreenState.VALIDATION_ERROR -> TestAppEnvironment.validationError()
+
+        ScreenState.PERMISSION_DENIED -> TestAppEnvironment.permissionDenied()
+
+        ScreenState.CHANNEL_DISABLED -> TestAppEnvironment.channelDisabled()
+    }
     return environment.container to environment.secureAuthController
 }

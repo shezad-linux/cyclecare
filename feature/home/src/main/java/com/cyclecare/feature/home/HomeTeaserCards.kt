@@ -118,11 +118,11 @@ internal fun FertilityTeaserCard(
         modifier = Modifier.testTag(HomeTags.FERTILE_CARD),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            // At a large font scale the label and the estimate sat side by
+            // side, and the label wrapped onto three lines and overlapped
+            // the estimate. They stack instead.
+            val largeFontScale = LocalDensity.current.fontScale > 1.2f
+            val estimate = @Composable {
                 Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4)) {
                     Text(
                         stringResource(R.string.ovulation_estimate),
@@ -134,8 +134,23 @@ internal fun FertilityTeaserCard(
                         style = MaterialTheme.typography.titleMedium,
                     )
                 }
+            }
+            val confidence = @Composable {
                 if (confidenceLabel.isNotBlank()) {
                     DashboardPill(text = confidenceLabel)
+                }
+            }
+            if (largeFontScale) {
+                estimate()
+                confidence()
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    estimate()
+                    confidence()
                 }
             }
             FilledTonalButton(

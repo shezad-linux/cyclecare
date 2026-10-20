@@ -50,10 +50,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
 import com.cyclecare.core.designsystem.token.extendedColors
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
@@ -200,14 +202,24 @@ internal fun CalendarScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(daySpacing),
                     ) {
+                        // The short weekday name does not fit a column of
+                        // a seventh of a narrow screen at a large font
+                        // scale, and it broke mid-word into "Su n" and
+                        // "M on". The narrow form is a single letter,
+                        // which is what a seven column grid wants and
+                        // which cannot break.
+                        val weekdayStyle =
+                            if (LocalDensity.current.fontScale > 1.2f) TextStyle.NARROW else TextStyle.SHORT
                         orderedWeekdays(firstDayOfWeek).forEach { dayOfWeek ->
                             Text(
-                                dayOfWeek.getDisplayName(TextStyle.SHORT, locale),
+                                dayOfWeek.getDisplayName(weekdayStyle, locale),
                                 modifier = Modifier.weight(1f),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                     }

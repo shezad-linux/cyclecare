@@ -168,6 +168,9 @@ internal fun HomeScreen(
     ).resolve()
     val heroTitle = homeHeroTitle(uiState).resolve()
     val heroSubtitle = homeHeroSubtitle(uiState).resolve()
+    // At a large font scale the controls and the text need to stack rather
+    // than sit side by side.
+    val largeFontScale = LocalDensity.current.fontScale > 1.2f
     val heroGradientColors = if (uiState.hasCurrentCycle) PeriodActiveGradientColors() else null
     val cycleProgressLabel = remember(uiState.cycleDay, uiState.cycleLength, uiState.confidenceLabel) {
         formatCycleProgressLabel(
@@ -242,7 +245,12 @@ internal fun HomeScreen(
                         text = uiState.cycleSourceSummary.resolve(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = headerTextColor.copy(alpha = if (isDark) 0.82f else 0.88f),
-                        maxLines = 3,
+                        // The cap is there to keep the hero a fixed shape
+                        // at the normal font scale. At a large scale it
+                        // silently cut the qualifier off the end, which
+                        // removed the meaning of the sentence, so the
+                        // limit is lifted instead and the card grows.
+                        maxLines = if (largeFontScale) Int.MAX_VALUE else 3,
                         overflow = TextOverflow.Ellipsis,
                     )
                     LinearProgressIndicator(
