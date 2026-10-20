@@ -66,7 +66,7 @@ class CyclePredictionEngineV2 {
         }
         if (recent.isEmpty()) warnings += PredictWarning.USER_ASSUMPTION_USED
 
-        val sigmaRaw: Double = weightedMad(recent, centre)
+        val sigmaRaw: Double = sigmaFromMad(weightedMad(recent, centre))
         val outliers: Int = recent.count { isOutlier((it.lengthDays - centre).roundToInt(), sigmaRaw) }
         if (outliers > 0) warnings += PredictWarning.OUTLIER_EXCLUDED
 

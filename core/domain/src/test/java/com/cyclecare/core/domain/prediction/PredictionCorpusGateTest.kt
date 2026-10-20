@@ -32,9 +32,15 @@ class PredictionCorpusGateTest {
         today = scenario.starts[upTo - 1],
     )
 
+    private data class HoldOut(
+        val prediction: CyclePrediction,
+        val actualIntervalDays: Int,
+        val historyIntervals: Int,
+    )
+
     /** Rolling origin: predict the next interval from every prefix. */
-    private fun holdOut(scenario: Corpus.Scenario): List<Pair<CyclePrediction, Int>> {
-        val results = mutableListOf<Pair<CyclePrediction, Int>>()
+    private fun holdOutDetailed(scenario: Corpus.Scenario): List<HoldOut> {
+        val results = mutableListOf<HoldOut>()
         for (prefix in 2 until scenario.starts.size) {
             val input = inputFor(scenario, prefix)
             val prediction = engine.predict(input) ?: continue
@@ -42,9 +48,41 @@ class PredictionCorpusGateTest {
                 scenario.starts[prefix - 1],
                 scenario.starts[prefix],
             ).toInt()
-            results += prediction to actual
+            results += HoldOut(prediction, actual, prefix - 1)
         }
         return results
+    }
+
+    private fun holdOut(scenario: Corpus.Scenario): List<Pair<CyclePrediction, Int>> =
+        holdOutDetailed(scenario).map { it.prediction to it.actualIntervalDays }
+
+    private fun regularGateScenarios(): List<Corpus.Scenario> = listOf(
+        Corpus.regular(cycles = 8),
+        Corpus.regular(cycles = 8, sigma = 1.0, seed = 7),
+        Corpus.regular(cycles = 12, sigma = 2.0, seed = 11),
+        Corpus.regular(cycles = 12, sigma = 4.0),
+        Corpus.regular(cycles = 12, sigma = 1.0, mean = 31, seed = 5),
+        Corpus.regular(cycles = 12, sigma = 2.0, mean = 24, seed = 9),
+    )
+
+    private fun regularHoldOutErrors(): List<Int> =
+        regularGateScenarios()
+            .flatMap { holdOutDetailed(it) }
+            .filter { it.historyIntervals >= 6 }
+            .map {
+                kotlin.math.abs(
+                    ChronoUnit.DAYS
+                        .between(it.prediction.generatedForDate, it.prediction.nextPeriodDate)
+                        .toInt() - it.actualIntervalDays,
+                )
+            }
+
+    /** Nearest-rank P90: the smallest value at or above the 90th percentile. */
+    private fun percentile90(values: List<Int>): Int {
+        require(values.isNotEmpty())
+        val sorted = values.sorted()
+        val rank = Math.ceil(sorted.size * 0.9).toInt().coerceIn(1, sorted.size)
+        return sorted[rank - 1]
     }
 
     // ── G7 availability ─────────────────────────────────────────────
@@ -108,6 +146,29 @@ class PredictionCorpusGateTest {
     }
 
     @Test
+    fun G2_irregularHistoryCoverageMeetsTheNinetyPercentTarget() {
+        val scenarios = listOf(
+            Corpus.irregular(cycles = 8, outlierCount = 2),
+            Corpus.irregular(cycles = 10, outlierCount = 2),
+            Corpus.irregular(cycles = 12, outlierCount = 2),
+            Corpus.irregular(cycles = 14, outlierCount = 2),
+            Corpus.irregular(cycles = 12, outlierCount = 2, magnitude = 42),
+        )
+        val holds = scenarios
+            .flatMap { holdOutDetailed(it) }
+            .filter { it.historyIntervals >= 6 }
+
+        assertThat(holds.size).isAtLeast(10)
+        val hits = holds.count { hold ->
+            val window = hold.prediction.nextPeriodWindow ?: return@count false
+            val actualDate = hold.prediction.generatedForDate
+                .plusDays(hold.actualIntervalDays.toLong())
+            actualDate >= window.start && actualDate <= window.endInclusive
+        }
+        assertThat(hits.toDouble() / holds.size).isAtLeast(0.90)
+    }
+
+    @Test
     fun G5_regularHistoryStaysSharpEnoughToBeUseful() {
         val widths = listOf(
             Corpus.regular(cycles = 6),
@@ -121,6 +182,22 @@ class PredictionCorpusGateTest {
         val median = sorted[sorted.size / 2]
         assertThat(median).isAtMost(3)
         assertThat(sorted.first()).isAtLeast(1)
+    }
+
+    @Test
+    fun G3_regularHistoryMeanAbsoluteErrorStaysWithinTwoDays() {
+        val errors = regularHoldOutErrors()
+
+        assertThat(errors.size).isAtLeast(20)
+        assertThat(errors.average()).isAtMost(2.0)
+    }
+
+    @Test
+    fun G6_regularHistoryNinetiethPercentileErrorStaysWithinFiveDays() {
+        val errors = regularHoldOutErrors()
+
+        assertThat(errors.size).isAtLeast(20)
+        assertThat(percentile90(errors)).isAtMost(5)
     }
 
     // ── G8 outlier sensitivity ─────────────────────────────────────
@@ -180,6 +257,89 @@ class PredictionCorpusGateTest {
         assertThat(prediction).isNotNull()
         assertThat(prediction!!.isIrregular).isTrue()
         assertThat(prediction.warnings).contains(PredictWarning.IRREGULAR_HISTORY)
+    }
+
+    // ── G10 drift activation, cap and monotonicity ──────────────────
+
+    @Test
+    fun G10_trendCorrectionActivatesAtTheThresholdAndStaysCappedAndMonotone() {
+        val cases = listOf(
+            1 to Corpus.linearDrift(cycles = 9, startLength = 30, slopePerCycle = 1),
+            -1 to Corpus.linearDrift(cycles = 9, startLength = 35, slopePerCycle = -1),
+            2 to Corpus.linearDrift(cycles = 9, startLength = 20, slopePerCycle = 2),
+            -2 to Corpus.linearDrift(cycles = 9, startLength = 50, slopePerCycle = -2),
+            3 to Corpus.linearDrift(cycles = 9, startLength = 15, slopePerCycle = 3),
+            -3 to Corpus.linearDrift(cycles = 9, startLength = 55, slopePerCycle = -3),
+            4 to Corpus.linearDrift(cycles = 9, startLength = 15, slopePerCycle = 4),
+            -4 to Corpus.linearDrift(cycles = 9, startLength = 60, slopePerCycle = -4),
+            5 to Corpus.linearDrift(cycles = 9, startLength = 15, slopePerCycle = 5),
+            -5 to Corpus.linearDrift(cycles = 9, startLength = 60, slopePerCycle = -5),
+        )
+
+        val corrections = cases.associate { (slope, scenario) ->
+            val prediction = requireNotNull(engine.predict(inputFor(scenario, scenario.starts.size)))
+            val projectedDrift = slope.toDouble()
+            val expected = if (kotlin.math.abs(projectedDrift) < TREND_ACTIVATION_DAYS) {
+                0.0
+            } else {
+                PROJECTED_DRIFT_CAP * kotlin.math.tanh(projectedDrift / PROJECTED_DRIFT_CAP)
+            }
+
+            assertThat(prediction.trendAdjustmentDays).isWithin(1e-9).of(expected)
+            assertThat(kotlin.math.abs(prediction.trendAdjustmentDays))
+                .isAtMost(PROJECTED_DRIFT_CAP)
+            if (expected == 0.0) {
+                assertThat(prediction.warnings).doesNotContain(PredictWarning.TREND_DETECTED)
+            } else {
+                assertThat(prediction.warnings).contains(PredictWarning.TREND_DETECTED)
+            }
+            slope to prediction.trendAdjustmentDays
+        }
+
+        val positiveMagnitudes = listOf(2, 3, 4, 5)
+            .map { kotlin.math.abs(requireNotNull(corrections[it])) }
+        positiveMagnitudes.zipWithNext().forEach { (smaller, larger) ->
+            assertThat(larger).isGreaterThan(smaller)
+        }
+
+        cases.forEach { (slope, _) ->
+            assertThat(kotlin.math.abs(requireNotNull(corrections[-slope])))
+                .isWithin(1e-9)
+                .of(kotlin.math.abs(requireNotNull(corrections[slope])))
+        }
+    }
+
+    // ── G12 stability ───────────────────────────────────────────────
+
+    @Test
+    fun G12_editingOneHistoricalDateStaysWithinThePriorWindowHalfWidth() {
+        val scenarios = listOf(
+            Corpus.regular(cycles = 8),
+            Corpus.regular(cycles = 12, sigma = 2.0, seed = 11),
+            Corpus.regular(cycles = 12, sigma = 1.0, mean = 31, seed = 5),
+            Corpus.regular(cycles = 12, sigma = 4.0),
+        )
+
+        scenarios.forEach { scenario ->
+            val baseline = requireNotNull(engine.predict(inputFor(scenario, scenario.starts.size)))
+            val priorHalfWidth = requireNotNull(baseline.nextPeriodWindow).halfWidthDays
+
+            for (index in 0 until scenario.starts.size - 1) {
+                for (delta in listOf(-7, -5, -3, -1, 1, 3, 5, 7)) {
+                    val edited = Corpus.corrected(scenario, index, delta)
+                    val input = inputFor(edited, edited.starts.size)
+                    val after = requireNotNull(engine.predict(input))
+
+                    val movement = kotlin.math.abs(
+                        ChronoUnit.DAYS
+                            .between(baseline.nextPeriodDate, after.nextPeriodDate)
+                            .toInt(),
+                    )
+                    assertThat(movement).isAtMost(priorHalfWidth)
+                    assertThat(engine.predict(input)).isEqualTo(after)
+                }
+            }
+        }
     }
 
     // ── G4 error bounds ─────────────────────────────────────────────
@@ -280,5 +440,120 @@ class PredictionCorpusGateTest {
         assertThat(prediction).isNotNull()
         val next = requireNotNull(prediction).nextPeriodDate
         assertThat(next).isEqualTo(LocalDate.parse("2026-05-06"))
+    }
+
+    // ── 11 §8 acceptance criteria 8, 10 and 12 ──────────────────────
+
+    @Test
+    fun criterion8_everyOutputCarriesAlgorithmVersionAndRecordIdsUsed() {
+        val scenario = Corpus.regular(cycles = 8)
+        val predicted = ObservedCycleStart(
+            id = "predicted",
+            startDate = scenario.starts.last().plusDays(28),
+            endDate = null,
+            source = CycleSource.Predicted,
+        )
+        val input = CyclePredictionInput(
+            observed = scenario.starts.mapIndexed { index, date ->
+                ObservedCycleStart("r$index", date, date.plusDays(4), CycleSource.User)
+            } + predicted,
+            userReportedAverageCycleLength = null,
+            today = scenario.starts.last(),
+        )
+
+        val prediction = requireNotNull(engine.predict(input))
+        assertThat(prediction.algorithmVersion).isEqualTo(PREDICTION_ALGORITHM_VERSION)
+        assertThat(prediction.recordIdsUsed)
+            .containsExactlyElementsIn(scenario.starts.indices.map { "r$it" })
+            .inOrder()
+        assertThat(prediction.toSnapshot().algorithmVersion)
+            .isEqualTo(PREDICTION_ALGORITHM_VERSION)
+    }
+
+    @Test
+    fun criterion10_deletingAnOldRecordRecomputesWithinThePriorWindow() {
+        val scenarios = listOf(
+            Corpus.regular(cycles = 8),
+            Corpus.regular(cycles = 12, sigma = 2.0, seed = 11),
+            Corpus.regular(cycles = 12, sigma = 1.0, mean = 31, seed = 5),
+            Corpus.regular(cycles = 12, sigma = 4.0),
+        )
+
+        scenarios.forEach { scenario ->
+            val baseline = requireNotNull(engine.predict(inputFor(scenario, scenario.starts.size)))
+            val priorHalfWidth = requireNotNull(baseline.nextPeriodWindow).halfWidthDays
+
+            // Keep the anchor and the interval immediately before it: this
+            // is an old-record deletion, not a change to the current cycle.
+            for (index in 0 until scenario.starts.size - 2) {
+                val deleted = Corpus.deleted(scenario, index)
+                val input = inputFor(deleted, deleted.starts.size)
+                val after = requireNotNull(engine.predict(input))
+
+                val movement = kotlin.math.abs(
+                    ChronoUnit.DAYS
+                        .between(baseline.nextPeriodDate, after.nextPeriodDate)
+                        .toInt(),
+                )
+                assertThat(movement).isAtMost(priorHalfWidth)
+                assertThat(engine.predict(input)).isEqualTo(after)
+            }
+        }
+    }
+
+    @Test
+    fun criterion12_predictionLabelsDoNotImplyContraceptionDiagnosisOrCertainty() {
+        val baseline = requireNotNull(
+            engine.predict(inputFor(Corpus.stable(cycles = 8), 9)),
+        )
+        val labels = EstimateQuality.values().flatMap { quality ->
+            listOf(false, true).map { stale ->
+                baseline.copy(quality = quality, isStale = stale)
+                    .toSnapshot()
+                    .confidenceLabel
+            }
+        }.distinct()
+
+        assertThat(labels).isNotEmpty()
+        val bannedPhrases = listOf(
+            "safe",
+            "contracept",
+            "diagnos",
+            "certain",
+            "guarantee",
+            "will start",
+            "definitely",
+            "clinically accurate",
+            "unhealthy",
+            "abnormal",
+            "100%",
+        )
+        labels.forEach { label ->
+            bannedPhrases.forEach { phrase ->
+                assertThat(label.lowercase()).doesNotContain(phrase)
+            }
+        }
+    }
+
+    @Test
+    fun dispersionSigmaAppliesTheMadConsistencyConstantBeforeInflation() {
+        val scenario = Corpus.regular(cycles = 12, sigma = 2.0, seed = 11)
+        val prediction = requireNotNull(
+            engine.predict(inputFor(scenario, scenario.starts.size)),
+        )
+        val lengths = prediction.intervalsUsed.map { it.lengthDays }
+        val weights = lengths.indices.map {
+            Math.pow(RECENCY_DECAY, (lengths.size - 1 - it).toDouble())
+        }
+        val weightedMad = lengths.indices.sumOf { index ->
+            kotlin.math.abs(lengths[index] - prediction.centerCycleLength) * weights[index]
+        } / weights.sum()
+        val expected = totalSigma(
+            sigmaFromMad(weightedMad),
+            lengths.size,
+            prediction.isIrregular,
+        )
+
+        assertThat(prediction.dispersionSigma).isWithin(1e-9).of(expected)
     }
 }

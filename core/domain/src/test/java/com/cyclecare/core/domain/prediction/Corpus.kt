@@ -89,6 +89,42 @@ object Corpus {
         return Scenario("drift_${mean}_${slopePerCycle}_$cycles", build(lengths), cycles)
     }
 
+    /**
+     * Drift with integer lengths, so the weighted least-squares slope is
+     * exactly [slopePerCycle] rather than approximately the parameter.
+     *
+     * G10 needs the projected drift to be known independently of the
+     * estimator; noisy generator output cannot establish the activation
+     * boundary or the `tanh` correction.
+     */
+    fun linearDrift(
+        cycles: Int = 9,
+        startLength: Int = 28,
+        slopePerCycle: Int = 2,
+    ): Scenario {
+        val lengths = List(cycles) { startLength + slopePerCycle * it }
+        return Scenario("linear_drift_${slopePerCycle}_$cycles", build(lengths), cycles)
+    }
+
+    /** A retroactive correction to one recorded start, as a user edit would make. */
+    fun corrected(base: Scenario, index: Int, deltaDays: Int): Scenario {
+        require(index in base.starts.indices) { "index $index is outside ${base.starts.indices}" }
+        val starts = base.starts.toMutableList()
+        starts[index] = starts[index].plusDays(deltaDays.toLong())
+        return base.copy(name = "${base.name}_edited_${index}_$deltaDays", starts = starts)
+    }
+
+    /** A deletion of one recorded start, as a user correction would make. */
+    fun deleted(base: Scenario, index: Int): Scenario {
+        require(index in base.starts.indices) { "index $index is outside ${base.starts.indices}" }
+        val starts = base.starts.filterIndexed { position, _ -> position != index }
+        return base.copy(
+            name = "${base.name}_deleted_$index",
+            starts = starts,
+            expectedIntervals = starts.size - 1,
+        )
+    }
+
     /** A few deliberately extreme intervals among plausible ones. */
     fun irregular(
         cycles: Int = 10,
