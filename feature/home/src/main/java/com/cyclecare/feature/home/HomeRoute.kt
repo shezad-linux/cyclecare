@@ -302,25 +302,37 @@ class HomeViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
+    /**
+     * Recomputes the editor's validation errors and [HomeEditorState.isSaveEnabled] so the save
+     * button reflects the current input rather than a stale value.
+     */
+    private fun validateEditor(editor: HomeEditorState): HomeEditorState =
+        validateHomeEditorState(editor = editor, cycles = baseState.value.cycles, validator = validator)
+            .also(savedStateHandle::persistHomeEditorState)
+
     fun openEditor() {
         messageFlow.update { null }
         val currentCycle = baseState.value.currentUserCycle()
         editorFlow.update {
-            when {
-                currentCycle != null -> currentCycle.toEditorState()
-                else -> defaultEditorState(baseState.value.profile)
-            }.also(savedStateHandle::persistHomeEditorState)
+            validateEditor(
+                when {
+                    currentCycle != null -> currentCycle.toEditorState()
+                    else -> defaultEditorState(baseState.value.profile)
+                }
+            )
         }
     }
 
     fun expandEditor() {
         editorFlow.update { current ->
             val fallback = defaultEditorState(baseState.value.profile)
-            (current.takeIf { it.isVisible } ?: fallback).copy(
-                isVisible = true,
-                isExpanded = true,
-                error = null,
-            ).also(savedStateHandle::persistHomeEditorState)
+            validateEditor(
+                (current.takeIf { it.isVisible } ?: fallback).copy(
+                    isVisible = true,
+                    isExpanded = true,
+                    error = null,
+                )
+            )
         }
     }
 
@@ -445,7 +457,10 @@ class HomeViewModel(
 
     private fun updateEditorState(transform: (HomeEditorState) -> HomeEditorState) {
         editorFlow.update { current ->
-            transform(current).also(savedStateHandle::persistHomeEditorState)
+            // The editor's errors and its save-enabled flag are recomputed on
+            // every change, so the button reflects the current input rather
+            // than a stale value.
+            validateEditor(transform(current))
         }
     }
 }

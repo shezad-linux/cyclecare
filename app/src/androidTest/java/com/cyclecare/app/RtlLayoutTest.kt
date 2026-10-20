@@ -7,9 +7,11 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -162,5 +164,24 @@ class RtlLayoutTest {
         val log = composeRule.onNodeWithTag(navTag("log")).fetchSemanticsNode()
 
         assertThat(insights.boundsInRoot.right).isLessThan(log.boundsInRoot.right)
+    }
+
+    @Test
+    fun everyKeyScreenRendersInRightToLeft() {
+        val screens = listOf(
+            "home" to "home_dashboard",
+            "calendar" to "calendar_scroll",
+            "log" to "logging_list",
+            "insights" to "insights_overview",
+        )
+        screens.forEach { (route, contentTag) ->
+            renderRtl()
+            composeRule.onNodeWithTag(navTag(route)).performClick()
+            composeRule.waitForIdle()
+
+            // The screen's content renders under a right-to-left layout
+            // direction without crashing or dropping out of the tree.
+            composeRule.onNodeWithTag(contentTag).assertIsDisplayed()
+        }
     }
 }

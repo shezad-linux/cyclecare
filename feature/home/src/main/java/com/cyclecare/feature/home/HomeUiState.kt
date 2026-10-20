@@ -132,6 +132,10 @@ internal object HomeTags {
     const val CYCLE_STATUS_SCREEN = "home_cycle_status_screen"
     const val CYCLE_STATUS_HERO = "home_cycle_status_hero"
     const val FERTILITY_DETAIL_SCREEN = "home_fertility_detail_screen"
+    const val EDITOR_START_DATE = "home_editor_start_date"
+    const val EDITOR_END_DATE = "home_editor_end_date"
+    const val EDITOR_CYCLE_LENGTH = "home_editor_cycle_length"
+    const val EDITOR_SAVE = "home_editor_save"
 
     fun actionTag(type: HomeQuickActionType): String = "home_action_${type.name}"
 }
