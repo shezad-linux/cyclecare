@@ -7,7 +7,9 @@ import androidx.work.ListenableWorker
 import androidx.work.workDataOf
 import androidx.work.testing.TestListenableWorkerBuilder
 import com.cyclecare.core.domain.ads.InMemoryDraftTracker
+import com.cyclecare.core.domain.InMemoryReminderIntelligenceRepository
 import com.cyclecare.core.domain.time.SystemTimeProvider
+import com.cyclecare.core.domain.time.TimeProvider
 import com.cyclecare.core.domain.AppResetRepository
 import com.cyclecare.core.domain.CycleRepository
 import com.cyclecare.core.domain.ExportRepository
@@ -177,34 +179,42 @@ class ReminderDeliveryWorkerTest {
         val result = buildWorker().doWork()
 
         assertThat(result).isInstanceOf(ListenableWorker.Result.Success::class.java)
-        assertThat(env.notificationClient.postedNotifications).hasSize(1)
-        val posted = env.notificationClient.postedNotifications.single()
+        // Two posts: the member, and the one summary the group needs.
+        assertThat(env.notificationClient.postedNotifications).hasSize(2)
+        val posted = env.notificationClient.postedNotifications.first()
         assertThat(posted.id).isEqualTo(42)
         assertThat(posted.notification.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString())
             .isEqualTo("Cycle reminder")
         assertThat(posted.notification.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString())
             .isEqualTo("Cycle reminder available. Open the app to review it.")
         assertThat(posted.notification.smallIcon.resId).isEqualTo(R.drawable.ic_notification_small)
+        val summary = env.notificationClient.postedNotifications.last()
+        assertThat(summary.id).isEqualTo(ReminderChannels.groupedSummaryNotificationId)
+        assertThat(summary.notification.flags and Notification.FLAG_GROUP_SUMMARY != 0).isTrue()
         assertThat(env.reminderScheduler.refreshCallCount).isEqualTo(1)
     }
 
-    private fun buildWorker(): ReminderDeliveryWorker =
-        TestListenableWorkerBuilder<ReminderDeliveryWorker>(application)
-            .setInputData(
-                workDataOf(
-                    ReminderDeliveryWorker.keyNotificationId to 42,
-                    ReminderDeliveryWorker.keyTitle to "Period reminder",
-                    ReminderDeliveryWorker.keyBody to "Your period may start soon.",
-                    ReminderDeliveryWorker.keyPrivateBody to "Cycle reminder available. Open the app to review it.",
-                    ReminderDeliveryWorker.keyRuleId to "period",
-                    ReminderDeliveryWorker.keyReminderType to ReminderType.PeriodPrep.name,
-                    ReminderDeliveryWorker.keyChannelKey to ReminderChannelKey.CycleAlerts.name,
-                    ReminderDeliveryWorker.keyDeepLinkTarget to ReminderDeepLinkTarget.Home.name,
-                    ReminderDeliveryWorker.keyTargetEpochDay to LocalDate.of(2026, 3, 20).toEpochDay(),
-                    ReminderDeliveryWorker.keyScheduledAtEpochMillis to ZonedDateTime.parse("2026-03-17T09:00:00+05:30[Asia/Kolkata]").toInstant().toEpochMilli(),
-                ),
-            )
-            .build()
+private val canonicalWorkerData: Map<String, Any> = mapOf(
+    ReminderDeliveryWorker.keyNotificationId to 42,
+    ReminderDeliveryWorker.keyTitle to "Period reminder",
+    ReminderDeliveryWorker.keyBody to "Your period may start soon.",
+    ReminderDeliveryWorker.keyPrivateBody to "Cycle reminder available. Open the app to review it.",
+    ReminderDeliveryWorker.keyRuleId to "period",
+    ReminderDeliveryWorker.keyReminderType to ReminderType.PeriodPrep.name,
+    ReminderDeliveryWorker.keyChannelKey to ReminderChannelKey.CycleAlerts.name,
+    ReminderDeliveryWorker.keyDeepLinkTarget to ReminderDeepLinkTarget.Home.name,
+    ReminderDeliveryWorker.keyTargetEpochDay to LocalDate.of(2026, 3, 20).toEpochDay(),
+    ReminderDeliveryWorker.keyScheduledAtEpochMillis to ZonedDateTime.parse("2026-03-17T09:00:00+05:30[Asia/Kolkata]").toInstant().toEpochMilli(),
+    // Carried so the scoring gates see a two-day lead: a clean-slate
+    // engagement table costs the candidate its fatigue penalty, and without
+    // a plausible lead the default fixture would sit under the threshold.
+    ReminderDeliveryWorker.keyLeadDays to 2,
+)
+
+private fun buildWorker(): ReminderDeliveryWorker =
+    TestListenableWorkerBuilder<ReminderDeliveryWorker>(application)
+        .setInputData(workDataOf(*canonicalWorkerData.entries.map { it.toPair() }.toTypedArray()))
+        .build()
 }
 
 private class WorkerTestEnvironment(
@@ -237,11 +247,12 @@ private class WorkerTestEnvironment(
         profileRepository = NoOpProfileRepository(),
         cycleRepository = NoOpCycleRepository(),
         symptomRepository = NoOpSymptomRepository(),
-        predictionRepository = NoOpPredictionRepository(),
+        predictionRepository = WorkerFakePredictionRepository(),
         insightRepository = NoOpInsightRepository(),
-        reminderRepository = NoOpReminderRepository(),
+        reminderRepository = StubReminderRepository(),
         reminderChannelSettingsRepository = WorkerFakeReminderChannelSettingsRepository(),
         reminderEventsRepository = reminderEventsRepository,
+        reminderIntelligenceRepository = InMemoryReminderIntelligenceRepository(),
         privacyRepository = privacyRepository,
         exportRepository = NoOpExportRepository(),
         appResetRepository = NoOpAppResetRepository(),
@@ -253,10 +264,55 @@ private class WorkerTestEnvironment(
         interstitialStatsRepository = FakeInterstitialStatsRepository(),
         draftTracker = InMemoryDraftTracker(),
         firstRunNudgeRepository = FakeFirstRunNudgeRepository(),
-        timeProvider = SystemTimeProvider(),
+        // The gates run against a pinned noon, so quiet-hours behaviour is
+        // stable no matter when the emulator happens to run the suite.
+        timeProvider = WorkerFixedClock(),
         reminderNotificationClient = notificationClient,
         appLogger = NoOpAppLogger,
     )
+}
+
+/** A clock pinned to nine minutes past noon local, on the day the tests run. */
+private class WorkerFixedClock : TimeProvider {
+    private val moment = java.time.ZonedDateTime.now(java.time.ZoneId.systemDefault())
+        .withHour(12)
+        .withMinute(9)
+        .withSecond(0)
+        .withNano(0)
+
+    override fun today(): LocalDate = moment.toLocalDate()
+
+    override fun now(): ZonedDateTime = moment
+
+    override fun nowEpochMillis(): Long = moment.toInstant().toEpochMilli()
+}
+
+/**
+ * A prediction the scoring gates treat as real: a supported range with high
+ * quality, so the quality bonus does not suppress a candidate the test is
+ * trying to prove posts.
+ */
+private class WorkerFakePredictionRepository : PredictionRepository {
+    private val snapshot = PredictionSnapshot(
+        generatedAt = LocalDate.of(2026, 3, 17),
+        cycleDay = 15,
+        nextPeriodDate = LocalDate.of(2026, 3, 24),
+        ovulationDate = LocalDate.of(2026, 3, 19),
+        fertileWindow = com.cyclecare.core.model.DateRange(
+            start = LocalDate.of(2026, 3, 17),
+            endInclusive = LocalDate.of(2026, 3, 22),
+        ),
+        confidenceLabel = "test",
+        daysUntilNextPeriod = 7,
+        nextPeriodWindow = com.cyclecare.core.model.DateRange(
+            start = LocalDate.of(2026, 3, 23),
+            endInclusive = LocalDate.of(2026, 3, 25),
+        ),
+        nextPeriodHalfWidthDays = 1,
+        quality = com.cyclecare.core.model.PredictionQuality.HIGH,
+    )
+
+    override fun observePrediction(): Flow<PredictionSnapshot?> = MutableStateFlow(snapshot).asStateFlow()
 }
 
 private class FakeReminderNotificationClient : ReminderNotificationClient {
@@ -293,6 +349,10 @@ private class WorkerFakeReminderEventsRepository : ReminderEventsRepository {
     private val state = MutableStateFlow<List<ReminderEvent>>(emptyList())
     val recordedEvents: List<ReminderEvent> get() = state.value
 
+    /** What the dedup and budget gates see. */
+    var newlyInserted: Boolean = true
+    var deliveredBetweenWindow: Int = 0
+
     override fun observeRecent(limit: Int): Flow<List<ReminderEvent>> = state.map { it.take(limit) }
 
     override fun observeUnreadCount(): Flow<Int> = state.map { events -> events.count { it.readAtEpochMillis == null } }
@@ -315,6 +375,19 @@ private class WorkerFakeReminderEventsRepository : ReminderEventsRepository {
         state.value
             .filter { it.deliveredAt.toInstant().toEpochMilli() >= sinceEpochMillis }
             .maxOfOrNull { it.deliveredAt.toInstant().toEpochMilli() }
+
+    override suspend fun insertIfAbsent(event: ReminderEvent): Boolean =
+        newlyInserted.also { if (it) recordEvent(event) }
+
+    override suspend fun countDeliveredBetween(fromEpochMillis: Long, toEpochMillis: Long): Int =
+        deliveredBetweenWindow
+
+    override suspend fun countDeliveredForType(type: ReminderType): Int =
+        state.value.count { it.type == type }
+
+    override suspend fun countDismissedForType(type: ReminderType): Int = 0
+
+    override suspend fun countOpenedForType(type: ReminderType): Int = 0
 }
 
 private class WorkerFakeReminderChannelSettingsRepository : ReminderChannelSettingsRepository {
@@ -469,10 +542,23 @@ private class NoOpInsightRepository : InsightRepository {
     ).asStateFlow()
 }
 
-private class NoOpReminderRepository : ReminderRepository {
+/**
+ * A reminder repository that does nothing.
+ *
+ * Named distinctly from the production `NoOpReminderRepository` in
+ * `ReminderCenterScreen.kt`. Both are file-private in Kotlin, so the
+ * compiler is happy, but they share a fully qualified name at the
+ * bytecode level, and the androidTest APK's copy of this one shadowed
+ * the production object. The result was a `NoSuchFieldError` for
+ * `NoOpReminderRepository.INSTANCE` whenever a test rendered the
+ * reminder centre.
+ */
+private class StubReminderRepository : ReminderRepository {
     override fun observeRules(): Flow<List<ReminderRule>> = MutableStateFlow(emptyList<ReminderRule>()).asStateFlow()
 
     override suspend fun upsertRule(rule: ReminderRule) = Unit
+
+    override suspend fun setRuleTypeEnabled(type: ReminderType, enabled: Boolean) = Unit
 }
 
 private class NoOpExportRepository : ExportRepository {

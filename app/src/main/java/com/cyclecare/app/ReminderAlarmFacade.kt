@@ -169,6 +169,12 @@ internal data class ReminderAlarmPayload(
     val deepLinkTarget: ReminderDeepLinkTarget,
     val targetEpochDay: Long?,
     val scheduledAtEpochMillis: Long,
+    /** Absolute lead this reminder was planned with, for the relevance score. */
+    val leadDays: Int = 0,
+    /** Half width of the prediction window behind this reminder. */
+    val windowHalfWidthDays: Int = 0,
+    /** Whether the user pinned this reminder's send time. */
+    val userPinnedTime: Boolean = false,
 ) {
     fun writeTo(intent: Intent): Intent = intent.apply {
         putExtra(keyNotificationId, notificationId)
@@ -181,6 +187,9 @@ internal data class ReminderAlarmPayload(
         putExtra(keyDeepLinkTarget, deepLinkTarget.name)
         putExtra(keyTargetEpochDay, targetEpochDay ?: Long.MIN_VALUE)
         putExtra(keyScheduledAtEpochMillis, scheduledAtEpochMillis)
+        putExtra(keyLeadDays, leadDays)
+        putExtra(keyWindowHalfWidthDays, windowHalfWidthDays)
+        putExtra(keyUserPinnedTime, userPinnedTime)
     }
 
     companion object {
@@ -194,6 +203,9 @@ internal data class ReminderAlarmPayload(
         const val keyDeepLinkTarget = "reminder_deep_link_target"
         const val keyTargetEpochDay = "reminder_target_epoch_day"
         const val keyScheduledAtEpochMillis = "reminder_scheduled_at_epoch_millis"
+        const val keyLeadDays = "reminder_lead_days"
+        const val keyWindowHalfWidthDays = "reminder_window_half_width_days"
+        const val keyUserPinnedTime = "reminder_user_pinned_time"
 
         fun from(intent: Intent): ReminderAlarmPayload? {
             val ruleId = intent.getStringExtra(keyRuleId) ?: return null
@@ -220,6 +232,12 @@ internal data class ReminderAlarmPayload(
                 deepLinkTarget = deepLinkTarget,
                 targetEpochDay = epochDay.takeIf { it != Long.MIN_VALUE },
                 scheduledAtEpochMillis = scheduledAt,
+                // Alarms scheduled by an older app version carry no scorer
+                // context; defaults keep them scoreable anyway, as if the
+                // estimate were tight and the time unpinned.
+                leadDays = intent.getIntExtra(keyLeadDays, 0),
+                windowHalfWidthDays = intent.getIntExtra(keyWindowHalfWidthDays, 0),
+                userPinnedTime = intent.getBooleanExtra(keyUserPinnedTime, false),
             )
         }
 
@@ -234,6 +252,9 @@ internal data class ReminderAlarmPayload(
             deepLinkTarget = reminder.deepLinkTarget,
             targetEpochDay = reminder.targetEpochDay,
             scheduledAtEpochMillis = reminder.scheduledAt.toInstant().toEpochMilli(),
+            leadDays = reminder.leadDays,
+            windowHalfWidthDays = reminder.windowHalfWidthDays,
+            userPinnedTime = reminder.userPinnedTime,
         )
     }
 }

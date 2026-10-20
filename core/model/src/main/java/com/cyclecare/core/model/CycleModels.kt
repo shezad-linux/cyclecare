@@ -212,6 +212,16 @@ data class ReminderRule(
     val daysBefore: Int,
     val hourOfDay: Int,
     val minute: Int,
+    /**
+     * True when the user explicitly chose this time.
+     *
+     * Spec `13` §8: a pinned time is the user's own agency — the learned
+     * send-time model must never override it, and a pinned candidate is
+     * scored against a lower threshold because the intent is explicit.
+     * Seeded rules are never pinned; only a settings editor that lets the
+     * user move a time sets this.
+     */
+    val userPinnedTime: Boolean = false,
 )
 
 data class ReminderChannelSettings(
@@ -220,6 +230,34 @@ data class ReminderChannelSettings(
     val soundEnabled: Boolean,
     val soundPreset: ReminderSoundPreset,
     val vibrationEnabled: Boolean,
+)
+
+/**
+ * A reminder type the app paused on its own, and the lifetime counts that
+ * explain it.
+ *
+ * Spec `13` §9: a type whose dismiss rate exceeds the threshold across a
+ * lifetime minimum of impressions is disabled by the app, and the record
+ * has to be honest about why — the counts are the explanation and they
+ * are what the re-enable surface shows.
+ */
+data class ReminderAutoDisabled(
+    val type: ReminderType,
+    val dismissedCount: Int,
+    val openedCount: Int,
+    val disabledAtEpochMillis: Long,
+)
+
+/**
+ * A reminder candidate that was deferred instead of posted, e.g. into
+ * quiet hours or an arbitration fold. Enough to summarise what is
+ * waiting; the summary text carries a count only, never cycle detail.
+ */
+data class DeferredReminder(
+    val ruleId: String,
+    val type: ReminderType,
+    val scheduledAtEpochMillis: Long,
+    val reason: String,
 )
 
 data class ReminderEvent(
@@ -294,4 +332,19 @@ data class ScheduledReminder(
     val privateBody: String,
     val deepLinkTarget: ReminderDeepLinkTarget,
     val targetEpochDay: Long? = null,
+    /**
+     * The rule's lead, in absolute days, carried so the delivery-time
+     * relevance score can reward a well-sized lead. Signed offsets are the
+     * rule's own concern; the scorer asks "how far ahead is this", so only
+     * the magnitude travels.
+     */
+    val leadDays: Int = 0,
+    /**
+     * Half the width of the prediction window the reminder is anchored to,
+     * so delivery-time scoring can respect the estimate's uncertainty.
+     * Zero when the reminder does not rest on an estimate.
+     */
+    val windowHalfWidthDays: Int = 0,
+    /** Carried from the rule so a pinned candidate gets its own threshold. */
+    val userPinnedTime: Boolean = false,
 )

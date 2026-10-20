@@ -21,7 +21,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -38,13 +40,18 @@ import com.cyclecare.core.designsystem.MetricCard
 import com.cyclecare.core.designsystem.metricCardAccents
 import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.domain.ReminderEventsRepository
+import com.cyclecare.core.domain.ReminderIntelligenceRepository
+import com.cyclecare.core.model.ReminderAutoDisabled
 import com.cyclecare.core.model.ReminderDeepLinkTarget
 import com.cyclecare.core.model.ReminderEvent
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -52,6 +59,8 @@ import kotlinx.coroutines.launch
 data class ReminderCenterUiState(
     val unreadCount: Int = 0,
     val groups: List<ReminderEventGroup> = emptyList(),
+    /** Types the app paused on its own, with the counts that explain it. */
+    val autoDisabled: List<ReminderAutoDisabled> = emptyList(),
 )
 
 data class ReminderEventGroup(
@@ -65,11 +74,15 @@ private val reminderTimeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale
 
 class ReminderCenterViewModel(
     private val reminderEventsRepository: ReminderEventsRepository,
+    private val reminderIntelligenceRepository: ReminderIntelligenceRepository,
+    private val reminderRepository: com.cyclecare.core.domain.ReminderRepository,
+    private val reminderScheduler: com.cyclecare.core.domain.ReminderScheduler,
 ) : ViewModel() {
     val uiState: StateFlow<ReminderCenterUiState> = combine(
         reminderEventsRepository.observeRecent(limit = 50),
         reminderEventsRepository.observeUnreadCount(),
-    ) { events, unreadCount ->
+        reminderIntelligenceRepository.observeAutoDisabled(),
+    ) { events, unreadCount, autoDisabled ->
         ReminderCenterUiState(
             unreadCount = unreadCount,
             groups = events.groupBy { it.deliveredAt.toLocalDate() }
@@ -80,6 +93,7 @@ class ReminderCenterViewModel(
                         items = items,
                     )
                 },
+            autoDisabled = autoDisabled,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReminderCenterUiState())
 
@@ -94,14 +108,72 @@ class ReminderCenterViewModel(
     fun dismiss(id: String) {
         viewModelScope.launch { reminderEventsRepository.dismiss(id) }
     }
+
+    fun reEnable(type: com.cyclecare.core.model.ReminderType) {
+        viewModelScope.launch {
+            // The rules were switched off when the type was paused, so
+            // re-enabling has to switch them back on, clear the pause
+            // record, and re-arm what was cancelled.
+            reEnableReminderType(
+                reminderRepository = reminderRepository,
+                intelligence = reminderIntelligenceRepository,
+                scheduler = reminderScheduler,
+                type = type,
+            )
+        }
+    }
 }
 
 class ReminderCenterViewModelFactory(
-    private val reminderEventsRepository: ReminderEventsRepository,
+    /**
+     * The event history the centre lists.
+     *
+     * Public because the route reads it back when it builds the factory
+     * it actually uses: the navigation shell owns this call site, and the
+     * intelligence state the auto-disable explanation needs comes from
+     * the app container rather than from the shell.
+     */
+    val reminderEventsRepository: ReminderEventsRepository,
+    private val reminderIntelligenceRepository: ReminderIntelligenceRepository =
+        com.cyclecare.core.domain.NoOpReminderIntelligenceRepository,
+    private val reminderRepository: com.cyclecare.core.domain.ReminderRepository =
+        NoOpReminderRepository,
+    private val reminderScheduler: com.cyclecare.core.domain.ReminderScheduler =
+        NoOpReminderScheduler,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        ReminderCenterViewModel(reminderEventsRepository) as T
+        ReminderCenterViewModel(
+            reminderEventsRepository = reminderEventsRepository,
+            reminderIntelligenceRepository = reminderIntelligenceRepository,
+            reminderRepository = reminderRepository,
+            reminderScheduler = reminderScheduler,
+        ) as T
+}
+
+/**
+ * A reminder repository that changes nothing.
+ *
+ * The default for a centre built without the app container: the pause
+ * record still shows, but there is nothing to re-enable.
+ */
+private object NoOpReminderRepository : com.cyclecare.core.domain.ReminderRepository {
+    override fun observeRules(): Flow<List<com.cyclecare.core.model.ReminderRule>> =
+        MutableStateFlow<List<com.cyclecare.core.model.ReminderRule>>(emptyList()).asStateFlow()
+
+    override suspend fun upsertRule(rule: com.cyclecare.core.model.ReminderRule) = Unit
+
+    override suspend fun setRuleTypeEnabled(
+        type: com.cyclecare.core.model.ReminderType,
+        enabled: Boolean,
+    ) = Unit
+}
+
+/** A scheduler that re-arms nothing. See [NoOpReminderRepository]. */
+private object NoOpReminderScheduler : com.cyclecare.core.domain.ReminderScheduler {
+    override suspend fun refreshSchedules(
+        now: java.time.ZonedDateTime,
+    ): List<com.cyclecare.core.model.ScheduledReminder> = emptyList()
 }
 
 @Composable
@@ -109,7 +181,21 @@ fun ReminderCenterRoute(
     factory: ReminderCenterViewModelFactory,
     onOpenEvent: (ReminderEvent) -> Unit,
 ) {
-    val viewModel: ReminderCenterViewModel = viewModel(factory = factory)
+    val context = LocalContext.current
+    // The pause record and the re-enable need the app container. The
+    // navigation shell owns the call site of this route, so the container
+    // is resolved here rather than threaded through it.
+    val container = remember(context) {
+        (context.applicationContext as CycleCareApplication).appContainer
+    }
+    val viewModel: ReminderCenterViewModel = viewModel(
+        factory = ReminderCenterViewModelFactory(
+            reminderEventsRepository = factory.reminderEventsRepository,
+            reminderIntelligenceRepository = container.reminderIntelligenceRepository,
+            reminderRepository = container.reminderRepository,
+            reminderScheduler = container.reminderScheduler,
+        ),
+    )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     ReminderCenterScreen(
         uiState = uiState,
@@ -119,6 +205,7 @@ fun ReminderCenterRoute(
             onOpenEvent(it)
         },
         onDismiss = viewModel::dismiss,
+        onReEnable = viewModel::reEnable,
     )
 }
 
@@ -128,6 +215,7 @@ private fun ReminderCenterScreen(
     onMarkAllRead: () -> Unit,
     onOpenEvent: (ReminderEvent) -> Unit,
     onDismiss: (String) -> Unit,
+    onReEnable: (com.cyclecare.core.model.ReminderType) -> Unit,
 ) {
     val totalEvents = uiState.groups.sumOf { it.items.size }
     LazyColumn(
@@ -183,6 +271,49 @@ private fun ReminderCenterScreen(
             }
         }
 
+        if (uiState.autoDisabled.isNotEmpty()) {
+            item {
+                DashboardSectionCard(
+                    title = stringResource(R.string.reminder_auto_disabled_card_title),
+                    eyebrow = stringResource(R.string.reminder_auto_disabled_title),
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space12),
+                    ) {
+                        uiState.autoDisabled.forEach { paused ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            ) {
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space4),
+                                ) {
+                                    Text(
+                                        text = reminderTypeDisplayName(paused.type),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                    Text(
+                                        text = stringResource(
+                                            R.string.reminder_auto_disabled_card_counts,
+                                            paused.dismissedCount,
+                                            paused.openedCount,
+                                        ),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                OutlinedButton(onClick = { onReEnable(paused.type) }) {
+                                    Text(stringResource(R.string.reminder_action_re_enable))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         if (uiState.groups.isEmpty()) {
             item {
                 DashboardSectionCard(
@@ -285,3 +416,23 @@ private fun ReminderEventCard(
         }
     }
 }
+
+@Composable
+private fun reminderTypeDisplayName(type: com.cyclecare.core.model.ReminderType): String =
+    when (type) {
+        com.cyclecare.core.model.ReminderType.PeriodPrep ->
+            stringResource(R.string.reminder_type_label_period_prep)
+        com.cyclecare.core.model.ReminderType.FertileWindowStart ->
+            stringResource(R.string.reminder_type_label_fertile_window)
+        com.cyclecare.core.model.ReminderType.OvulationEstimate ->
+            stringResource(R.string.reminder_type_label_ovulation)
+        com.cyclecare.core.model.ReminderType.DailyLog ->
+            stringResource(R.string.reminder_type_label_daily_log)
+        com.cyclecare.core.model.ReminderType.LatePeriod ->
+            stringResource(R.string.reminder_type_label_late_period)
+        // Never generated; the label keeps the compiler exhaustive.
+        com.cyclecare.core.model.ReminderType.Hydration ->
+            stringResource(R.string.reminder_type_label_daily_log)
+        com.cyclecare.core.model.ReminderType.Pill ->
+            stringResource(R.string.reminder_type_label_daily_log)
+    }

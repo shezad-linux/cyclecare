@@ -11,7 +11,9 @@ import com.cyclecare.core.domain.NoOpCrashReporter
 import com.cyclecare.core.domain.PredictionRepository
 import com.cyclecare.core.domain.PrivacyRepository
 import com.cyclecare.core.domain.ProfileRepository
+import com.cyclecare.core.domain.NoOpReminderIntelligenceRepository
 import com.cyclecare.core.domain.AppResetRepository
+import com.cyclecare.core.domain.ReminderIntelligenceRepository
 import com.cyclecare.core.domain.ReminderRepository
 import com.cyclecare.core.domain.ReminderChannelSettingsRepository
 import com.cyclecare.core.domain.ReminderEventsRepository
@@ -33,6 +35,12 @@ data class AppContainer(
     val reminderRepository: ReminderRepository,
     val reminderChannelSettingsRepository: ReminderChannelSettingsRepository,
     val reminderEventsRepository: ReminderEventsRepository,
+    /**
+     * The state the notification intelligence owns: auto-disabled types
+     * and deferred candidates. Defaults to the never-changing store so a
+     * container built for a narrow test still composes.
+     */
+    val reminderIntelligenceRepository: ReminderIntelligenceRepository = NoOpReminderIntelligenceRepository,
     val privacyRepository: PrivacyRepository,
     val exportRepository: ExportRepository,
     val appResetRepository: AppResetRepository,

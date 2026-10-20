@@ -15,6 +15,7 @@ import com.cyclecare.core.domain.ads.InterstitialStatsRepository
 import com.cyclecare.core.domain.time.TimeProvider
 import com.cyclecare.core.model.AgeBand
 import com.cyclecare.core.model.ReminderEvent
+import com.cyclecare.core.model.ReminderType
 import com.cyclecare.core.model.TrackingGoal
 import com.cyclecare.core.model.UserProfile
 import com.google.android.gms.ads.AdRequest
@@ -84,6 +85,17 @@ class InterstitialCoordinatorTest {
         override suspend fun dismiss(id: String) = Unit
         override suspend fun latestDeliveryAtSince(sinceEpochMillis: Long): Long? =
             deliveredAtEpochMillis?.takeIf { it >= sinceEpochMillis }
+
+        override suspend fun insertIfAbsent(event: ReminderEvent): Boolean = true
+
+        override suspend fun countDeliveredBetween(fromEpochMillis: Long, toEpochMillis: Long): Int =
+            deliveredAtEpochMillis
+                ?.takeIf { it >= fromEpochMillis && it < toEpochMillis }
+                ?.let { 1 } ?: 0
+
+        override suspend fun countDeliveredForType(type: ReminderType): Int = 0
+        override suspend fun countDismissedForType(type: ReminderType): Int = 0
+        override suspend fun countOpenedForType(type: ReminderType): Int = 0
     }
 
     private class FakeProfileRepository(

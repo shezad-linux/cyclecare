@@ -1,5 +1,6 @@
 package com.cyclecare.core.domain
 
+import com.cyclecare.core.domain.notification.resolveSendHour
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
 import com.cyclecare.core.model.PredictionSnapshot
@@ -16,6 +17,16 @@ import kotlin.math.absoluteValue
 
 class ReminderSchedulePlanner(
     private val zoneId: ZoneId = ZoneId.systemDefault(),
+    /**
+     * The send hour the engagement profile suggests, when the user has
+     * accepted one.
+     *
+     * Null today: nothing in the app proposes a learned hour yet. The
+     * parameter exists so the rule is enforced in one place — a pinned
+     * time is never overridden by it — rather than being an assumption
+     * scattered across the scheduling code.
+     */
+    private val learnedSendHour: Int? = null,
 ) {
     fun buildSchedules(
         prediction: PredictionSnapshot?,
@@ -103,6 +114,9 @@ class ReminderSchedulePlanner(
             body = body,
             privateBody = "Cycle reminder available. Open the app to review it.",
             deepLinkTarget = ReminderDeepLinkTarget.Home,
+            leadDays = leadDays,
+            windowHalfWidthDays = halfWidth,
+            userPinnedTime = rule.userPinnedTime,
         )
     }
 
@@ -117,6 +131,11 @@ class ReminderSchedulePlanner(
         val scheduledAt = scheduleDateTime(targetDate, rule, now)
         if (!scheduledAt.isAfter(now)) return null
 
+        // The fertile window is derived from the same estimate as the
+        // period, so its uncertainty is expressed by the period window's
+        // half width. There is no separate fertility uncertainty in the
+        // engine's output.
+        val halfWidth = predictionSnapshot.nextPeriodHalfWidthDays ?: 0
         return ScheduledReminder(
             uniqueWorkName = reminderWorkName(rule.id),
             ruleId = rule.id,
@@ -128,6 +147,9 @@ class ReminderSchedulePlanner(
             privateBody = "Cycle reminder available. Open the app to review it.",
             deepLinkTarget = ReminderDeepLinkTarget.Calendar,
             targetEpochDay = targetDate.toEpochDay(),
+            leadDays = rule.daysBefore.absoluteValue,
+            windowHalfWidthDays = halfWidth,
+            userPinnedTime = rule.userPinnedTime,
         )
     }
 
@@ -152,6 +174,11 @@ class ReminderSchedulePlanner(
             privateBody = "Cycle reminder available. Open the app to review it.",
             deepLinkTarget = ReminderDeepLinkTarget.Calendar,
             targetEpochDay = targetDate.toEpochDay(),
+            leadDays = rule.daysBefore.absoluteValue,
+            // See buildFertileWindow: the estimate's uncertainty is the
+            // period window's half width.
+            windowHalfWidthDays = predictionSnapshot.nextPeriodHalfWidthDays ?: 0,
+            userPinnedTime = rule.userPinnedTime,
         )
     }
 
@@ -159,7 +186,9 @@ class ReminderSchedulePlanner(
         rule: ReminderRule,
         now: ZonedDateTime,
     ): ScheduledReminder {
-        val candidateToday = now.withHour(rule.hourOfDay).withMinute(rule.minute).withSecond(0).withNano(0)
+        // See scheduleDateTime: a pinned time is never overridden.
+        val hour = resolveSendHour(rule, learnedSendHour)
+        val candidateToday = now.withHour(hour).withMinute(rule.minute).withSecond(0).withNano(0)
         val scheduledAt = if (candidateToday.isAfter(now)) candidateToday else candidateToday.plusDays(1)
         return ScheduledReminder(
             uniqueWorkName = reminderWorkName(rule.id),
@@ -171,6 +200,11 @@ class ReminderSchedulePlanner(
             body = "Take a moment to log today's symptoms.",
             privateBody = "Cycle reminder available. Open the app to review it.",
             deepLinkTarget = ReminderDeepLinkTarget.Log,
+            // Not anchored to any estimate, so the scorer gets zero width
+            // and zero lead.
+            leadDays = 0,
+            windowHalfWidthDays = 0,
+            userPinnedTime = rule.userPinnedTime,
         )
     }
 
@@ -208,6 +242,9 @@ class ReminderSchedulePlanner(
             body = "Your period looks later than expected. Open CycleCare to update your cycle if it started.",
             privateBody = "Cycle reminder available. Open the app to review it.",
             deepLinkTarget = ReminderDeepLinkTarget.Home,
+            leadDays = rule.daysBefore.absoluteValue,
+            windowHalfWidthDays = predictionSnapshot.nextPeriodHalfWidthDays ?: 0,
+            userPinnedTime = rule.userPinnedTime,
         )
     }
 
@@ -215,7 +252,13 @@ class ReminderSchedulePlanner(
         date: LocalDate,
         rule: ReminderRule,
         now: ZonedDateTime,
-    ): ZonedDateTime = ZonedDateTime.of(date, LocalTime.of(rule.hourOfDay, rule.minute), now.zone)
+    ): ZonedDateTime {
+        // A pinned time is the user's own choice and is never overridden;
+        // an unpinned rule may take the hour the user accepted from the
+        // engagement profile. Spec `13` §8.
+        val hour = resolveSendHour(rule, learnedSendHour)
+        return ZonedDateTime.of(date, LocalTime.of(hour, rule.minute), now.zone)
+    }
 }
 
 /**
