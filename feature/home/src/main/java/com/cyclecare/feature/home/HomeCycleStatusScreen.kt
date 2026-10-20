@@ -246,6 +246,13 @@ internal fun HomeCycleStatusScreen(
                         label = stringResource(R.string.fertile_window),
                         value = uiState.fertileWindowText.resolve(),
                     )
+                    // Spec 11 §5: a fertile window always says it is not
+                    // a contraceptive method.
+                    Text(
+                        text = stringResource(R.string.not_a_contraceptive_method),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                     DashboardKeyValueRow(
                         label = stringResource(R.string.ovulation_estimate),
                         value = uiState.ovulationEstimateText.resolve(),

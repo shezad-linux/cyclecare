@@ -809,7 +809,7 @@ private class TestAppEnvironment(
                 cycleRepository = FakeCycleRepository(emptyList()),
                 symptomRepository = FakeSymptomRepository(emptyList()),
                 predictionRepository = FakePredictionRepository(null),
-                insightRepository = FakeInsightRepository(),
+                insightRepository = FakeInsightRepository(lowData = true),
                 reminderRepository = FakeReminderRepository(emptyList()),
                 reminderChannelSettingsRepository = FakeReminderChannelSettingsRepository(),
                 reminderEventsRepository = FakeReminderEventsRepository(),
@@ -829,13 +829,42 @@ private class TestAppEnvironment(
          * A save that is in flight and cannot complete, so the screen stays
          * in its saving state for as long as the test needs it to.
          */
-        fun saving(): TestAppEnvironment = populated()
+        fun saving(): TestAppEnvironment = populated(
+            symptomRepository = FakeSymptomRepository(
+                initial = listOf(
+                    SymptomLog(
+                        id = "symptom-1",
+                        date = LocalDate.of(2026, 3, 16),
+                        mood = Mood.Stable,
+                        painLevel = PainLevel.Light,
+                        energyLevel = EnergyLevel.Steady,
+                        dischargeType = DischargeType.Dry,
+                    ),
+                ),
+                hangOnSave = true,
+            ),
+        )
 
         /** A save that has just completed, so the screen shows its saved state. */
         fun saved(): TestAppEnvironment = populated()
 
         /** The input is invalid, so the screen shows its validation message. */
         fun validationError(): TestAppEnvironment = populated()
+
+        /** An export that is written and never finishes, so the screen shows its working state. */
+        fun exportWorking(): TestAppEnvironment = populated(
+            exportRepository = FakeExportRepository(ExportBehaviour.Hangs),
+        )
+
+        /** An export that has just been written, so the screen shows its saved state. */
+        fun exportSucceeded(): TestAppEnvironment = populated(
+            exportRepository = FakeExportRepository(ExportBehaviour.Succeeds),
+        )
+
+        /** An export that cannot be written, so the screen shows its failure state. */
+        fun exportFailed(): TestAppEnvironment = populated(
+            exportRepository = FakeExportRepository(ExportBehaviour.Fails),
+        )
 
         /** Notifications are not permitted. */
         fun permissionDenied(): TestAppEnvironment {
@@ -858,7 +887,21 @@ private class TestAppEnvironment(
             return environment
         }
 
-        fun populated(): TestAppEnvironment {
+        fun populated(
+            symptomRepository: FakeSymptomRepository = FakeSymptomRepository(
+                listOf(
+                    SymptomLog(
+                        id = "symptom-1",
+                        date = LocalDate.of(2026, 3, 16),
+                        mood = Mood.Stable,
+                        painLevel = PainLevel.Light,
+                        energyLevel = EnergyLevel.Steady,
+                        dischargeType = DischargeType.Dry,
+                    ),
+                ),
+            ),
+            exportRepository: FakeExportRepository = FakeExportRepository(),
+        ): TestAppEnvironment {
             val profile = UserProfile(
                 ageBand = AgeBand.Twenties,
                 averageCycleLength = 28,
@@ -876,16 +919,6 @@ private class TestAppEnvironment(
                     cycleLength = 28,
                     source = CycleSource.User,
                     notes = "Initial cycle",
-                ),
-            )
-            val symptoms = listOf(
-                SymptomLog(
-                    id = "symptom-1",
-                    date = LocalDate.of(2026, 3, 16),
-                    mood = Mood.Stable,
-                    painLevel = PainLevel.Light,
-                    energyLevel = EnergyLevel.Steady,
-                    dischargeType = DischargeType.Dry,
                 ),
             )
             val prediction = PredictionSnapshot(
@@ -913,7 +946,7 @@ private class TestAppEnvironment(
             return TestAppEnvironment(
                 profileRepository = FakeProfileRepository(profile),
                 cycleRepository = FakeCycleRepository(cycles),
-                symptomRepository = FakeSymptomRepository(symptoms),
+                symptomRepository = symptomRepository,
                 predictionRepository = FakePredictionRepository(prediction),
                 insightRepository = FakeInsightRepository(),
                 reminderRepository = FakeReminderRepository(reminders),
@@ -926,7 +959,7 @@ private class TestAppEnvironment(
                         appLockEnabled = false,
                     ),
                 ),
-                exportRepository = FakeExportRepository(),
+                exportRepository = exportRepository,
                 scheduler = FakeReminderScheduler(),
                 secureAuthController = FakeSecureAuthController(),
             )
@@ -986,6 +1019,11 @@ private class FakeCycleRepository(
 private class FakeSymptomRepository(
     initial: List<SymptomLog>,
     val emitImmediately: Boolean = true,
+    /**
+     * When true a save never completes, so the screen stays in its
+     * saving state for as long as the test needs it to.
+     */
+    private val hangOnSave: Boolean = false,
 ) : SymptomRepository {
     private val state = MutableStateFlow(initial)
     val current: List<SymptomLog> get() = state.value
@@ -997,6 +1035,9 @@ private class FakeSymptomRepository(
         state.asStateFlow().map { logs -> logs.firstOrNull { it.date == date } }
 
     override suspend fun upsertSymptom(log: SymptomLog) {
+        if (hangOnSave) {
+            kotlinx.coroutines.awaitCancellation()
+        }
         state.update { current ->
             current.filterNot { it.id == log.id } + log
         }
@@ -1024,9 +1065,14 @@ private class FakePredictionRepository(
 private class FakeInsightRepository(
     /** When false the flow never emits, so the screen stays in its loading state. */
     val emitImmediately: Boolean = true,
+    /**
+     * When true the snapshot carries no cycle or symptom history, which
+     * is the empty state the Insights screens have to render.
+     */
+    private val lowData: Boolean = false,
 ) : InsightRepository {
     private val state = MutableStateFlow(
-        InsightSnapshot(
+        if (lowData) lowDataInsightSnapshot() else InsightSnapshot(
             averageCycleLength = 28,
             averagePeriodLength = 5,
             irregularCycles = false,
@@ -1076,6 +1122,32 @@ private class FakeInsightRepository(
     override fun observeInsights(): Flow<InsightSnapshot> =
         if (emitImmediately) state.asStateFlow() else emptyFlow()
 }
+
+/**
+ * The empty insights snapshot.
+ *
+ * One logged cycle is not two, so there is no cycle interval to average
+ * and no symptom history to group. The screens have to say so rather
+ * than show a chart of nothing.
+ */
+private fun lowDataInsightSnapshot() = InsightSnapshot(
+    averageCycleLength = 28,
+    averagePeriodLength = 5,
+    irregularCycles = false,
+    recentCycleLengths = emptyList(),
+    recentPeriodLengths = emptyList(),
+    minCycleLength = 28,
+    maxCycleLength = 28,
+    cycleWindowLabel = "Log two full cycles to unlock cycle trend charts.",
+    hasEnoughCycleData = false,
+    moodCounts = emptyMap(),
+    energyCounts = emptyMap(),
+    painCounts = emptyMap(),
+    dischargeCounts = emptyMap(),
+    phaseHighlights = emptyList(),
+    hasEnoughSymptomData = false,
+    narrativeSummary = "",
+)
 
 private class FakeReminderRepository(
     initial: List<ReminderRule>,
@@ -1317,15 +1389,34 @@ private class FakeSecureAuthController(
     }
 }
 
-private class FakeExportRepository : ExportRepository {
-    override suspend fun createReport(format: ExportFormat): ExportArtifact =
-        ExportArtifact(
+/**
+ * What the export repository does when the screen asks for a report.
+ */
+private enum class ExportBehaviour {
+    /** The report is written and the screen shows its saved state. */
+    Succeeds,
+
+    /** The report cannot be written and the screen shows its failure state. */
+    Fails,
+
+    /** The write never completes, so the screen stays in its working state. */
+    Hangs,
+}
+
+private class FakeExportRepository(
+    private val behaviour: ExportBehaviour = ExportBehaviour.Succeeds,
+) : ExportRepository {
+    override suspend fun createReport(format: ExportFormat): ExportArtifact = when (behaviour) {
+        ExportBehaviour.Succeeds -> ExportArtifact(
             format = format,
             displayName = "test.${format.name.lowercase()}",
             absolutePath = "/tmp/test",
             mimeType = "text/plain",
             generatedAt = LocalDate.now(),
         )
+        ExportBehaviour.Fails -> throw IllegalStateException("the report could not be written")
+        ExportBehaviour.Hangs -> kotlinx.coroutines.awaitCancellation()
+    }
 
     override suspend fun createEncryptedBackup(passphrase: CharArray): ExportArtifact =
         ExportArtifact(
@@ -1468,6 +1559,15 @@ internal enum class ScreenState {
 
     /** A notification channel has been switched off. */
     CHANNEL_DISABLED,
+
+    /** An export is in flight and has not finished. */
+    EXPORT_WORKING,
+
+    /** An export has just been written. */
+    EXPORT_SUCCEEDED,
+
+    /** An export could not be written. */
+    EXPORT_FAILED,
 }
 
 /**
@@ -1498,6 +1598,12 @@ internal fun stateEnvironment(
         ScreenState.PERMISSION_DENIED -> TestAppEnvironment.permissionDenied()
 
         ScreenState.CHANNEL_DISABLED -> TestAppEnvironment.channelDisabled()
+
+        ScreenState.EXPORT_WORKING -> TestAppEnvironment.exportWorking()
+
+        ScreenState.EXPORT_SUCCEEDED -> TestAppEnvironment.exportSucceeded()
+
+        ScreenState.EXPORT_FAILED -> TestAppEnvironment.exportFailed()
     }
     return environment.container to environment.secureAuthController
 }

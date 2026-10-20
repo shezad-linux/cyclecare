@@ -11,7 +11,6 @@ import com.cyclecare.core.designsystem.text.uiText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import com.cyclecare.core.designsystem.CycleCareTheme
-import com.cyclecare.core.designsystem.ScreenDebugPreviews
 
 @ScreenWidthPreviews
 @Composable
@@ -39,7 +38,7 @@ private fun HomeScreenPreview() {
     }
 }
 
-@ScreenDebugPreviews
+@ScreenWidthPreviews
 @Composable
 private fun HomeCycleStatusPreview() {
     CycleCareTheme {
@@ -52,7 +51,7 @@ private fun HomeCycleStatusPreview() {
     }
 }
 
-@ScreenDebugPreviews
+@ScreenWidthPreviews
 @Composable
 private fun HomeFertilityDetailPreview() {
     CycleCareTheme {
@@ -61,6 +60,32 @@ private fun HomeFertilityDetailPreview() {
             onBack = {},
             onOpenCalendar = {},
             onOpenInsights = {},
+        )
+    }
+}
+
+@ScreenWidthPreviews
+@Composable
+private fun EditCycleSheetPreview() {
+    CycleCareTheme {
+        EditCycleSheet(
+            editor = HomeEditorState(
+                isVisible = true,
+                isExpanded = true,
+                startDateText = "2026-03-11",
+                endDateText = "2026-03-15",
+                cycleLengthText = "28",
+                notes = "Cycle felt regular and symptoms stayed light.",
+            ),
+            hasCurrentCycle = false,
+            onDismiss = {},
+            onExpand = {},
+            onQuickStartPeriod = {},
+            onStartDateChanged = {},
+            onEndDateChanged = {},
+            onCycleLengthChanged = {},
+            onNotesChanged = {},
+            onSaveCycle = {},
         )
     }
 }

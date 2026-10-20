@@ -4,9 +4,9 @@ package com.cyclecare.feature.insights
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import com.cyclecare.core.designsystem.ScreenDebugPreviews
 import com.cyclecare.core.designsystem.ScreenWidthPreviews
 import com.cyclecare.core.designsystem.CycleCareTheme
-import com.cyclecare.core.designsystem.ScreenDebugPreviews
 import com.cyclecare.core.designsystem.text.UiText
 import com.cyclecare.core.model.Mood
 
@@ -34,7 +34,7 @@ private fun InsightsLowDataPreview() {
     }
 }
 
-@ScreenDebugPreviews
+@ScreenWidthPreviews
 @Composable
 private fun CycleTrendsPreview() {
     CycleCareTheme {
@@ -45,7 +45,7 @@ private fun CycleTrendsPreview() {
     }
 }
 
-@ScreenDebugPreviews
+@ScreenWidthPreviews
 @Composable
 private fun SymptomPatternsPreview() {
     CycleCareTheme {

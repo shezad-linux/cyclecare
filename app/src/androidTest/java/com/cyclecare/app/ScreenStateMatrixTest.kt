@@ -2,26 +2,24 @@ package com.cyclecare.app
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.cyclecare.core.designsystem.CycleCareTheme
 import com.google.common.truth.Truth.assertThat
-import java.io.File
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * The state matrix from spec `03` §6.
+ * The state matrix from spec `03` §6, at screen level.
  *
  * The specification lists ten state categories. This test covers the ones
  * the product actually has a surface for, and says so where it does not.
@@ -42,6 +40,12 @@ import org.junit.runner.RunWith
  * content is read from the local database and the app has no network
  * dependency for it. The export screen is the only screen that reaches
  * the network, and it is the only one with a failure state.
+ *
+ * "Unsupported or corrupt schema data" is a database condition rather
+ * than a screen state, and it is covered by the migration tests.
+ *
+ * The save states, the validation state and the export states are in
+ * [ScreenSaveStateMatrixTest].
  */
 @RunWith(AndroidJUnit4::class)
 class ScreenStateMatrixTest {
@@ -64,6 +68,46 @@ class ScreenStateMatrixTest {
         composeRule.waitForIdle()
     }
 
+    // ── navigation helpers ─────────────────────────────────────────
+
+    private fun openTab(route: String) {
+        composeRule.onNodeWithTag(navTag(route)).performClick()
+        composeRule.waitForIdle()
+    }
+
+    private fun openSettings() {
+        composeRule.onNodeWithTag("app_bar_settings").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodes(hasTestTag("settings_list")).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    private fun openExport() {
+        openSettings()
+        composeRule.onNodeWithTag("settings_list").performScrollToNode(hasText("Open export"))
+        composeRule.onNodeWithText("Open export").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodes(hasTestTag("export_screen")).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    private fun openPrivacy() {
+        openSettings()
+        composeRule.onNodeWithTag("settings_list").performScrollToNode(hasText("Open privacy lock"))
+        composeRule.onNodeWithText("Open privacy lock").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodes(hasTestTag("privacy_screen")).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    private fun openReminderCentre() {
+        openTab("home")
+        composeRule.onNodeWithTag("home_reminder_center").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodes(hasText("Reminder center")).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
     // ── loading ───────────────────────────────────────────────────
 
     @Test
@@ -78,7 +122,29 @@ class ScreenStateMatrixTest {
     @Test
     fun theLogScreenShowsItsLoadingStateBeforeTheDataArrives() {
         render(ScreenState.LOADING)
+
         composeRule.onNodeWithTag("logging_list").assertDoesNotExist()
+    }
+
+    @Test
+    fun noDataDrivenScreenIsReachableBeforeTheProfileArrives() {
+        render(ScreenState.LOADING)
+
+        // The local profile is what the whole app waits for, so while it
+        // is in flight there is no dashboard, no calendar, no log, no
+        // insights and no settings. This is the loading state for every
+        // data-driven screen, not only for Today.
+        listOf(
+            "home_dashboard",
+            "calendar_scroll",
+            "logging_list",
+            "insights_overview",
+            "settings_list",
+            "export_screen",
+            "privacy_screen",
+        ).forEach { tag ->
+            composeRule.onNodeWithTag(tag).assertDoesNotExist()
+        }
     }
 
     // ── content ───────────────────────────────────────────────────
@@ -94,8 +160,7 @@ class ScreenStateMatrixTest {
     @Test
     fun theLogScreenShowsItsContent() {
         render(ScreenState.CONTENT)
-        composeRule.onNodeWithTag(navTag("log")).performClick()
-        composeRule.waitForIdle()
+        openTab("log")
 
         composeRule.onNodeWithTag("logging_list").assertIsDisplayed()
     }
@@ -103,10 +168,91 @@ class ScreenStateMatrixTest {
     @Test
     fun theInsightsScreenShowsItsContent() {
         render(ScreenState.CONTENT)
-        composeRule.onNodeWithTag(navTag("insights")).performClick()
-        composeRule.waitForIdle()
+        openTab("insights")
 
         composeRule.onNodeWithTag("insights_overview").assertIsDisplayed()
+    }
+
+    @Test
+    fun theCalendarScreenShowsItsContent() {
+        render(ScreenState.CONTENT)
+        openTab("calendar")
+
+        composeRule.onNodeWithTag("calendar_scroll").assertIsDisplayed()
+    }
+
+    @Test
+    fun theCycleStatusScreenShowsItsContent() {
+        render(ScreenState.CONTENT)
+        composeRule.onNodeWithTag("home_dashboard")
+            .performScrollToNode(hasTestTag("home_cycle_status_cta"))
+        composeRule.onNodeWithTag("home_cycle_status_cta").performClick()
+
+        composeRule.onNodeWithTag("home_cycle_status_screen").assertIsDisplayed()
+    }
+
+    @Test
+    fun theFertilityDetailScreenShowsItsContent() {
+        render(ScreenState.CONTENT)
+        composeRule.onNodeWithTag("home_dashboard")
+            .performScrollToNode(hasTestTag("home_fertility_detail_cta"))
+        composeRule.onNodeWithTag("home_fertility_detail_cta").performClick()
+
+        composeRule.onNodeWithTag("home_fertility_detail_screen").assertIsDisplayed()
+    }
+
+    @Test
+    fun theCycleTrendsScreenShowsItsContent() {
+        render(ScreenState.CONTENT)
+        openTab("insights")
+        composeRule.onNodeWithTag("insights_overview")
+            .performScrollToNode(hasTestTag("insights_cycle_trends_cta"))
+        composeRule.onNodeWithTag("insights_cycle_trends_cta").performScrollTo().performClick()
+
+        composeRule.onNodeWithTag("insights_cycle_trends").assertIsDisplayed()
+    }
+
+    @Test
+    fun theSymptomPatternsScreenShowsItsContent() {
+        render(ScreenState.CONTENT)
+        openTab("insights")
+        composeRule.onNodeWithTag("insights_overview")
+            .performScrollToNode(hasTestTag("insights_symptom_patterns_cta"))
+        composeRule.onNodeWithTag("insights_symptom_patterns_cta").performScrollTo().performClick()
+
+        composeRule.onNodeWithTag("insights_symptom_patterns").assertIsDisplayed()
+    }
+
+    @Test
+    fun theSettingsScreenShowsItsContent() {
+        render(ScreenState.CONTENT)
+        openSettings()
+
+        composeRule.onNodeWithTag("settings_list").assertIsDisplayed()
+    }
+
+    @Test
+    fun theReminderCentreShowsItsContent() {
+        render(ScreenState.CONTENT)
+        openReminderCentre()
+
+        composeRule.onNodeWithText("Reminder center").assertIsDisplayed()
+    }
+
+    @Test
+    fun theExportScreenShowsItsContent() {
+        render(ScreenState.CONTENT)
+        openExport()
+
+        composeRule.onNodeWithTag("export_screen").assertIsDisplayed()
+    }
+
+    @Test
+    fun thePrivacyScreenShowsItsContent() {
+        render(ScreenState.CONTENT)
+        openPrivacy()
+
+        composeRule.onNodeWithTag("privacy_screen").assertIsDisplayed()
     }
 
     // ── empty ─────────────────────────────────────────────────────
@@ -114,10 +260,7 @@ class ScreenStateMatrixTest {
     @Test
     fun theReminderCentreShowsAnEmptyStateWhenNothingHasBeenDelivered() {
         render(ScreenState.EMPTY)
-        composeRule.onNodeWithTag(navTag("home")).performClick()
-        composeRule.waitForIdle()
-        composeRule.onNodeWithTag("home_reminder_center").performClick()
-        composeRule.waitForIdle()
+        openReminderCentre()
 
         composeRule.onNodeWithText("No reminders yet").assertIsDisplayed()
     }
@@ -133,6 +276,70 @@ class ScreenStateMatrixTest {
         // fabricated estimate.
         composeRule.onNodeWithText("Not enough history yet to give a range")
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun theCalendarShowsAnEmptyStateWithNoLoggedCycles() {
+        render(ScreenState.EMPTY)
+        openTab("calendar")
+
+        composeRule.onNodeWithTag("calendar_scroll").assertIsDisplayed()
+        composeRule.onNodeWithTag("calendar_scroll").performScrollToNode(
+            hasText(
+                "Your logged cycles will appear here once you save them. " +
+                    "History makes predictions and reminder timing more reliable.",
+            ),
+        )
+        composeRule.onNodeWithText(
+            "Your logged cycles will appear here once you save them. " +
+                "History makes predictions and reminder timing more reliable.",
+        ).assertIsDisplayed()
+    }
+
+    @Test
+    fun theInsightsScreenShowsAnEmptyStateWithNoHistory() {
+        render(ScreenState.EMPTY)
+        openTab("insights")
+
+        composeRule.onNodeWithTag("insights_overview").assertIsDisplayed()
+        composeRule.onNodeWithTag("insights_overview")
+            .performScrollToNode(hasText("Symptom clustering needs more check-ins"))
+        // The screen says the clustering is still building rather than
+        // grouping nothing.
+        composeRule.onNodeWithText("Symptom clustering needs more check-ins").assertIsDisplayed()
+        composeRule.onNodeWithTag("insights_overview")
+            .performScrollToNode(hasText("Build stronger patterns"))
+        composeRule.onNodeWithText("Build stronger patterns").assertIsDisplayed()
+    }
+
+    @Test
+    fun theCycleTrendChartIsNotOfferedWithNoHistory() {
+        render(ScreenState.EMPTY)
+        openTab("insights")
+
+        // With no cycle history there is no chart to open, so the app
+        // does not offer one. A locked chart behind a button that goes
+        // nowhere would be the alternative.
+        composeRule.onNodeWithTag("insights_cycle_trends_cta").assertDoesNotExist()
+    }
+
+    @Test
+    fun theSymptomPatternChartIsNotOfferedWithNoHistory() {
+        render(ScreenState.EMPTY)
+        openTab("insights")
+
+        composeRule.onNodeWithTag("insights_symptom_patterns_cta").assertDoesNotExist()
+    }
+
+    @Test
+    fun theExportScreenShowsItsIdleStateWithNothingGenerated() {
+        render(ScreenState.EMPTY)
+        openExport()
+
+        composeRule.onNodeWithTag("export_screen").assertIsDisplayed()
+        composeRule.onNodeWithText(
+            "Generate a local markdown or PDF report and keep it on-device.",
+        ).assertIsDisplayed()
     }
 
     // ── permission ────────────────────────────────────────────────
@@ -158,8 +365,7 @@ class ScreenStateMatrixTest {
     fun theSettingsScreenShowsAChannelThatHasBeenSwitchedOff() {
         render(ScreenState.CHANNEL_DISABLED)
 
-        composeRule.onNodeWithTag("app_bar_settings").performClick()
-        composeRule.waitForIdle()
+        openSettings()
         composeRule.onNodeWithTag("settings_list").performScrollToNode(hasTestTag("settings_reminders_enabled"))
         composeRule.onNodeWithTag("settings_reminders_enabled").assertIsDisplayed()
     }

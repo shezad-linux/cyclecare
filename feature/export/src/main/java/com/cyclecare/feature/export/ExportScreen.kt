@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -66,6 +67,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+/**
+ * Test tags for the export screen.
+ *
+ * The export screen is reachable from Settings and has no other
+ * distinguishing mark, so the state matrix needs a tag to address it.
+ */
+object ExportTags {
+    const val SCREEN = "export_screen"
+}
 
 sealed interface ExportStatus {
     data object Idle : ExportStatus
@@ -309,7 +320,7 @@ fun ExportRoute(factory: ExportViewModelFactory) {
 }
 
 @Composable
-private fun ExportScreen(
+internal fun ExportScreen(
     uiState: ExportUiState,
     onCreateMarkdownReport: () -> Unit,
     onCreatePdfReport: () -> Unit,
@@ -321,7 +332,8 @@ private fun ExportScreen(
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
-            .padding(CycleCareSpace.space16),
+            .padding(CycleCareSpace.space16)
+            .testTag(ExportTags.SCREEN),
         verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
     ) {
         GradientHeaderCard(

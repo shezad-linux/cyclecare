@@ -8,14 +8,14 @@ package com.cyclecare.feature.calendar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import com.cyclecare.core.designsystem.CycleCareTheme
-import com.cyclecare.core.designsystem.ScreenDebugPreviews
+import com.cyclecare.core.designsystem.ScreenWidthPreviews
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
 import com.cyclecare.core.model.PredictionSnapshot
 import java.time.LocalDate
 import java.time.YearMonth
 
-@ScreenDebugPreviews
+@ScreenWidthPreviews
 @Composable
 private fun CalendarScreenPreview() {
     val sampleCycle = CycleRecord(
@@ -50,6 +50,37 @@ private fun CalendarScreenPreview() {
                 cycles = listOf(sampleCycle),
                 prediction = samplePrediction,
                 historyItems = buildHistoryItems(listOf(sampleCycle)),
+            ),
+            onPreviousMonth = {},
+            onNextMonth = {},
+            onSelectDate = {},
+            onOpenCreate = {},
+            onOpenEdit = {},
+            onOpenHistoryEdit = {},
+            onStartDateChanged = {},
+            onEndDateChanged = {},
+            onCycleLengthChanged = {},
+            onNotesChanged = {},
+            onSaveCycle = {},
+            onDismissEditor = {},
+            onShowDeleteConfirmation = {},
+            onDismissDeleteConfirmation = {},
+            onDeleteCycle = {},
+        )
+    }
+}
+
+@ScreenWidthPreviews
+@Composable
+private fun CalendarEmptyScreenPreview() {
+    CycleCareTheme {
+        CalendarScreen(
+            uiState = CalendarUiState(
+                month = YearMonth.of(2026, 3),
+                selectedDate = LocalDate.of(2026, 3, 16),
+                historyEmptyMessage = com.cyclecare.core.designsystem.text.uiText(
+                    R.string.history_empty_message,
+                ),
             ),
             onPreviousMonth = {},
             onNextMonth = {},

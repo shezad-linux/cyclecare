@@ -10,6 +10,11 @@ import androidx.compose.ui.tooling.preview.Preview
  * 320dp exercises every stacked arrangement, 360dp sits on the breakpoint
  * itself, and 600dp and 840dp are the side-by-side arrangements.
  *
+ * Every width is declared in both colour schemes. The dark set used to
+ * carry only the two ends of the range, which meant the middle widths
+ * were never seen in dark mode, and the phase requires all four widths
+ * in both schemes.
+ *
  * Applied only to the components and screens that change shape at those
  * widths. Generating one of these for every trivial component would make
  * the preview list unusable and would not find anything.
@@ -41,6 +46,20 @@ import androidx.compose.ui.tooling.preview.Preview
 @Preview(
     name = "320 Dark",
     widthDp = 320,
+    showBackground = true,
+    backgroundColor = 0xFF141414,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+@Preview(
+    name = "360 Dark",
+    widthDp = 360,
+    showBackground = true,
+    backgroundColor = 0xFF141414,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+@Preview(
+    name = "600 Dark",
+    widthDp = 600,
     showBackground = true,
     backgroundColor = 0xFF141414,
     uiMode = Configuration.UI_MODE_NIGHT_YES,

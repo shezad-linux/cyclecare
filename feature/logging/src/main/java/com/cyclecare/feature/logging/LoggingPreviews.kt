@@ -5,7 +5,7 @@ package com.cyclecare.feature.logging
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import com.cyclecare.core.designsystem.CycleCareTheme
-import com.cyclecare.core.designsystem.ScreenDebugPreviews
+import com.cyclecare.core.designsystem.ScreenWidthPreviews
 import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.model.AgeBand
 import com.cyclecare.core.model.DischargeType
@@ -19,7 +19,7 @@ import com.cyclecare.core.model.DateRange
 import com.cyclecare.core.model.UserProfile
 import java.time.LocalDate
 
-@ScreenDebugPreviews
+@ScreenWidthPreviews
 @Composable
 private fun LoggingScreenPreview() {
     CycleCareTheme {
@@ -38,12 +38,34 @@ private fun LoggingScreenPreview() {
     }
 }
 
-@ScreenDebugPreviews
+@ScreenWidthPreviews
 @Composable
 private fun LoggingScreenEditingPreview() {
     CycleCareTheme {
         LoggingScreen(
             uiState = previewLoggingUiState(hasExistingEntry = true),
+            onMoodSelected = {},
+            onPainSelected = {},
+            onEnergySelected = {},
+            onDischargeSelected = {},
+            onMedicationChanged = {},
+            onNotesChanged = {},
+            onToggleDetailsExpanded = {},
+            onSave = {},
+            onApplyYesterdayPattern = {},
+        )
+    }
+}
+
+@ScreenWidthPreviews
+@Composable
+private fun LoggingScreenSavingPreview() {
+    CycleCareTheme {
+        LoggingScreen(
+            uiState = previewLoggingUiState().copy(
+                isSaving = true,
+                isSaveEnabled = false,
+            ),
             onMoodSelected = {},
             onPainSelected = {},
             onEnergySelected = {},

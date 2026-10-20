@@ -288,7 +288,13 @@ internal fun buildSelectedDaySummary(
     locale: Locale = Locale.getDefault(),
 ): SelectedDaySummary {
     val isOvulationDay = prediction?.ovulationDate == selectedDate
-    val isFertileDay = prediction?.fertileWindow?.let { selectedDate >= it.start && selectedDate <= it.endInclusive } == true
+    // The snapshot always carries a fertile window: when the engine
+    // declined to produce one, the mapper fills the field in with a
+    // presentation fallback. That fallback is not an estimate, so the
+    // calendar gates on `supportsRange` rather than marking days the
+    // engine never estimated.
+    val engineFertileWindow = prediction?.takeIf { it.supportsRange }?.fertileWindow
+    val isFertileDay = engineFertileWindow?.let { selectedDate >= it.start && selectedDate <= it.endInclusive } == true
     val isToday = selectedDate == today
     val isFuture = selectedDate.isAfter(today)
     val daysUntilPeriod = prediction?.daysUntilNextPeriod
@@ -335,7 +341,7 @@ internal fun buildSelectedDaySummary(
         )
 
         isFertileDay -> {
-            val daysInFertileWindow = prediction?.fertileWindow?.let {
+            val daysInFertileWindow = engineFertileWindow?.let {
                 java.time.temporal.ChronoUnit.DAYS.between(it.start, selectedDate).toInt() + 1
             } ?: 1
             SelectedDaySummary(
@@ -420,7 +426,8 @@ internal fun buildCalendarDays(
     return (0 until 42).map { index ->
         val date = start.plusDays(index.toLong())
         val isPeriodDay = uiState.cycles.any { date >= it.startDate && date <= it.endDate }
-        val isFertileDay = uiState.prediction?.fertileWindow?.let { date >= it.start && date <= it.endInclusive } == true
+        val engineFertileWindow = uiState.prediction?.takeIf { it.supportsRange }?.fertileWindow
+        val isFertileDay = engineFertileWindow?.let { date >= it.start && date <= it.endInclusive } == true
         val isOvulationDay = uiState.prediction?.ovulationDate == date
         CalendarDay(
             date = date,
