@@ -386,7 +386,7 @@ class PredictionCorpusGateTest {
         Corpus.all().forEach { scenario ->
             val input = inputFor(scenario, scenario.starts.size)
             val first = engine.predict(input)
-            repeat(20) {
+            repeat(1000) {
                 assertThat(engine.predict(input)).isEqualTo(first)
             }
         }
