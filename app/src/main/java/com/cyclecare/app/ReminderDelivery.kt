@@ -66,6 +66,14 @@ internal object ReminderDelivery {
         val targetEpochDay = payload.targetEpochDay
         val scheduledAtEpochMillis = payload.scheduledAtEpochMillis
         val deliveredAtEpochMillis = container.timeProvider.nowEpochMillis()
+        // The lateness is classified before it is logged. The log line
+        // is written at the delivery instant, so a delay in minutes
+        // could be subtracted from that time to recover the scheduled
+        // instant — which for a period reminder is the derived cycle
+        // date. A class cannot be subtracted.
+        val deliveryLatency = deliveryLatencyOf(
+            maxOf(0L, deliveredAtEpochMillis - scheduledAtEpochMillis),
+        )
 
         val event = ReminderEvent(
             id = "${payload.ruleId}-$scheduledAtEpochMillis",
@@ -222,6 +230,9 @@ internal object ReminderDelivery {
                     reason = gateOutcome.reason,
                 )
                 ReminderDeferralScheduler.schedule(context, gateOutcome.deferredUntilEpochMillis)
+                // The hour is worked out here rather than inside the log
+                // call, so that no instant is ever an argument to a log.
+                val deferUntilHour = hourOfDay(gateOutcome.deferredUntilEpochMillis)
                 logger.info(
                     tag = ReminderDeliveryLog.TAG,
                     event = "delivery_deferred",
@@ -230,7 +241,7 @@ internal object ReminderDelivery {
                         type = payload.reminderType,
                         reason = gateOutcome.reason,
                         deferredCount = deferredCount,
-                        deferUntilHour = hourOfDay(gateOutcome.deferredUntilEpochMillis),
+                        deferUntilHour = deferUntilHour,
                     ),
                 )
                 return ReminderDeliveryOutcome.Delivered
@@ -327,10 +338,7 @@ internal object ReminderDelivery {
                         type = event.type,
                         channelKey = channelKey,
                         leadDays = payload.leadDays,
-                        deliveryDelayMinutes = maxOf(
-                            0L,
-                            (deliveredAtEpochMillis - scheduledAtEpochMillis) / MILLIS_PER_MINUTE,
-                        ),
+                        deliveryLatency = deliveryLatency,
                         score = deliveredScore,
                         threshold = deliveredThreshold,
                     ),
@@ -514,6 +522,4 @@ internal object ReminderDelivery {
      */
     private fun hourOfDay(epochMillis: Long): Int =
         Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).hour
-
-    private const val MILLIS_PER_MINUTE = 60_000L
 }
