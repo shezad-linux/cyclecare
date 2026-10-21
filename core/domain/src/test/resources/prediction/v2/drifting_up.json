@@ -1,0 +1,178 @@
+{
+  "name": "drifting_up",
+  "algorithmVersion": "2.1.0",
+  "description": "Cycles two days longer each time. The drift correction is applied and capped.",
+  "today": "2026-11-25",
+  "observed": [
+    {
+      "id": "r0",
+      "startDate": "2026-01-05",
+      "endDate": "2026-01-09",
+      "source": "User"
+    },
+    {
+      "id": "r1",
+      "startDate": "2026-02-02",
+      "endDate": "2026-02-06",
+      "source": "User"
+    },
+    {
+      "id": "r2",
+      "startDate": "2026-03-04",
+      "endDate": "2026-03-08",
+      "source": "User"
+    },
+    {
+      "id": "r3",
+      "startDate": "2026-04-05",
+      "endDate": "2026-04-09",
+      "source": "User"
+    },
+    {
+      "id": "r4",
+      "startDate": "2026-05-09",
+      "endDate": "2026-05-13",
+      "source": "User"
+    },
+    {
+      "id": "r5",
+      "startDate": "2026-06-14",
+      "endDate": "2026-06-18",
+      "source": "User"
+    },
+    {
+      "id": "r6",
+      "startDate": "2026-07-22",
+      "endDate": "2026-07-26",
+      "source": "User"
+    },
+    {
+      "id": "r7",
+      "startDate": "2026-08-31",
+      "endDate": "2026-09-04",
+      "source": "User"
+    },
+    {
+      "id": "r8",
+      "startDate": "2026-10-12",
+      "endDate": "2026-10-16",
+      "source": "User"
+    },
+    {
+      "id": "r9",
+      "startDate": "2026-11-25",
+      "endDate": "2026-11-29",
+      "source": "User"
+    }
+  ],
+  "expected": {
+    "nextPeriodDate": "2027-01-03",
+    "nextPeriodWindow": {
+      "start": "2026-12-27",
+      "endInclusive": "2027-01-10",
+      "halfWidthDays": 7
+    },
+    "fertileWindow": {
+      "start": "2026-12-07",
+      "endInclusive": "2026-12-30",
+      "halfWidthDays": 7
+    },
+    "ovulationDate": "2026-12-20",
+    "centerCycleLength": 37.27238919754792,
+    "dispersionSigma": 7.471237319976237,
+    "trendAdjustmentDays": 1.7483488360437307,
+    "isIrregular": false,
+    "isStale": false,
+    "quality": "LOW",
+    "warnings": [
+      "TREND_DETECTED"
+    ],
+    "recordIdsUsed": [
+      "r0",
+      "r1",
+      "r2",
+      "r3",
+      "r4",
+      "r5",
+      "r6",
+      "r7",
+      "r8",
+      "r9"
+    ],
+    "intervalsUsed": [
+      {
+        "fromRecordId": "r0",
+        "toRecordId": "r1",
+        "startDate": "2026-01-05",
+        "lengthDays": 28,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r1",
+        "toRecordId": "r2",
+        "startDate": "2026-02-02",
+        "lengthDays": 30,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r2",
+        "toRecordId": "r3",
+        "startDate": "2026-03-04",
+        "lengthDays": 32,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r3",
+        "toRecordId": "r4",
+        "startDate": "2026-04-05",
+        "lengthDays": 34,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r4",
+        "toRecordId": "r5",
+        "startDate": "2026-05-09",
+        "lengthDays": 36,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r5",
+        "toRecordId": "r6",
+        "startDate": "2026-06-14",
+        "lengthDays": 38,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r6",
+        "toRecordId": "r7",
+        "startDate": "2026-07-22",
+        "lengthDays": 40,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r7",
+        "toRecordId": "r8",
+        "startDate": "2026-08-31",
+        "lengthDays": 42,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r8",
+        "toRecordId": "r9",
+        "startDate": "2026-10-12",
+        "lengthDays": 44,
+        "usable": true,
+        "exclusionReason": null
+      }
+    ],
+    "intervalsExcluded": []
+  }
+}

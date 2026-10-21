@@ -164,21 +164,84 @@ object Corpus {
     /** One recorded period with nothing to compare it against. */
     fun singleRecord(): Scenario = Scenario("single_record", listOf(start(0)), 0)
 
-    /** An implausible gap that must be excluded, not averaged in. */
+    /**
+     * An implausible gap that must be excluded, not averaged in.
+     *
+     * The gap is real: a run of ordinary cycles, then a jump of [gap]
+     * days, then ordinary cycles again. The jump is longer than
+     * `MAX_PLAUSIBLE_INTERVAL_DAYS`, so the extractor excludes it and
+     * reports it, and the centre is fitted on the ordinary cycles either
+     * side.
+     *
+     * An earlier version of this generator built the gap and then failed
+     * to put it in the scenario, so the history it produced held two
+     * duplicated dates and no gap at all. The exclusion it appeared to
+     * prove was the short end of the plausibility band, not the long one.
+     */
     fun impossibleGap(mean: Int = 28, gap: Int = 300): Scenario {
-        val first = build(List(3) { mean })
-        val afterGap = first.last().plusDays(gap.toLong())
-        val tail = listOf(afterGap)
-        var day = afterGap
-        val more = build(List(3) { mean }).drop(1)
-        tail.forEach { day = it }
+        val before = build(List(3) { mean })
+        val afterGap = before.last().plusDays(gap.toLong())
+        val tail = listOf(
+            afterGap,
+            afterGap.plusDays(mean.toLong()),
+            afterGap.plusDays(2L * mean.toLong()),
+        )
         return Scenario(
             "impossible_gap_$gap",
-            first + more,
+            before + tail,
             expectedIntervals = 6,
             stress = true,
         )
     }
+
+    /**
+     * One interval that is a data-entry error rather than a cycle.
+     *
+     * Spec `12` §3 names this generator: "Impossible intervals must not
+     * influence the centre". The planted interval is longer than
+     * `MAX_PLAUSIBLE_INTERVAL_DAYS`, so the extractor excludes it, and
+     * the estimate must be the one the same history would produce
+     * without it.
+     */
+    fun dataEntryError(
+        cycles: Int = 8,
+        errorIndex: Int = 3,
+        magnitude: Int = 200,
+        mean: Int = 28,
+    ): Scenario {
+        require(errorIndex in 0 until cycles) { "errorIndex $errorIndex is outside 0 until $cycles" }
+        val lengths = List(cycles) { mean }.toMutableList()
+        lengths[errorIndex] = magnitude
+        return Scenario(
+            "data_entry_error_${errorIndex}_${magnitude}_$cycles",
+            build(lengths),
+            cycles,
+            stress = true,
+        )
+    }
+
+    /**
+     * Calendar boundaries, with plausible cycle lengths.
+     *
+     * Spec `12` §3 names this generator: "Leap day, month end, year
+     * boundary, DST-adjacent dates". The intervals are ordinary 28-day
+     * cycles, so the estimate is a real estimate rather than a fallback,
+     * and the history spans a year boundary (15 December to 12 January)
+     * and a leap day (9 February to 8 March 2024, which contains 29
+     * February).
+     */
+    fun calendarEdge(): Scenario = Scenario(
+        "calendar_edge",
+        listOf(
+            LocalDate.parse("2023-12-15"),
+            LocalDate.parse("2024-01-12"),
+            LocalDate.parse("2024-02-09"),
+            LocalDate.parse("2024-03-08"),
+            LocalDate.parse("2024-04-05"),
+            LocalDate.parse("2024-05-03"),
+        ),
+        expectedIntervals = 5,
+    )
 
     /** A skipped period, which is a long but plausible interval. */
     fun skipped(cycles: Int = 8, mean: Int = 28, skipAt: Int = 3): Scenario {

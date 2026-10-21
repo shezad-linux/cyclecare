@@ -1,0 +1,131 @@
+{
+  "name": "regular_28_sigma2_6cycles",
+  "algorithmVersion": "2.1.0",
+  "description": "Six cycles around 28 days with two days of spread.",
+  "today": "2026-06-28",
+  "observed": [
+    {
+      "id": "r0",
+      "startDate": "2026-01-05",
+      "endDate": "2026-01-09",
+      "source": "User"
+    },
+    {
+      "id": "r1",
+      "startDate": "2026-02-03",
+      "endDate": "2026-02-07",
+      "source": "User"
+    },
+    {
+      "id": "r2",
+      "startDate": "2026-03-06",
+      "endDate": "2026-03-10",
+      "source": "User"
+    },
+    {
+      "id": "r3",
+      "startDate": "2026-04-04",
+      "endDate": "2026-04-08",
+      "source": "User"
+    },
+    {
+      "id": "r4",
+      "startDate": "2026-05-03",
+      "endDate": "2026-05-07",
+      "source": "User"
+    },
+    {
+      "id": "r5",
+      "startDate": "2026-05-31",
+      "endDate": "2026-06-04",
+      "source": "User"
+    },
+    {
+      "id": "r6",
+      "startDate": "2026-06-28",
+      "endDate": "2026-07-02",
+      "source": "User"
+    }
+  ],
+  "expected": {
+    "nextPeriodDate": "2026-07-27",
+    "nextPeriodWindow": {
+      "start": "2026-07-25",
+      "endInclusive": "2026-07-29",
+      "halfWidthDays": 2
+    },
+    "fertileWindow": {
+      "start": "2026-07-05",
+      "endInclusive": "2026-07-18",
+      "halfWidthDays": 2
+    },
+    "ovulationDate": "2026-07-13",
+    "centerCycleLength": 28.640330504795017,
+    "dispersionSigma": 1.3642528501709714,
+    "trendAdjustmentDays": 0,
+    "isIrregular": false,
+    "isStale": false,
+    "quality": "MODERATE",
+    "warnings": [],
+    "recordIdsUsed": [
+      "r0",
+      "r1",
+      "r2",
+      "r3",
+      "r4",
+      "r5",
+      "r6"
+    ],
+    "intervalsUsed": [
+      {
+        "fromRecordId": "r0",
+        "toRecordId": "r1",
+        "startDate": "2026-01-05",
+        "lengthDays": 29,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r1",
+        "toRecordId": "r2",
+        "startDate": "2026-02-03",
+        "lengthDays": 31,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r2",
+        "toRecordId": "r3",
+        "startDate": "2026-03-06",
+        "lengthDays": 29,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r3",
+        "toRecordId": "r4",
+        "startDate": "2026-04-04",
+        "lengthDays": 29,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r4",
+        "toRecordId": "r5",
+        "startDate": "2026-05-03",
+        "lengthDays": 28,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r5",
+        "toRecordId": "r6",
+        "startDate": "2026-05-31",
+        "lengthDays": 28,
+        "usable": true,
+        "exclusionReason": null
+      }
+    ],
+    "intervalsExcluded": []
+  }
+}

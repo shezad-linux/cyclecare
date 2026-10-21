@@ -10,9 +10,18 @@ import java.time.LocalDate
  * A change in golden-fixture output without a version bump is a defect,
  * not an update.
  *
+ * `2.1.0` — the fertile window is now the shape spec `11` §4.5
+ * describes: the population-typical `[ovulation - 4, ovulation + 1]`,
+ * widened by the `§4.6` uncertainty and by the irreducible
+ * `LUTEAL_PHASE_SIGMA_DAYS` floor. Under `2.0.0` the engine emitted a
+ * symmetric window eight days wide on each side of ovulation and never
+ * applied the luteal floor at all, so the two behaviours are not
+ * interchangeable and the version has to tell them apart. Reason
+ * recorded in `01`'s ADR log and in `12` §7's golden fixtures.
+ *
  * Spec: CycleCare-Redesign-Docs/11-prediction-engine.md
  */
-const val PREDICTION_ALGORITHM_VERSION = "2.0.0"
+const val PREDICTION_ALGORITHM_VERSION = "2.1.0"
 
 // ── Named thresholds ──────────────────────────────────────────────
 //

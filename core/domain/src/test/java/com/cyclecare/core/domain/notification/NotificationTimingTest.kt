@@ -3,6 +3,7 @@ package com.cyclecare.core.domain.notification
 import com.cyclecare.core.domain.prediction.CyclePrediction
 import com.cyclecare.core.domain.prediction.CyclePhase
 import com.cyclecare.core.domain.prediction.EstimateQuality
+import com.cyclecare.core.domain.prediction.PREDICTION_ALGORITHM_VERSION
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
 import org.junit.Test
@@ -15,7 +16,7 @@ class NotificationTimingTest {
         quality: EstimateQuality =
             if (halfWidth == null) EstimateQuality.INSUFFICIENT_HISTORY else EstimateQuality.MODERATE,
     ) = CyclePrediction(
-        algorithmVersion = "2.0.0",
+        algorithmVersion = PREDICTION_ALGORITHM_VERSION,
         generatedForDate = LocalDate.parse(generatedFor),
         anchorRecordId = "anchor",
         anchorDate = LocalDate.parse("2026-09-25"),

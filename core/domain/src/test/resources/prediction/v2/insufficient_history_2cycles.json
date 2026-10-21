@@ -1,0 +1,63 @@
+{
+  "name": "insufficient_history_2cycles",
+  "algorithmVersion": "2.1.0",
+  "description": "Two cycles. There is no range to give, and the engine must not invent one.",
+  "today": "2026-03-02",
+  "observed": [
+    {
+      "id": "r0",
+      "startDate": "2026-01-05",
+      "endDate": "2026-01-09",
+      "source": "User"
+    },
+    {
+      "id": "r1",
+      "startDate": "2026-02-02",
+      "endDate": "2026-02-06",
+      "source": "User"
+    },
+    {
+      "id": "r2",
+      "startDate": "2026-03-02",
+      "endDate": "2026-03-06",
+      "source": "User"
+    }
+  ],
+  "expected": {
+    "nextPeriodDate": "2026-03-30",
+    "nextPeriodWindow": null,
+    "fertileWindow": null,
+    "ovulationDate": "2026-03-16",
+    "centerCycleLength": 27.999999999999996,
+    "dispersionSigma": 9.21769327533184E-15,
+    "trendAdjustmentDays": 0,
+    "isIrregular": false,
+    "isStale": false,
+    "quality": "INSUFFICIENT_HISTORY",
+    "warnings": [],
+    "recordIdsUsed": [
+      "r0",
+      "r1",
+      "r2"
+    ],
+    "intervalsUsed": [
+      {
+        "fromRecordId": "r0",
+        "toRecordId": "r1",
+        "startDate": "2026-01-05",
+        "lengthDays": 28,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r1",
+        "toRecordId": "r2",
+        "startDate": "2026-02-02",
+        "lengthDays": 28,
+        "usable": true,
+        "exclusionReason": null
+      }
+    ],
+    "intervalsExcluded": []
+  }
+}
