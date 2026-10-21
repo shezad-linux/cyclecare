@@ -1,0 +1,341 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*'
+  workflow_dispatch:
+
+# A release is not cancelled half way. A second run on the same tag
+# waits for the first one rather than replacing it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: '21'
+  # bundletool version used for the real App Bundle validation. The
+  # download is best effort: if it fails the structural fallback runs
+  # and says so.
+  BUNDLETOOL_VERSION: '1.18.3'
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────
+  # Guards.
+  #
+  # These are the same guards ci.yml runs, unchanged. A release is a
+  # build of the same source, so it must not be able to bypass a
+  # check that the ordinary CI enforces: the ad-targeting guard, the
+  # typography guard, the secret scan and the signing-secret check.
+  # ─────────────────────────────────────────────────────────────────
+  guards:
+    name: Privacy and secret guards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # gitleaks needs full history to scan it, and the version
+          # check needs the previous release tag.
+          fetch-depth: 0
+
+      - name: No ad-targeting APIs in the app module
+        run: ./scripts/guard-no-ad-targeting.sh
+
+      - name: Every typography role is used
+        run: ./scripts/guard-typography-roles.sh
+
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
+
+      - name: Confirm signing secrets are not tracked
+        run: |
+          set -euo pipefail
+          for pattern in keystore.properties '*.jks' '*.keystore' \
+                        google-services.json 'app/signing/'; do
+            if git ls-files --error-unmatch "$pattern" >/dev/null 2>&1; then
+              echo "FAIL: signing or Firebase config is tracked: $pattern"
+              git ls-files | grep "$pattern"
+              exit 1
+            fi
+          done
+          echo "  OK: no signing secret or Firebase config is tracked."
+
+  # ─────────────────────────────────────────────────────────────────
+  # Version.
+  #
+  # versionCode has to be a positive integer that is strictly greater
+  # than the previous release tag's, and the tag and the source have to
+  # agree about versionName. This runs before the build so a bad
+  # version fails in seconds rather than after a full R8 build.
+  # ─────────────────────────────────────────────────────────────────
+  version:
+    name: Version check
+    runs-on: ubuntu-latest
+    needs: guards
+    outputs:
+      version_code: ${{ steps.check.outputs.version_code }}
+      version_name: ${{ steps.check.outputs.version_name }}
+      tag: ${{ steps.check.outputs.tag }}
+      previous_tag: ${{ steps.check.outputs.previous_tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Check the release version
+        id: check
+        run: ./scripts/check-release-version.sh
+
+  # ─────────────────────────────────────────────────────────────────
+  # The signed bundle.
+  #
+  # The `release` environment holds the four signing secrets. It has to
+  # be created by the repository owner, with the environment protected
+  # by a reviewer. See CycleCare-Redesign-Docs/25-release-pipeline.md.
+  # ─────────────────────────────────────────────────────────────────
+  bundle:
+    name: Signed release bundle
+    runs-on: ubuntu-latest
+    needs: [guards, version]
+    environment:
+      name: release
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Full history: the provenance file records the git describe
+          # output and the previous release tag.
+          fetch-depth: 0
+
+      - name: Confirm the checkout is the exact source commit
+        shell: bash
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          CHECKED_OUT=$(git rev-parse HEAD)
+          echo "  checked out: ${CHECKED_OUT}"
+          echo "  expected   : ${EXPECTED_COMMIT}"
+          if [ "${CHECKED_OUT}" != "${EXPECTED_COMMIT}" ]; then
+            echo "::error::The checkout is not the commit that triggered this workflow."
+            exit 1
+          fi
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # ─────────────────────────────────────────────────────────────
+      # bundletool, best effort.
+      #
+      # When the jar is there, the bundle is validated by bundletool.
+      # When it is not, scripts/validate-aab.sh runs the documented
+      # structural fallback and says that it did. The download is
+      # never allowed to fail the release silently.
+      # ─────────────────────────────────────────────────────────────
+      - name: Fetch bundletool
+        shell: bash
+        run: |
+          set -euo pipefail
+          JAR="${RUNNER_TEMP}/bundletool.jar"
+          URL="https://github.com/android/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar"
+          if curl --fail --silent --show-error --location \
+               --retry 3 --retry-delay 2 \
+               --output "${JAR}" "${URL}"; then
+            if java -cp "${JAR}" com.android.tools.build.bundletool.BundleToolMain version >/dev/null 2>&1; then
+              echo "BUNDLETOOL=${JAR}" >> "${GITHUB_ENV}"
+              echo "  bundletool ${BUNDLETOOL_VERSION} is available."
+            else
+              rm -f "${JAR}"
+              echo "::warning::The bundletool jar downloaded but did not run. The structural fallback will be used."
+            fi
+          else
+            rm -f "${JAR}"
+            echo "::warning::bundletool could not be downloaded. The structural fallback will be used and the validation will say so."
+          fi
+
+      # The unit tests run before the signing material exists on the
+      # runner, so the key is not lying around during a step that does
+      # not need it.
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest --stacktrace
+
+      # ─────────────────────────────────────────────────────────────
+      # Signing material.
+      #
+      # The keystore is decoded from the base64 secret into the
+      # runner's temporary directory, outside the repository, so it
+      # cannot be committed and does not sit in the working tree.
+      # keystore.properties is rebuilt there too, never in the
+      # repository. Nothing is echoed: the values are written to files
+      # with printf and the files are removed at the end of the job.
+      # ─────────────────────────────────────────────────────────────
+      - name: Reconstruct the signing material in the runner temporary directory
+        shell: bash
+        env:
+          CYCLECARE_KEYSTORE_BASE64: ${{ secrets.CYCLECARE_KEYSTORE_BASE64 }}
+          CYCLECARE_STORE_PASSWORD: ${{ secrets.CYCLECARE_STORE_PASSWORD }}
+          CYCLECARE_KEY_ALIAS: ${{ secrets.CYCLECARE_KEY_ALIAS }}
+          CYCLECARE_KEY_PASSWORD: ${{ secrets.CYCLECARE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+
+          missing=0
+          for name in CYCLECARE_KEYSTORE_BASE64 CYCLECARE_STORE_PASSWORD \
+                       CYCLECARE_KEY_ALIAS CYCLECARE_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Required secret ${name} is not set in the 'release' environment."
+              missing=1
+            fi
+          done
+          if [ "${missing}" -ne 0 ]; then
+            echo "::error::The 'release' environment needs the four signing secrets. See CycleCare-Redesign-Docs/25-release-pipeline.md."
+            exit 1
+          fi
+
+          # Mask the encoded keystore as well, so that a stray echo can
+          # never put it in the log.
+          echo "::add-mask::${CYCLECARE_KEYSTORE_BASE64}"
+
+          SIGN_DIR="${RUNNER_TEMP}/cyclecare-signing"
+          mkdir -p "${SIGN_DIR}"
+
+          printf '%s' "${CYCLECARE_KEYSTORE_BASE64}" | base64 --decode > "${SIGN_DIR}/upload-keystore.jks"
+          if [ ! -s "${SIGN_DIR}/upload-keystore.jks" ]; then
+            echo "::error::The decoded keystore is empty."
+            exit 1
+          fi
+          chmod 600 "${SIGN_DIR}/upload-keystore.jks"
+
+          {
+            printf 'storeFile=%s\n' "${SIGN_DIR}/upload-keystore.jks"
+            printf 'storePassword=%s\n' "${CYCLECARE_STORE_PASSWORD}"
+            printf 'keyAlias=%s\n' "${CYCLECARE_KEY_ALIAS}"
+            printf 'keyPassword=%s\n' "${CYCLECARE_KEY_PASSWORD}"
+          } > "${SIGN_DIR}/keystore.properties"
+          chmod 600 "${SIGN_DIR}/keystore.properties"
+
+          # Only paths are exported. The secrets stay in this step's
+          # environment and are handed to Gradle explicitly below.
+          {
+            echo "CYCLECARE_KEYSTORE_PROPERTIES=${SIGN_DIR}/keystore.properties"
+            echo "CYCLECARE_STORE_FILE=${SIGN_DIR}/upload-keystore.jks"
+            echo "SIGN_DIR=${SIGN_DIR}"
+          } >> "${GITHUB_ENV}"
+
+          echo "  signing material is in ${SIGN_DIR}, outside the repository."
+
+      - name: Build the signed release bundle
+        shell: bash
+        env:
+          CYCLECARE_STORE_PASSWORD: ${{ secrets.CYCLECARE_STORE_PASSWORD }}
+          CYCLECARE_KEY_ALIAS: ${{ secrets.CYCLECARE_KEY_ALIAS }}
+          CYCLECARE_KEY_PASSWORD: ${{ secrets.CYCLECARE_KEY_PASSWORD }}
+          CYCLECARE_VERSION_CODE: ${{ needs.version.outputs.version_code }}
+          CYCLECARE_VERSION_NAME: ${{ needs.version.outputs.version_name }}
+        run: |
+          set -euo pipefail
+          ./gradlew bundleRelease --stacktrace \
+            -Pcyclecare.versionCode="${CYCLECARE_VERSION_CODE}" \
+            -Pcyclecare.versionName="${CYCLECARE_VERSION_NAME}"
+
+      - name: Validate the bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./scripts/validate-aab.sh \
+            --checksum-file "${RUNNER_TEMP}/aab.sha256" \
+            app/build/outputs/bundle/release/app-release.aab
+
+      # ─────────────────────────────────────────────────────────────
+      # Provenance.
+      #
+      # The provenance file is what makes the artifact traceable: it
+      # names the commit, the version, the tag, the build date and the
+      # checksum of the file that was uploaded next to it.
+      # ─────────────────────────────────────────────────────────────
+      - name: Write the provenance file
+        shell: bash
+        env:
+          VERSION_CODE: ${{ needs.version.outputs.version_code }}
+          VERSION_NAME: ${{ needs.version.outputs.version_name }}
+          RELEASE_TAG: ${{ needs.version.outputs.tag }}
+          PREVIOUS_TAG: ${{ needs.version.outputs.previous_tag }}
+        run: |
+          set -euo pipefail
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+          CHECKSUM=$(cut -d' ' -f1 < "${RUNNER_TEMP}/aab.sha256")
+          SIZE_BYTES=$(wc -c < "${AAB}" | tr -d ' ')
+          {
+            echo "source_commit=$(git rev-parse HEAD)"
+            echo "source_ref=${GITHUB_REF}"
+            echo "git_describe=$(git describe --tags --always --dirty)"
+            echo "release_tag=${RELEASE_TAG}"
+            echo "previous_release_tag=${PREVIOUS_TAG}"
+            echo "version_code=${VERSION_CODE}"
+            echo "version_name=${VERSION_NAME}"
+            echo "build_date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "artifact=$(basename "${AAB}")"
+            echo "artifact_bytes=${SIZE_BYTES}"
+            echo "sha256=${CHECKSUM}"
+            echo "runner=${RUNNER_OS}"
+            echo "java_version=${JAVA_VERSION}"
+          } > release-provenance.txt
+          cat release-provenance.txt
+
+      - name: Upload the signed bundle and its provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyclecare-aab-${{ needs.version.outputs.version_name }}-${{ needs.version.outputs.version_code }}-${{ github.sha }}
+          path: |
+            app/build/outputs/bundle/release/app-release.aab
+            release-provenance.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      # ─────────────────────────────────────────────────────────────
+      # Cleanup.
+      #
+      # Runs whatever happened. The runner is destroyed afterwards
+      # anyway, but the key material should not survive the job even
+      # briefly, and it certainly should not survive it in a
+      # readable form.
+      # ─────────────────────────────────────────────────────────────
+      - name: Remove the signing material
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          SIGN_DIR="${SIGN_DIR:-${RUNNER_TEMP}/cyclecare-signing}"
+          if [ -f "${SIGN_DIR}/upload-keystore.jks" ]; then
+            if command -v shred >/dev/null 2>&1; then
+              shred -u -z "${SIGN_DIR}/upload-keystore.jks" || rm -f "${SIGN_DIR}/upload-keystore.jks"
+            else
+              rm -f "${SIGN_DIR}/upload-keystore.jks"
+            fi
+          fi
+          rm -f "${SIGN_DIR}/keystore.properties"
+          rm -rf "${SIGN_DIR}"
+          echo "  signing material removed from the runner."
+
+      - name: Confirm the working tree holds no secret
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git status --porcelain | grep -qE 'keystore\.properties|\.jks$|\.keystore$'; then
+            echo "::error::A signing file is tracked or present in the working tree."
+            git status --porcelain
+            exit 1
+          fi
+          echo "  OK: no signing file in the working tree."
