@@ -1,7 +1,7 @@
 # 11 — Prediction Engine Specification (Version 2)
 
 **Status:** Implementation contract. Supersedes the method described in `05-cycle-domain-and-health-safety.md` §2 and `docs/prediction-logic.md`.
-**Algorithm version:** `2.0.0`
+**Algorithm version:** `2.1.0`
 **Depends on:** `05` (health-safety guardrails, which remain binding on all output here).
 
 ## 1. Purpose and scope
@@ -32,7 +32,7 @@ package com.cyclecare.core.domain.prediction
 import com.cyclecare.core.model.CycleSource
 import java.time.LocalDate
 
-const val PREDICTION_ALGORITHM_VERSION = "2.0.0"
+const val PREDICTION_ALGORITHM_VERSION = "2.1.0"
 
 enum class EstimateQuality { INSUFFICIENT_HISTORY, LOW, MODERATE, HIGH }
 
@@ -353,7 +353,7 @@ Every estimate is displayable with a "How is this estimated?" affordance that re
 
 ## 6. Determinism, versioning and persistence
 
-- `PREDICTION_ALGORITHM_VERSION = "2.0.0"`, independent of the app version.
+- `PREDICTION_ALGORITHM_VERSION = "2.1.0"`, independent of the app version.
 - The clock is injected. `core/data` must pass `today` explicitly — the current production call site (`Repositories.kt:142`) omits it and must be fixed.
 - Predictions are **not persisted**. There is no cache table in schema v2 and this version does not add one; recomputation from ≤12 intervals is cheap. If a cache is added later it must carry `algorithmVersion`, an input fingerprint and a generated-at marker, and must be discarded on algorithm change.
 - Because predictions are not persisted, upgrading from algorithm v1 to v2 requires **no data migration** — but it changes every estimate's shape from one date to a range. This needs release notes and a "what changed" surface.

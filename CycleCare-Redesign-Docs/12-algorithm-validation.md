@@ -1,7 +1,7 @@
 # 12 — Algorithm Validation, Acceptance Gates, and Regression Harness
 
 **Status:** Implementation contract for verifying the engine specified in `11`.
-**Applies to:** `PREDICTION_ALGORITHM_VERSION = "2.0.0"`.
+**Applies to:** `PREDICTION_ALGORITHM_VERSION = "2.1.0"`.
 **Depends on:** `11` (constants and outputs), `05` §7 (health-content safety), `06` (general test strategy).
 
 ## 1. Purpose and honest limits
@@ -72,7 +72,7 @@ Results are reported **stratified by history length** (`n` = 3, 4, 5, 6, 8, 12) 
 
 ## 6. Release gates
 
-All gates must pass for `2.0.0` to ship. Any failure blocks release; constants are then revisited, and the change recorded in the ADR log.
+All gates must pass for `2.1.0` to ship. Any failure blocks release; constants are then revisited, and the change recorded in the ADR log.
 
 | ID | Gate | Threshold |
 |---|---|---|
@@ -115,6 +115,15 @@ Two rules make these trustworthy:
 
 1. **Fixtures are generated, then reviewed and committed.** Never regenerate them to make a test pass — that is the mechanism by which a suite quietly stops testing anything.
 2. **Any behaviour change requires a version bump and a documented reason.** A diff in fixture output without a version change is a defect, not an update. Record the reason in the ADR log alongside `01`'s ADR-001.
+
+The eight fixtures above are committed under
+`core/domain/src/test/resources/prediction/v2/`, and
+`PredictionGoldenFixtureTest` reads every one of them. Each fixture records the
+`algorithmVersion` it was generated under, and the test asserts it equals
+`PREDICTION_ALGORITHM_VERSION`, so rule 2 is executable rather than advisory:
+bumping the constant without regenerating the fixtures turns the suite red.
+The current version is `2.1.0`; the bump and its reason are recorded in `01`'s
+ADR-002, and the measured gate results are in `25`.
 
 Fixtures are the primary regression defence. Corpus gates are the primary design evidence. Both are required.
 

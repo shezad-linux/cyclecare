@@ -1,0 +1,116 @@
+{
+  "name": "leap_year_boundary",
+  "algorithmVersion": "2.1.0",
+  "description": "Twenty-eight-day cycles spanning a year boundary and 29 February 2024.",
+  "today": "2024-05-03",
+  "observed": [
+    {
+      "id": "r0",
+      "startDate": "2023-12-15",
+      "endDate": "2023-12-19",
+      "source": "User"
+    },
+    {
+      "id": "r1",
+      "startDate": "2024-01-12",
+      "endDate": "2024-01-16",
+      "source": "User"
+    },
+    {
+      "id": "r2",
+      "startDate": "2024-02-09",
+      "endDate": "2024-02-13",
+      "source": "User"
+    },
+    {
+      "id": "r3",
+      "startDate": "2024-03-08",
+      "endDate": "2024-03-12",
+      "source": "User"
+    },
+    {
+      "id": "r4",
+      "startDate": "2024-04-05",
+      "endDate": "2024-04-09",
+      "source": "User"
+    },
+    {
+      "id": "r5",
+      "startDate": "2024-05-03",
+      "endDate": "2024-05-07",
+      "source": "User"
+    }
+  ],
+  "expected": {
+    "nextPeriodDate": "2024-05-31",
+    "nextPeriodWindow": {
+      "start": "2024-05-30",
+      "endInclusive": "2024-06-01",
+      "halfWidthDays": 1
+    },
+    "fertileWindow": {
+      "start": "2024-05-10",
+      "endInclusive": "2024-05-21",
+      "halfWidthDays": 1
+    },
+    "ovulationDate": "2024-05-17",
+    "centerCycleLength": 28,
+    "dispersionSigma": 0,
+    "trendAdjustmentDays": 0,
+    "isIrregular": false,
+    "isStale": false,
+    "quality": "MODERATE",
+    "warnings": [],
+    "recordIdsUsed": [
+      "r0",
+      "r1",
+      "r2",
+      "r3",
+      "r4",
+      "r5"
+    ],
+    "intervalsUsed": [
+      {
+        "fromRecordId": "r0",
+        "toRecordId": "r1",
+        "startDate": "2023-12-15",
+        "lengthDays": 28,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r1",
+        "toRecordId": "r2",
+        "startDate": "2024-01-12",
+        "lengthDays": 28,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r2",
+        "toRecordId": "r3",
+        "startDate": "2024-02-09",
+        "lengthDays": 28,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r3",
+        "toRecordId": "r4",
+        "startDate": "2024-03-08",
+        "lengthDays": 28,
+        "usable": true,
+        "exclusionReason": null
+      },
+      {
+        "fromRecordId": "r4",
+        "toRecordId": "r5",
+        "startDate": "2024-04-05",
+        "lengthDays": 28,
+        "usable": true,
+        "exclusionReason": null
+      }
+    ],
+    "intervalsExcluded": []
+  }
+}
