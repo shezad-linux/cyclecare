@@ -13,12 +13,24 @@ report.
 
 | | |
 |---|---|
-| **Audit date** | 2026-10-21 |
-| **Commit** | `7605ba1cb86601eaaed9108e41499b412be73dee` |
+| **Audit date** | 2026-10-21 (production-readiness pass) |
+| **Commit** | See `20-release-readiness.md` for the integrated head |
 | **Branch** | `main` |
-| **Working tree** | Clean at the commit above |
-| **Unit baseline** | 437 tests, 0 failures, 0 skipped |
-| **Instrumented baseline** | 251 tests, 0 failures, 2 skipped |
+| **Working tree** | Clean |
+| **Unit baseline** | 505 tests, 0 failures, 0 skipped |
+| **Instrumented baseline** | 268 tests, 7 failures, 2 skipped — **regressions, see below** |
+
+The seven instrumented failures are deterministic (they fail in
+isolation, not as flakes) and were introduced by the integrated
+workstreams. They are **open**, not waived: two calendar regressions,
+one responsive-layout regression on the Insights overview, two privacy
+PIN-keypad regressions, one app-lock cooldown timeout, and one
+`dumpsys alarm` parsing assumption in a new reset test. The privacy and
+app-lock failures are in `feature/privacy` and the app-lock overlay,
+neither of which the integrated workstreams modified, so they are
+pre-existing latent failures surfaced by running the suite on this
+branch; the calendar and responsive ones are in code the prediction
+migration touched. All seven need focused debugging before release.
 | **Environment** | `cc36` AVD, API 36, Android 16, 320x640 at 160dpi, `emulator-5556` |
 
 The 2026-10-20 audit of commit `d689a7e` recorded 333 unit and 166
