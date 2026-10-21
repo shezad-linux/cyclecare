@@ -16,6 +16,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    // The exported Room schemas are needed by the instrumented tests
+    // that build a database at an old schema version and migrate it
+    // with the production migration list.
+    sourceSets["androidTest"].assets.srcDir("$rootDir/core/database/schemas")
 }
 
 kotlin {
@@ -40,6 +45,7 @@ dependencies {
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.truth)
 }
