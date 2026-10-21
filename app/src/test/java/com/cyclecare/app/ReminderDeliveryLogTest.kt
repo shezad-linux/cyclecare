@@ -52,18 +52,47 @@ class ReminderDeliveryLogTest {
             type = type,
             channelKey = channelKey,
             leadDays = 2,
-            deliveryDelayMinutes = 3,
+            deliveryLatency = DeliveryLatency.OnTime,
             score = 70,
             threshold = 40,
         )
 
-        // A distance, a duration and the scorer's own numbers: not an
+        // A distance, a class and the scorer's own numbers: not an
         // instant.
         assertThat(attributes["leadDays"]).isEqualTo("2")
-        assertThat(attributes["deliveryDelayMinutes"]).isEqualTo("3")
+        assertThat(attributes["deliveryLatency"]).isEqualTo("OnTime")
         assertThat(attributes["score"]).isEqualTo("70")
         assertThat(attributes["threshold"]).isEqualTo("40")
         assertThat(attributes.values).doesNotContain("2026-03-17")
+    }
+
+    @Test
+    fun `the lateness is a class and not a measurement`() {
+        val onTime = ReminderDeliveryLog.success(
+            ruleId = "period",
+            type = type,
+            channelKey = channelKey,
+            leadDays = 2,
+            deliveryLatency = deliveryLatencyOf(0L),
+            score = 70,
+            threshold = 40,
+        )
+        val late = ReminderDeliveryLog.success(
+            ruleId = "period",
+            type = type,
+            channelKey = channelKey,
+            leadDays = 2,
+            deliveryLatency = deliveryLatencyOf(180L * 60_000L),
+            score = 70,
+            threshold = 40,
+        )
+
+        assertThat(onTime["deliveryLatency"]).isEqualTo("OnTime")
+        assertThat(late["deliveryLatency"]).isEqualTo("Late")
+        // The minutes are not in the log: they are the subtraction that
+        // recovers the scheduled instant.
+        assertThat(late.values).doesNotContain("180")
+        assertThat(late.keys).doesNotContain("deliveryDelayMinutes")
     }
 
     @Test
@@ -99,7 +128,7 @@ class ReminderDeliveryLogTest {
         "delivery_deferred" to ReminderDeliveryLog.deferred("period", type, "quiet hours", 1, 8),
         "delivery_deduplicated" to ReminderDeliveryLog.deduplicated("period", type),
         "delivery_success" to
-            ReminderDeliveryLog.success("period", type, channelKey, 2, 3, 70, 40),
+            ReminderDeliveryLog.success("period", type, channelKey, 2, DeliveryLatency.OnTime, 70, 40),
         "delivery_failed" to ReminderDeliveryLog.failed("period", type, channelKey),
         "reminder_type_auto_disabled" to ReminderDeliveryLog.autoDisabled(type, 10, 7, 1),
         "auto_disable_failed" to ReminderDeliveryLog.autoDisableFailed(type),
