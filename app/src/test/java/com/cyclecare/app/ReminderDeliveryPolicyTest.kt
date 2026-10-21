@@ -1,5 +1,9 @@
 package com.cyclecare.app
 
+import com.cyclecare.core.domain.prediction.CyclePrediction
+import com.cyclecare.core.domain.prediction.SamplePrediction
+import com.cyclecare.core.domain.prediction.DateWindow
+import com.cyclecare.core.domain.prediction.EstimateQuality
 import com.cyclecare.core.domain.ProfileRepository
 import com.cyclecare.core.domain.PredictionRepository
 import com.cyclecare.core.domain.ReminderEventsRepository
@@ -65,7 +69,7 @@ class ReminderDeliveryPolicyTest {
             events = events,
             type = ReminderType.PeriodPrep,
             payload = payload,
-            quality = com.cyclecare.core.model.PredictionQuality.LOW,
+            quality = EstimateQuality.LOW,
         )
 
         assertThat(outcome).isInstanceOf(DeliveryGateOutcome.Suppress::class.java)
@@ -242,8 +246,8 @@ class ReminderDeliveryPolicyTest {
         intelligence: InMemoryReminderIntelligenceRepository = InMemoryReminderIntelligenceRepository(),
         deliveredAt: ZonedDateTime = now,
         interruptionFilter: Int = INTERRUPTION_FILTER_ALL,
-        quality: com.cyclecare.core.model.PredictionQuality =
-            com.cyclecare.core.model.PredictionQuality.HIGH,
+        quality: EstimateQuality =
+            EstimateQuality.HIGH,
     ): DeliveryGateOutcome {
         val input = ReminderDeliveryPolicy.gateInput(
             events = events,
@@ -368,32 +372,33 @@ private class FakeProfileRepository : ProfileRepository {
 }
 
 private class FakePredictionRepository(
-    private val quality: com.cyclecare.core.model.PredictionQuality,
+    private val quality: EstimateQuality,
 ) : PredictionRepository {
-    private val snapshot = MutableStateFlow<com.cyclecare.core.model.PredictionSnapshot?>(
-        com.cyclecare.core.model.PredictionSnapshot(
-            generatedAt = java.time.LocalDate.of(2026, 3, 17),
+    private val prediction = MutableStateFlow<CyclePrediction?>(
+        SamplePrediction.of(
+            generatedForDate = java.time.LocalDate.of(2026, 3, 17),
             cycleDay = 15,
             nextPeriodDate = java.time.LocalDate.of(2026, 3, 24),
             ovulationDate = java.time.LocalDate.of(2026, 3, 19),
-            fertileWindow = com.cyclecare.core.model.DateRange(
-                start = java.time.LocalDate.of(2026, 3, 17),
-                endInclusive = java.time.LocalDate.of(2026, 3, 22),
-            ),
-            confidenceLabel = "test",
             daysUntilNextPeriod = 7,
-            nextPeriodWindow = com.cyclecare.core.model.DateRange(
+            quality = quality,
+            nextPeriodWindow = DateWindow(
                 start = java.time.LocalDate.of(2026, 3, 23),
                 endInclusive = java.time.LocalDate.of(2026, 3, 25),
+                halfWidthDays = 3,
             ),
-            nextPeriodHalfWidthDays = 1,
-            quality = quality,
+            fertileWindow = DateWindow(
+                start = java.time.LocalDate.of(2026, 3, 17),
+                endInclusive = java.time.LocalDate.of(2026, 3, 22),
+                halfWidthDays = 3,
+            ),
         ),
     )
 
-    override fun observePrediction(): Flow<com.cyclecare.core.model.PredictionSnapshot?> =
-        snapshot.asStateFlow()
+    override fun observePrediction(): Flow<CyclePrediction?> =
+        prediction.asStateFlow()
 }
+
 
 private class FakeReminderRepository : ReminderRepository {
     val enabledTypes = mutableListOf<ReminderType>()

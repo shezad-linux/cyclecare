@@ -1,5 +1,6 @@
 package com.cyclecare.feature.onboarding
 
+import com.cyclecare.core.domain.VALID_CYCLE_LENGTH_RANGE
 import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.model.AgeBand
 import com.cyclecare.core.model.TrackingGoal
@@ -47,11 +48,19 @@ class OnboardingPresentationTest {
 
     @Test
     fun submitEnabled_isFalseForInvalidCycleLength() {
-        val state = OnboardingUiState(cycleLength = 19)
+        val state = OnboardingUiState(cycleLengthDays = 19)
 
         assertThat(state.isSubmitEnabled).isFalse()
+        // The range in the message comes from the shared domain
+        // constant, so the wording cannot drift from the rule.
         assertThat(state.cycleLengthError)
-            .isEqualTo(uiText(R.string.cycle_length_out_of_range))
+            .isEqualTo(
+                uiText(
+                    R.string.cycle_length_out_of_range,
+                    VALID_CYCLE_LENGTH_RANGE.first,
+                    VALID_CYCLE_LENGTH_RANGE.last,
+                ),
+            )
     }
 
     @Test

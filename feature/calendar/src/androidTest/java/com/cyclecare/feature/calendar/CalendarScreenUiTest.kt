@@ -1,5 +1,6 @@
 package com.cyclecare.feature.calendar
 
+import com.cyclecare.core.domain.prediction.EstimateQuality
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -21,8 +22,8 @@ import com.cyclecare.core.designsystem.CycleCareTheme
 import com.cyclecare.core.domain.CycleRecordValidator
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
-import com.cyclecare.core.model.DateRange
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.DateWindow
+import com.cyclecare.core.domain.prediction.SamplePrediction
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -176,27 +177,28 @@ class CalendarScreenUiTest {
 
     @Test
     fun futurePredictionHidesCreateEntryButton() {
-        val prediction = PredictionSnapshot(
-            generatedAt = LocalDate.of(2026, 3, 16),
+        val prediction = SamplePrediction.of(
+            generatedForDate = LocalDate.of(2026, 3, 16),
             cycleDay = 6,
             nextPeriodDate = LocalDate.of(2026, 4, 8),
             ovulationDate = LocalDate.of(2026, 3, 23),
-            fertileWindow = DateRange(
-                start = LocalDate.of(2026, 3, 19),
-                endInclusive = LocalDate.of(2026, 3, 24),
-            ),
-            confidenceLabel = "Baseline estimate",
+            quality = EstimateQuality.MODERATE,
             daysUntilNextPeriod = 23,
             // The calendar marks fertile days from the engine's own
             // window, and the engine only produces one when it supports
             // a range. `supportsRange` is `nextPeriodWindow != null`, so
             // the fixture has to carry a range for the fertile marker to
             // exist at all.
-            nextPeriodWindow = DateRange(
+            nextPeriodWindow = DateWindow(
                 start = LocalDate.of(2026, 4, 6),
                 endInclusive = LocalDate.of(2026, 4, 10),
+                halfWidthDays = 2,
             ),
-            nextPeriodHalfWidthDays = 2,
+            fertileWindow = DateWindow(
+                start = LocalDate.of(2026, 3, 19),
+                endInclusive = LocalDate.of(2026, 3, 24),
+                halfWidthDays = 3,
+            ),
         )
 
         composeRule.setContent {
@@ -273,27 +275,28 @@ class CalendarScreenUiTest {
             source = CycleSource.User,
             notes = "Cycle felt regular and symptoms stayed light.",
         )
-        val prediction = PredictionSnapshot(
-            generatedAt = LocalDate.of(2026, 3, 16),
+        val prediction = SamplePrediction.of(
+            generatedForDate = LocalDate.of(2026, 3, 16),
             cycleDay = 6,
             nextPeriodDate = LocalDate.of(2026, 4, 8),
             ovulationDate = LocalDate.of(2026, 3, 23),
-            fertileWindow = DateRange(
-                start = LocalDate.of(2026, 3, 19),
-                endInclusive = LocalDate.of(2026, 3, 24),
-            ),
-            confidenceLabel = "Baseline estimate",
+            quality = EstimateQuality.MODERATE,
             daysUntilNextPeriod = 23,
             // The calendar marks fertile days from the engine's own
             // window, and the engine only produces one when it supports
             // a range. `supportsRange` is `nextPeriodWindow != null`, so
             // the fixture has to carry a range for the fertile marker to
             // exist at all.
-            nextPeriodWindow = DateRange(
+            nextPeriodWindow = DateWindow(
                 start = LocalDate.of(2026, 4, 6),
                 endInclusive = LocalDate.of(2026, 4, 10),
+                halfWidthDays = 2,
             ),
-            nextPeriodHalfWidthDays = 2,
+            fertileWindow = DateWindow(
+                start = LocalDate.of(2026, 3, 19),
+                endInclusive = LocalDate.of(2026, 3, 24),
+                halfWidthDays = 3,
+            ),
         )
         val month = YearMonth.of(2026, 3)
         return CalendarUiState(

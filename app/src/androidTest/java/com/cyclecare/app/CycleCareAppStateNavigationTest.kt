@@ -1,5 +1,7 @@
 package com.cyclecare.app
 
+import com.cyclecare.core.domain.prediction.CyclePrediction
+import com.cyclecare.core.domain.prediction.EstimateQuality
 import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -53,7 +55,7 @@ import com.cyclecare.core.model.AgeBand
 import com.cyclecare.core.model.ConsentState
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
-import com.cyclecare.core.model.DateRange
+import com.cyclecare.core.domain.prediction.DateWindow
 import com.cyclecare.core.model.DischargeType
 import com.cyclecare.core.model.EnergyLevel
 import com.cyclecare.core.model.ExportArtifact
@@ -61,7 +63,7 @@ import com.cyclecare.core.model.ExportFormat
 import com.cyclecare.core.model.InsightSnapshot
 import com.cyclecare.core.model.Mood
 import com.cyclecare.core.model.PainLevel
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.SamplePrediction
 import com.cyclecare.core.model.ReminderChannelKey
 import com.cyclecare.core.model.ReminderChannelSettings
 import com.cyclecare.core.model.ReminderEvent
@@ -922,18 +924,19 @@ private class TestAppEnvironment(
                     notes = "Initial cycle",
                 ),
             )
-            val prediction = PredictionSnapshot(
-                generatedAt = LocalDate.of(2026, 3, 16),
-                cycleDay = 6,
-                nextPeriodDate = LocalDate.of(2026, 4, 8),
-                ovulationDate = LocalDate.of(2026, 3, 23),
-                fertileWindow = DateRange(
-                    start = LocalDate.of(2026, 3, 19),
-                    endInclusive = LocalDate.of(2026, 3, 24),
-                ),
-                confidenceLabel = "Baseline estimate",
-                daysUntilNextPeriod = 23,
-            )
+            val prediction = SamplePrediction.of(
+            generatedForDate = LocalDate.of(2026, 3, 16),
+            cycleDay = 6,
+            nextPeriodDate = LocalDate.of(2026, 4, 8),
+            ovulationDate = LocalDate.of(2026, 3, 23),
+            quality = EstimateQuality.MODERATE,
+            daysUntilNextPeriod = 23,
+            fertileWindow = DateWindow(
+                start = LocalDate.of(2026, 3, 19),
+                endInclusive = LocalDate.of(2026, 3, 24),
+                halfWidthDays = 3,
+            ),
+        )
             val reminders = listOf(
                 ReminderRule(
                     id = "daily-log",
@@ -1050,12 +1053,12 @@ private class FakeSymptomRepository(
 }
 
 private class FakePredictionRepository(
-    initial: PredictionSnapshot?,
+    initial: CyclePrediction?,
     val emitImmediately: Boolean = true,
 ) : PredictionRepository {
     private val state = MutableStateFlow(initial)
 
-    override fun observePrediction(): Flow<PredictionSnapshot?> =
+    override fun observePrediction(): Flow<CyclePrediction?> =
         if (emitImmediately) state.asStateFlow() else emptyFlow()
 
     suspend fun clear() {

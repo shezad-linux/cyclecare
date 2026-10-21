@@ -39,7 +39,7 @@
         <item quantity="one">%1$d day</item>
         <item quantity="other">%1$d days</item>
     </plurals>
-    <string name="cycle_length_out_of_range">Cycle length must stay between 20 and 45 days.</string>
+    <string name="cycle_length_out_of_range">Cycle length must stay between %1$d and %2$d days.</string>
     <string name="period_length_out_of_range">Period length must stay between 2 and 10 days.</string>
     <string name="last_period_start_in_future">Last period start cannot be in the future.</string>
 

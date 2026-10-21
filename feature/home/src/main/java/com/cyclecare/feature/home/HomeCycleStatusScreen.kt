@@ -130,21 +130,21 @@ internal fun HomeCycleStatusScreen(
     onOpenEditCycle: () -> Unit,
     onOpenCalendar: () -> Unit,
 ) {
-    val progress = remember(uiState.cycleDay, uiState.cycleLength) {
+    val progress = remember(uiState.cycleDay, uiState.cycleLengthDays) {
         uiState.cycleDay
-            ?.let { cycleDay -> (cycleDay.toFloat() / uiState.cycleLength.toFloat()).coerceIn(0f, 1f) }
+            ?.let { cycleDay -> (cycleDay.toFloat() / uiState.cycleLengthDays.toFloat()).coerceIn(0f, 1f) }
             ?: 0f
     }
     // Resolved once at the composable boundary so the progress bar's
     // accessibility state description stays locale-correct without
     // calling stringResource inside the modifier lambda.
-    val progressStateDescriptionText = progressStateDescription(uiState.cycleDay, uiState.cycleLength).resolve()
+    val progressStateDescriptionText = progressStateDescription(uiState.cycleDay, uiState.cycleLengthDays).resolve()
     HomeDetailShell(
         title = formatNextPeriodTitle(uiState.daysUntilNextPeriod).resolve(),
         subtitle = stringResource(
             R.string.expected_date_with_overdue,
             uiState.nextPeriodDateText.resolve(),
-            formatCycleProgressLabel(uiState.cycleDay, uiState.cycleLength, uiState.confidenceLabel).resolve(),
+            formatCycleProgressLabel(uiState.cycleDay, uiState.cycleLengthDays).resolve(),
         ),
         modifier = Modifier.testTag(HomeTags.CYCLE_STATUS_SCREEN),
         onBack = onBack,
@@ -184,7 +184,7 @@ internal fun HomeCycleStatusScreen(
                 ) {
                     MetricCard(
                         label = uiText(R.string.avg_cycle),
-                        value = pluralStringResource(R.plurals.n_days, uiState.cycleLength, uiState.cycleLength),
+                        value = pluralStringResource(R.plurals.n_days, uiState.cycleLengthDays, uiState.cycleLengthDays),
                         modifier = Modifier.weight(1f),
                         accent = metricCardAccents(MaterialTheme.colorScheme).neutral,
                     )
@@ -359,7 +359,7 @@ internal fun CycleStatusHeroText(
 ) {
     val isDark = LocalIsDarkTheme.current
     val heroTextColor = if (isDark) MaterialTheme.colorScheme.onSurface else Color.White
-    val progressStateDescriptionText = progressStateDescription(uiState.cycleDay, uiState.cycleLength).resolve()
+    val progressStateDescriptionText = progressStateDescription(uiState.cycleDay, uiState.cycleLengthDays).resolve()
     Column(verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space8)) {
         Text(
             stringResource(R.string.cycle_detail),
@@ -384,9 +384,9 @@ internal fun CycleStatusHeroText(
                 text = uiState.cycleModeLabel.resolve(),
                 tone = MetricPillTone.Inverse,
             )
-            if (uiState.confidenceLabel.isNotBlank()) {
+            uiState.confidenceLabelRes?.let { confidenceRes ->
                 MetricPill(
-                    text = uiState.confidenceLabel,
+                    text = uiText(confidenceRes).resolve(),
                     tone = MetricPillTone.Inverse,
                 )
             }

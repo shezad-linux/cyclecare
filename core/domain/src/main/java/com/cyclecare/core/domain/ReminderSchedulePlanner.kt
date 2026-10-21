@@ -1,9 +1,9 @@
 package com.cyclecare.core.domain
 
 import com.cyclecare.core.domain.notification.resolveSendHour
+import com.cyclecare.core.domain.prediction.CyclePrediction
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
-import com.cyclecare.core.model.PredictionSnapshot
 import com.cyclecare.core.model.ReminderChannelKey
 import com.cyclecare.core.model.ReminderDeepLinkTarget
 import com.cyclecare.core.model.ReminderRule
@@ -29,7 +29,7 @@ class ReminderSchedulePlanner(
     private val learnedSendHour: Int? = null,
 ) {
     fun buildSchedules(
-        prediction: PredictionSnapshot?,
+        prediction: CyclePrediction?,
         rules: List<ReminderRule>,
         cycles: List<CycleRecord> = emptyList(),
         now: ZonedDateTime = ZonedDateTime.now(zoneId),
@@ -63,9 +63,9 @@ class ReminderSchedulePlanner(
      *
      * Spec: 13-notification-intelligence.md section 6.
      */
-    private fun earliestPlausibleStart(prediction: PredictionSnapshot): LocalDate =
+    private fun earliestPlausibleStart(prediction: CyclePrediction): LocalDate =
         prediction.nextPeriodDate.minusDays(
-            (prediction.nextPeriodHalfWidthDays ?: 0).toLong(),
+            (prediction.nextPeriodWindow?.halfWidthDays ?: 0).toLong(),
         )
 
     /**
@@ -75,12 +75,12 @@ class ReminderSchedulePlanner(
      * Below three intervals there is nothing to say, so prediction-derived
      * reminders are withheld rather than sent from a default assumption.
      */
-    private fun PredictionSnapshot.hasSupportableEstimate(): Boolean =
-        supportsRange && nextPeriodHalfWidthDays != null
+    private fun CyclePrediction.hasSupportableEstimate(): Boolean =
+        supportsRange
 
     private fun buildPeriodPrep(
         rule: ReminderRule,
-        prediction: PredictionSnapshot?,
+        prediction: CyclePrediction?,
         now: ZonedDateTime,
     ): ScheduledReminder? {
         val predictionSnapshot = prediction ?: return null
@@ -93,7 +93,7 @@ class ReminderSchedulePlanner(
         val scheduledAt = scheduleDateTime(targetDate, rule, now)
         if (!scheduledAt.isAfter(now)) return null
 
-        val halfWidth = predictionSnapshot.nextPeriodHalfWidthDays ?: 0
+        val halfWidth = predictionSnapshot.nextPeriodWindow?.halfWidthDays ?: 0
         val leadDays = rule.daysBefore.absoluteValue
         val body = when {
             halfWidth <= 1 && leadDays == 0 ->
@@ -122,12 +122,13 @@ class ReminderSchedulePlanner(
 
     private fun buildFertileWindow(
         rule: ReminderRule,
-        prediction: PredictionSnapshot?,
+        prediction: CyclePrediction?,
         now: ZonedDateTime,
     ): ScheduledReminder? {
         val predictionSnapshot = prediction ?: return null
         if (!predictionSnapshot.hasSupportableEstimate()) return null
-        val targetDate = predictionSnapshot.fertileWindow.start.plusDays(rule.daysBefore.toLong())
+        val fertileWindow = predictionSnapshot.fertileWindow ?: return null
+        val targetDate = fertileWindow.start.plusDays(rule.daysBefore.toLong())
         val scheduledAt = scheduleDateTime(targetDate, rule, now)
         if (!scheduledAt.isAfter(now)) return null
 
@@ -135,7 +136,7 @@ class ReminderSchedulePlanner(
         // period, so its uncertainty is expressed by the period window's
         // half width. There is no separate fertility uncertainty in the
         // engine's output.
-        val halfWidth = predictionSnapshot.nextPeriodHalfWidthDays ?: 0
+        val halfWidth = predictionSnapshot.nextPeriodWindow?.halfWidthDays ?: 0
         return ScheduledReminder(
             uniqueWorkName = reminderWorkName(rule.id),
             ruleId = rule.id,
@@ -155,7 +156,7 @@ class ReminderSchedulePlanner(
 
     private fun buildOvulationReminder(
         rule: ReminderRule,
-        prediction: PredictionSnapshot?,
+        prediction: CyclePrediction?,
         now: ZonedDateTime,
     ): ScheduledReminder? {
         val predictionSnapshot = prediction ?: return null
@@ -177,7 +178,7 @@ class ReminderSchedulePlanner(
             leadDays = rule.daysBefore.absoluteValue,
             // See buildFertileWindow: the estimate's uncertainty is the
             // period window's half width.
-            windowHalfWidthDays = predictionSnapshot.nextPeriodHalfWidthDays ?: 0,
+            windowHalfWidthDays = predictionSnapshot.nextPeriodWindow?.halfWidthDays ?: 0,
             userPinnedTime = rule.userPinnedTime,
         )
     }
@@ -210,7 +211,7 @@ class ReminderSchedulePlanner(
 
     private fun buildLatePeriod(
         rule: ReminderRule,
-        prediction: PredictionSnapshot?,
+        prediction: CyclePrediction?,
         cycles: List<CycleRecord>,
         now: ZonedDateTime,
     ): ScheduledReminder? {
@@ -243,7 +244,7 @@ class ReminderSchedulePlanner(
             privateBody = "Cycle reminder available. Open the app to review it.",
             deepLinkTarget = ReminderDeepLinkTarget.Home,
             leadDays = rule.daysBefore.absoluteValue,
-            windowHalfWidthDays = predictionSnapshot.nextPeriodHalfWidthDays ?: 0,
+            windowHalfWidthDays = predictionSnapshot.nextPeriodWindow?.halfWidthDays ?: 0,
             userPinnedTime = rule.userPinnedTime,
         )
     }

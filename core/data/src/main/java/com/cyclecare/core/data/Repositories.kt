@@ -42,7 +42,6 @@ import com.cyclecare.core.domain.PredictionRepository
 import com.cyclecare.core.domain.prediction.CyclePredictionEngineV2
 import com.cyclecare.core.domain.prediction.CyclePredictionInput
 import com.cyclecare.core.domain.prediction.ObservedCycleStart
-import com.cyclecare.core.domain.prediction.toSnapshot
 import com.cyclecare.core.domain.time.TimeProvider
 import com.cyclecare.core.domain.PrivacyRepository
 import com.cyclecare.core.domain.ProfileRepository
@@ -62,7 +61,6 @@ import com.cyclecare.core.model.ExportFormat
 import com.cyclecare.core.model.InsightSnapshot
 import com.cyclecare.core.model.Mood
 import com.cyclecare.core.model.PainLevel
-import com.cyclecare.core.model.PredictionSnapshot
 import com.cyclecare.core.model.ReminderChannelKey
 import com.cyclecare.core.model.ReminderChannelSettings
 import com.cyclecare.core.model.ReminderDeepLinkTarget

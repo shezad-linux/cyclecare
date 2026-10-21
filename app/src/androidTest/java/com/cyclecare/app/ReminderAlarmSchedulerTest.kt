@@ -1,5 +1,7 @@
 package com.cyclecare.app
 
+import com.cyclecare.core.domain.prediction.CyclePrediction
+import com.cyclecare.core.domain.prediction.EstimateQuality
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.work.Configuration
@@ -18,8 +20,8 @@ import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.ReminderChannelKey
 import com.cyclecare.core.model.ReminderChannelSettings
 import com.cyclecare.core.model.ConsentState
-import com.cyclecare.core.model.DateRange
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.DateWindow
+import com.cyclecare.core.domain.prediction.SamplePrediction
 import com.cyclecare.core.model.ReminderRule
 import com.cyclecare.core.model.ReminderSoundPreset
 import com.cyclecare.core.model.ReminderType
@@ -309,23 +311,23 @@ class ReminderAlarmSchedulerTest {
         fertileEnd: LocalDate = LocalDate.of(2026, 3, 15),
         ovulationDate: LocalDate = LocalDate.of(2026, 3, 14),
         daysUntilNextPeriod: Int = 18,
-    ) = PredictionSnapshot(
-        generatedAt = LocalDate.of(2026, 3, 10),
-        cycleDay = 1,
-        nextPeriodDate = nextPeriodDate,
-        ovulationDate = ovulationDate,
-        fertileWindow = DateRange(fertileStart, fertileEnd),
-        confidenceLabel = "Stable",
-        daysUntilNextPeriod = daysUntilNextPeriod,
-        // The planner withholds prediction-derived reminders when the
-        // engine reports no supportable range, so these fixtures carry a
-        // real one. Scheduling itself is what this test exercises.
-        nextPeriodWindow = DateRange(
-            nextPeriodDate.minusDays(1),
-            nextPeriodDate.plusDays(1),
-        ),
-        nextPeriodHalfWidthDays = 1,
-    )
+    ) = SamplePrediction.of(
+            generatedForDate = LocalDate.of(2026, 3, 10),
+            cycleDay = 1,
+            nextPeriodDate = nextPeriodDate,
+            ovulationDate = ovulationDate,
+            fertileWindow = DateWindow(start = fertileStart, endInclusive = fertileEnd, halfWidthDays = 3),
+            quality = EstimateQuality.MODERATE,
+            daysUntilNextPeriod = daysUntilNextPeriod,
+            // The planner withholds prediction-derived reminders when the
+            // engine reports no supportable range, so these fixtures carry
+            // a real one. Scheduling itself is what this test exercises.
+            nextPeriodWindow = DateWindow(
+                start = nextPeriodDate.minusDays(1),
+                endInclusive = nextPeriodDate.plusDays(1),
+                halfWidthDays = 1,
+            ),
+        )
 }
 
 /**
@@ -396,13 +398,13 @@ private class TestProfileRepository(
 }
 
 private class TestPredictionRepository(
-    initial: PredictionSnapshot?,
+    initial: CyclePrediction?,
 ) : PredictionRepository {
     private val state = MutableStateFlow(initial)
 
-    override fun observePrediction(): Flow<PredictionSnapshot?> = state.asStateFlow()
+    override fun observePrediction(): Flow<CyclePrediction?> = state.asStateFlow()
 
-    fun setPrediction(prediction: PredictionSnapshot?) {
+    fun setPrediction(prediction: CyclePrediction?) {
         state.value = prediction
     }
 }

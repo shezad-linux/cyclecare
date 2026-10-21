@@ -5,17 +5,20 @@
 
 package com.cyclecare.feature.home
 
+import com.cyclecare.core.domain.VALID_CYCLE_LENGTH_RANGE
 import com.cyclecare.core.designsystem.text.UiText
 import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.designsystem.text.pluralUiText
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.runtime.getValue
 import com.cyclecare.core.domain.CycleRecordValidator
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
-import com.cyclecare.core.model.DateRange
+import com.cyclecare.core.domain.prediction.DateWindow
+import com.cyclecare.core.domain.prediction.EstimateQuality
 import com.cyclecare.core.model.InsightSnapshot
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.CyclePrediction
 import com.cyclecare.core.model.UserProfile
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -25,12 +28,12 @@ data class HomeUiState(
     val daysUntilNextPeriod: Int? = null,
     val nextPeriodDateText: UiText = uiText(R.string.prediction_unavailable),
     val cycleDay: Int? = null,
-    val cycleLength: Int = 28,
+    val cycleLengthDays: Int = 28,
     val averagePeriodLength: Int = 5,
     val variabilityText: UiText = uiText(R.string.from_your_setup),
     val fertileWindowText: UiText = uiText(R.string.fertile_window_unavailable),
     val ovulationEstimateText: UiText = uiText(R.string.unavailable),
-    val confidenceLabel: String = "",
+    val confidenceLabelRes: Int? = null,
     /**
      * Human-readable spread, or null when the engine declined to emit a
      * range. Null must never be rendered as if it were zero.
@@ -181,20 +184,62 @@ internal fun homeHeroSubtitle(uiState: HomeUiState): UiText = when {
     else -> uiText(R.string.date_not_enough_history_for_a_range, uiState.nextPeriodDateText)
 }
 
+/**
+ * The resource that carries the confidence wording for a quality tier.
+ *
+ * Spec `11` §7: the engine's `EstimateQuality` replaces the old
+ * `confidenceLabel: String`. The wording is a presentation concern, so
+ * it lives in resources and the tier selects between them. The mapping
+ * is explicit for every tier rather than derived from whether a string
+ * happened to be blank, so a tier can never silently lose its label.
+ *
+ * The precedence matches the engine's own wording exactly: a history
+ * too thin to estimate anything is a baseline estimate even when it is
+ * also stale, because "not enough history" is the more useful thing to
+ * say.
+ *
+ * None of these strings claims that a prediction is accurate or
+ * certain. They describe the width of the range, which is the thing
+ * the engine actually knows.
+ */
+/**
+ * The confidence resource for this prediction.
+ *
+ * Null only when there is no prediction at all, which is different from
+ * a prediction whose tier has no wording: the tiers all have one.
+ */
+@StringRes
+internal fun CyclePrediction.confidenceLabelRes(): Int =
+    confidenceLabelResource(quality = quality, isStale = isStale)
+
+@StringRes
+internal fun confidenceLabelResource(
+    quality: EstimateQuality,
+    isStale: Boolean,
+): Int = when {
+    quality == EstimateQuality.INSUFFICIENT_HISTORY -> R.string.confidence_baseline_estimate
+    isStale -> R.string.confidence_estimate_may_be_out_of_date
+    quality == EstimateQuality.HIGH -> R.string.confidence_narrow_range
+    quality == EstimateQuality.MODERATE -> R.string.confidence_moderate_range
+    else -> R.string.confidence_wide_range
+}
+
+/**
+ * The day and total, and nothing else.
+ *
+ * The confidence used to be part of this string, as
+ * `day_slash_total_with_confidence`. That took the engine's English
+ * prose as an argument to a translatable sentence, so every locale
+ * would have had to translate a sentence containing an untranslated
+ * fragment. The confidence is now a separate element with its own
+ * resource, and this string carries only the numbers.
+ */
 internal fun formatCycleProgressLabel(
     cycleDay: Int?,
     cycleLength: Int,
-    confidenceLabel: String,
 ): UiText {
     val dayText = cycleDay?.toString() ?: "--"
-    return if (confidenceLabel.isBlank()) {
-        uiText(R.string.day_slash_total, dayText, cycleLength)
-    } else {
-        // Sentence shape in one resource: the day label and the
-        // confidence suffix are parts of a single statement, not
-        // separately translatable fragments.
-        uiText(R.string.day_slash_total_with_confidence, dayText, cycleLength, confidenceLabel)
-    }
+    return uiText(R.string.day_slash_total, dayText, cycleLength)
 }
 
 /**
@@ -206,7 +251,7 @@ internal fun formatCycleProgressLabel(
  * absent rather than silently collapsed to a point estimate.
  */
 internal fun formatNextPeriodRange(
-    range: DateRange?,
+    range: DateWindow?,
     supportsRange: Boolean,
     halfWidthDays: Int?,
 ): UiText? = when {
@@ -241,7 +286,7 @@ internal fun formatOverdue(days: Int): UiText = when {
  * gate a one-cycle user is shown a fertile range the engine never
  * generated.
  */
-internal fun formatFertileWindow(range: DateRange?, supportsRange: Boolean): UiText = when {
+internal fun formatFertileWindow(range: DateWindow?, supportsRange: Boolean): UiText = when {
     range != null && supportsRange -> uiText(
         R.string.estimated_fertile_days,
         range.start.format(dashboardDateFormatter),
@@ -313,7 +358,7 @@ internal fun resolveAverageCycleLength(
 internal fun buildCyclePhaseLabel(
     cycleDay: Int?,
     cycleLength: Int,
-    prediction: PredictionSnapshot? = null,
+    prediction: CyclePrediction? = null,
     today: LocalDate = LocalDate.now(),
 ): UiText {
     if (cycleDay == null) return uiText(R.string.empty_label)
@@ -334,7 +379,7 @@ internal fun buildCyclePhaseLabel(
 
 internal fun buildHomeCyclePhaseLabel(
     currentCycle: CycleRecord?,
-    prediction: PredictionSnapshot?,
+    prediction: CyclePrediction?,
     cycleLength: Int,
     today: LocalDate = LocalDate.now(),
 ): UiText = if (currentCycle != null) {
@@ -383,7 +428,11 @@ internal fun validateHomeEditorState(
     val cycleLengthError = when {
         editor.cycleLengthText.isBlank() -> uiText(R.string.cycle_length_required)
         cycleLength == null -> uiText(R.string.cycle_length_whole_number)
-        cycleLength !in 20..45 -> uiText(R.string.cycle_length_range_error)
+        cycleLength !in VALID_CYCLE_LENGTH_RANGE -> uiText(
+            R.string.cycle_length_range_error,
+            VALID_CYCLE_LENGTH_RANGE.first,
+            VALID_CYCLE_LENGTH_RANGE.last,
+        )
         else -> null
     }
 

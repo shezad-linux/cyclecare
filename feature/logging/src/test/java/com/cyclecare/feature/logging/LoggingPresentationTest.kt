@@ -1,14 +1,15 @@
 package com.cyclecare.feature.logging
 
+import com.cyclecare.core.domain.prediction.EstimateQuality
 import com.cyclecare.core.model.AgeBand
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
-import com.cyclecare.core.model.DateRange
+import com.cyclecare.core.domain.prediction.DateWindow
 import com.cyclecare.core.model.DischargeType
 import com.cyclecare.core.model.EnergyLevel
 import com.cyclecare.core.model.Mood
 import com.cyclecare.core.model.PainLevel
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.SamplePrediction
 import com.cyclecare.core.model.SymptomLog
 import com.cyclecare.core.model.TrackingGoal
 import com.cyclecare.core.model.UserProfile
@@ -77,13 +78,13 @@ class LoggingPresentationTest {
             remindersEnabled = true,
             privacyModeEnabled = true,
         )
-        val prediction = PredictionSnapshot(
-            generatedAt = today,
+        val prediction = SamplePrediction.of(
+            generatedForDate = today,
             cycleDay = 6,
             nextPeriodDate = today.plusDays(22),
             ovulationDate = today.plusDays(9),
-            fertileWindow = DateRange(today.plusDays(7), today.plusDays(12)),
-            confidenceLabel = "Baseline estimate",
+            fertileWindow = DateWindow(start = today.plusDays(7), endInclusive = today.plusDays(12), halfWidthDays = 3),
+            quality = EstimateQuality.MODERATE,
             daysUntilNextPeriod = 22,
         )
 
@@ -134,13 +135,13 @@ class LoggingPresentationTest {
             remindersEnabled = true,
             privacyModeEnabled = true,
         )
-        val prediction = PredictionSnapshot(
-            generatedAt = today,
+        val prediction = SamplePrediction.of(
+            generatedForDate = today,
             cycleDay = 6,
             nextPeriodDate = today.plusDays(22),
             ovulationDate = today.plusDays(9),
-            fertileWindow = DateRange(today.plusDays(7), today.plusDays(12)),
-            confidenceLabel = "Baseline estimate",
+            fertileWindow = DateWindow(start = today.plusDays(7), endInclusive = today.plusDays(12), halfWidthDays = 3),
+            quality = EstimateQuality.MODERATE,
             daysUntilNextPeriod = 22,
         )
 
@@ -189,7 +190,7 @@ class LoggingPresentationTest {
         // screen used to disagree about which days it covered.
         val prediction = predictionWith(
             cycleDay = 6,
-            fertileWindow = DateRange(today.minusDays(1), today.plusDays(3)),
+            fertileWindow = DateWindow(start = today.minusDays(1), endInclusive = today.plusDays(3), halfWidthDays = 3),
             supportsRange = true,
         )
 
@@ -214,7 +215,7 @@ class LoggingPresentationTest {
         // window on the screen that the engine never generated.
         val prediction = predictionWith(
             cycleDay = 14,
-            fertileWindow = DateRange(today.minusDays(4), today.plusDays(1)),
+            fertileWindow = DateWindow(start = today.minusDays(4), endInclusive = today.plusDays(1), halfWidthDays = 3),
             supportsRange = false,
         )
 
@@ -239,7 +240,7 @@ class LoggingPresentationTest {
         // with the engine's.
         val prediction = predictionWith(
             cycleDay = 4,
-            fertileWindow = DateRange(today.plusDays(4), today.plusDays(9)),
+            fertileWindow = DateWindow(start = today.plusDays(4), endInclusive = today.plusDays(9), halfWidthDays = 3),
             supportsRange = true,
         )
 
@@ -273,20 +274,20 @@ class LoggingPresentationTest {
 
     private fun predictionWith(
         cycleDay: Int,
-        fertileWindow: DateRange,
+        fertileWindow: DateWindow,
         supportsRange: Boolean,
-    ) = PredictionSnapshot(
-        generatedAt = today,
-        cycleDay = cycleDay,
-        nextPeriodDate = today.plusDays((28 - cycleDay).toLong()),
-        ovulationDate = today.plusDays((14 - cycleDay).toLong()),
-        fertileWindow = fertileWindow,
-        confidenceLabel = if (supportsRange) "Moderate range" else "Baseline estimate",
-        daysUntilNextPeriod = 28 - cycleDay,
-        nextPeriodWindow = if (supportsRange) {
-            DateRange(today.plusDays((26 - cycleDay).toLong()), today.plusDays((30 - cycleDay).toLong()))
+    ) = SamplePrediction.of(
+            generatedForDate = today,
+            cycleDay = cycleDay,
+            nextPeriodDate = today.plusDays((28 - cycleDay).toLong()),
+            ovulationDate = today.plusDays((14 - cycleDay).toLong()),
+            fertileWindow = fertileWindow,
+            quality = EstimateQuality.MODERATE,
+            daysUntilNextPeriod = 28 - cycleDay,
+            nextPeriodWindow = if (supportsRange) {
+            DateWindow(start = today.plusDays((26 - cycleDay).toLong()), endInclusive = today.plusDays((30 - cycleDay).toLong()), halfWidthDays = 3)
         } else {
             null
         },
-    )
+        )
 }

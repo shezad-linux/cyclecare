@@ -1,5 +1,6 @@
 package com.cyclecare.feature.logging
 
+import com.cyclecare.core.domain.prediction.SamplePrediction
 import androidx.lifecycle.SavedStateHandle
 import com.cyclecare.core.domain.CycleRepository
 import com.cyclecare.core.domain.PredictionRepository
@@ -8,7 +9,7 @@ import com.cyclecare.core.domain.SymptomRepository
 import com.cyclecare.core.domain.ads.InMemoryDraftTracker
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.Mood
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.CyclePrediction
 import com.cyclecare.core.model.SymptomLog
 import com.cyclecare.core.model.UserProfile
 import com.google.common.truth.Truth.assertThat
@@ -62,7 +63,7 @@ class LoggingDraftReportingTest {
     }
 
     private class EmptyPredictionRepository : PredictionRepository {
-        override fun observePrediction(): Flow<PredictionSnapshot?> = MutableStateFlow(null)
+        override fun observePrediction(): Flow<CyclePrediction?> = MutableStateFlow(null)
     }
 
     private class FixedSymptomRepository(

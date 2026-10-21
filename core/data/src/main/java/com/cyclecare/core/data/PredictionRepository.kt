@@ -2,14 +2,13 @@ package com.cyclecare.core.data
 
 import com.cyclecare.core.domain.CycleRepository
 import com.cyclecare.core.domain.PredictionRepository
+import com.cyclecare.core.domain.prediction.CyclePrediction
 import com.cyclecare.core.domain.prediction.CyclePredictionEngineV2
 import com.cyclecare.core.domain.prediction.CyclePredictionInput
 import com.cyclecare.core.domain.prediction.ObservedCycleStart
-import com.cyclecare.core.domain.prediction.toSnapshot
 import com.cyclecare.core.domain.time.TimeProvider
 import com.cyclecare.core.domain.ProfileRepository
 import com.cyclecare.core.model.CycleSource
-import com.cyclecare.core.model.PredictionSnapshot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -22,7 +21,7 @@ class LocalPredictionRepository(
     private val engine: CyclePredictionEngineV2,
     private val timeProvider: TimeProvider,
 ) : PredictionRepository {
-    override fun observePrediction(): Flow<PredictionSnapshot?> =
+    override fun observePrediction(): Flow<CyclePrediction?> =
         combine(profileRepository.observeProfile(), cycleRepository.observeCycles()) { profile, cycles ->
             val today = timeProvider.today()
 
@@ -48,7 +47,7 @@ class LocalPredictionRepository(
                     userReportedAverageCycleLength = reported,
                     today = today,
                 ),
-            )?.toSnapshot()
+            )
         }.flowOn(Dispatchers.Default)
 }
 

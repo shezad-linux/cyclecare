@@ -1,8 +1,9 @@
 package com.cyclecare.feature.calendar
 
+import com.cyclecare.core.domain.prediction.EstimateQuality
 import com.cyclecare.core.designsystem.text.UiText
-import com.cyclecare.core.model.DateRange
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.DateWindow
+import com.cyclecare.core.domain.prediction.SamplePrediction
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
 import org.junit.Test
@@ -18,24 +19,26 @@ import org.junit.Test
  */
 class CalendarEstimateFramingTest {
 
-    private val prediction = PredictionSnapshot(
-        generatedAt = LocalDate.of(2026, 3, 16),
+    private val prediction = SamplePrediction.of(
+        generatedForDate = LocalDate.of(2026, 3, 16),
         cycleDay = 6,
         nextPeriodDate = LocalDate.of(2026, 4, 8),
         ovulationDate = LocalDate.of(2026, 3, 23),
-        fertileWindow = DateRange(
-            start = LocalDate.of(2026, 3, 19),
-            endInclusive = LocalDate.of(2026, 3, 24),
-        ),
         // The calendar gates the fertile marking on `supportsRange`,
         // which is derived from the next-period window. Without one the
         // engine declined to estimate a range, and the calendar must not
         // mark fertile days it never estimated.
-        nextPeriodWindow = DateRange(
+        nextPeriodWindow = DateWindow(
             start = LocalDate.of(2026, 4, 6),
             endInclusive = LocalDate.of(2026, 4, 10),
+            halfWidthDays = 2,
         ),
-        confidenceLabel = "Narrow range",
+        fertileWindow = DateWindow(
+            start = LocalDate.of(2026, 3, 19),
+            endInclusive = LocalDate.of(2026, 3, 24),
+            halfWidthDays = 3,
+        ),
+        quality = EstimateQuality.MODERATE,
         daysUntilNextPeriod = 23,
     )
 

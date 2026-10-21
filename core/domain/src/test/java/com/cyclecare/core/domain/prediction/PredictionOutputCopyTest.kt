@@ -1,5 +1,7 @@
 package com.cyclecare.core.domain.prediction
 
+import com.cyclecare.core.domain.prediction.DateWindow
+import com.cyclecare.core.domain.prediction.SamplePrediction
 import com.cyclecare.core.domain.InsightEngine
 import com.cyclecare.core.domain.ReminderSchedulePlanner
 import com.cyclecare.core.model.CycleRecord
@@ -75,26 +77,38 @@ class PredictionOutputCopyTest {
     // ── the strings the engine produces ─────────────────────────────
 
     @Test
-    fun confidenceLabelsAreFramedAndNeverClaimCertainty() {
-        // Every quality tier, plus the stale branch, is enumerated here
-        // so a new tier cannot be added without its copy being reviewed.
-        val labels = listOf(
-            EstimateQuality.INSUFFICIENT_HISTORY to false,
-            EstimateQuality.LOW to false,
-            EstimateQuality.MODERATE to false,
-            EstimateQuality.HIGH to false,
-            EstimateQuality.HIGH to true,
-        ).map { (quality, stale) ->
-            prediction(quality = quality, isStale = stale).toSnapshot().confidenceLabel
+    fun everyQualityTierIsMachineReadableAndTotal() {
+        // Spec `11` §7: "`confidenceLabel: String` is removed;
+        // `quality: EstimateQuality` replaces it." The wording is now a
+        // resource in the feature layer, so what the domain can promise
+        // is that the tier is machine-readable, that every tier the
+        // engine can produce is one of the declared ones, and that no
+        // tier is left without a way to be described.
+        //
+        // The wording itself is checked where it now lives, in
+        // `feature/home`'s `ConfidenceCopyTest`.
+        val declared = EstimateQuality.entries.toSet()
+        val produced = listOf(
+            EstimateQuality.INSUFFICIENT_HISTORY,
+            EstimateQuality.LOW,
+            EstimateQuality.MODERATE,
+            EstimateQuality.HIGH,
+        )
+        assertThat(produced).containsExactlyElementsIn(declared)
+
+        produced.forEach { quality ->
+            val prediction = prediction(quality = quality, isStale = false)
+            assertThat(prediction.quality).isEqualTo(quality)
+            // A tier is never blank, so the screen always has something
+            // to say about how certain the estimate is.
+            assertThat(prediction.quality.name).isNotEmpty()
         }
 
-        assertThat(labels).hasSize(5)
-        labels.forEach { label ->
-            // Framed: never blank, so the screen always has something to
-            // say about how certain the estimate is.
-            assertThat(label).isNotEmpty()
-            assertNoBannedPhrase("confidence label", label)
-        }
+        // The stale branch is orthogonal to the tier, and it is carried
+        // separately so the screen can say so.
+        val stale = prediction(quality = EstimateQuality.HIGH, isStale = true)
+        assertThat(stale.isStale).isTrue()
+        assertThat(stale.quality).isEqualTo(EstimateQuality.HIGH)
     }
 
     @Test
@@ -202,10 +216,9 @@ class PredictionOutputCopyTest {
         assertThat(prediction.algorithmVersion).isEqualTo(PREDICTION_ALGORITHM_VERSION)
         assertThat(prediction.recordIdsUsed).containsExactly("r0", "r1", "r2", "r3")
         assertThat(prediction.algorithmVersion).isNotEmpty()
-        // The version and the provenance survive the mapping to the
-        // shape the screens read.
-        val snapshot = prediction.toSnapshot()
-        assertThat(snapshot.algorithmVersion).isEqualTo(PREDICTION_ALGORITHM_VERSION)
+        // The version and the provenance are on the shape the screens
+        // read. There is no second shape to carry them through: spec
+        // `11` §7 replaced `PredictionSnapshot` with `CyclePrediction`.
     }
 
     @Test
@@ -275,24 +288,23 @@ class PredictionOutputCopyTest {
         warnings = emptyList(),
     )
 
-    private fun snapshotForReminder() = com.cyclecare.core.model.PredictionSnapshot(
-        generatedAt = LocalDate.parse("2026-03-10"),
+    private fun snapshotForReminder() = SamplePrediction.of(
+        generatedForDate = LocalDate.parse("2026-03-10"),
         cycleDay = 10,
         nextPeriodDate = LocalDate.parse("2026-03-28"),
         ovulationDate = LocalDate.parse("2026-03-14"),
-        fertileWindow = com.cyclecare.core.model.DateRange(
+        fertileWindow = DateWindow(
             start = LocalDate.parse("2026-03-10"),
             endInclusive = LocalDate.parse("2026-03-15"),
+            halfWidthDays = 3,
         ),
-        confidenceLabel = "Narrow range",
         daysUntilNextPeriod = 18,
-        nextPeriodWindow = com.cyclecare.core.model.DateRange(
+        nextPeriodWindow = DateWindow(
             start = LocalDate.parse("2026-03-27"),
             endInclusive = LocalDate.parse("2026-03-29"),
+            halfWidthDays = 1,
         ),
-        nextPeriodHalfWidthDays = 1,
-        quality = com.cyclecare.core.model.PredictionQuality.HIGH,
-        phase = com.cyclecare.core.model.PredictionPhase.FOLLICULAR,
+        quality = EstimateQuality.HIGH,
         algorithmVersion = PREDICTION_ALGORITHM_VERSION,
     )
 

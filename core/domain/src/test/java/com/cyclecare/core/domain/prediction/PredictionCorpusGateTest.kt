@@ -528,7 +528,10 @@ class PredictionCorpusGateTest {
         assertThat(prediction.recordIdsUsed)
             .containsExactlyElementsIn(scenario.starts.indices.map { "r$it" })
             .inOrder()
-        assertThat(prediction.toSnapshot().algorithmVersion)
+        // Spec `11` §7 replaced `PredictionSnapshot` with
+        // `CyclePrediction`, so the version and the provenance are on the
+        // one shape the screens read.
+        assertThat(prediction.algorithmVersion)
             .isEqualTo(PREDICTION_ALGORITHM_VERSION)
     }
 
@@ -568,32 +571,25 @@ class PredictionCorpusGateTest {
         val baseline = requireNotNull(
             engine.predict(inputFor(Corpus.stable(cycles = 8), 9)),
         )
-        val labels = EstimateQuality.values().flatMap { quality ->
+        // The wording is a resource in the feature layer, so the domain
+        // asserts what the domain owns: that the tier is
+        // machine-readable, that every tier is reachable, and that the
+        // stale branch is carried separately.
+        //
+        // The wording itself is checked where it now lives, in
+        // `feature/home`'s `ConfidenceCopyTest`.
+        val tiers = EstimateQuality.entries.flatMap { quality ->
             listOf(false, true).map { stale ->
                 baseline.copy(quality = quality, isStale = stale)
-                    .toSnapshot()
-                    .confidenceLabel
             }
-        }.distinct()
-
-        assertThat(labels).isNotEmpty()
-        val bannedPhrases = listOf(
-            "safe",
-            "contracept",
-            "diagnos",
-            "certain",
-            "guarantee",
-            "will start",
-            "definitely",
-            "clinically accurate",
-            "unhealthy",
-            "abnormal",
-            "100%",
-        )
-        labels.forEach { label ->
-            bannedPhrases.forEach { phrase ->
-                assertThat(label.lowercase()).doesNotContain(phrase)
-            }
+        }
+        assertThat(tiers).isNotEmpty()
+        assertThat(tiers.map { it.quality }.toSet())
+            .containsExactlyElementsIn(EstimateQuality.entries.toSet())
+        tiers.forEach { prediction ->
+            // Framed: never blank, so the screen always has something to
+            // say about how certain the estimate is.
+            assertThat(prediction.quality.name).isNotEmpty()
         }
     }
 

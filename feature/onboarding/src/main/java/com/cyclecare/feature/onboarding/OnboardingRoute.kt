@@ -71,7 +71,7 @@ class OnboardingViewModel(
 
     fun incrementCycleLength(delta: Int) {
         updateState { state ->
-            state.copy(cycleLength = (state.cycleLength + delta).coerceIn(20, 45))
+            state.copy(cycleLengthDays = (state.cycleLengthDays + delta).coerceIn(20, 45))
         }
     }
 
@@ -109,7 +109,7 @@ class OnboardingViewModel(
                 profileRepository.saveProfile(
                     UserProfile(
                         ageBand = state.ageBand,
-                        averageCycleLength = state.cycleLength,
+                        averageCycleLength = state.cycleLengthDays,
                         periodLength = state.periodLength,
                         lastPeriodStart = state.lastPeriodStart,
                         trackingGoal = state.goal,
@@ -127,7 +127,7 @@ class OnboardingViewModel(
                         id = UUID.randomUUID().toString(),
                         startDate = state.lastPeriodStart,
                         endDate = state.lastPeriodStart.plusDays(state.periodLength.toLong() - 1),
-                        cycleLength = state.cycleLength,
+                        cycleLength = state.cycleLengthDays,
                         source = CycleSource.User,
                     ),
                 )

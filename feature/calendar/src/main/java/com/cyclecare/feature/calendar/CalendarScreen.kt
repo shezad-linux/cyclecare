@@ -84,7 +84,7 @@ import com.cyclecare.core.domain.PredictionRepository
 import com.cyclecare.core.domain.ReminderScheduler
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.CyclePrediction
 import com.cyclecare.core.designsystem.text.UiText
 import com.cyclecare.core.designsystem.text.pluralUiText
 import com.cyclecare.core.designsystem.text.resolve
@@ -301,6 +301,13 @@ internal fun CalendarScreen(
                     StatusPill(summary = uiState.selectedDaySummary)
                 }
                 Text(uiState.selectedDaySummary.detail.resolve(), style = MaterialTheme.typography.bodyLarge)
+                uiState.selectedDaySummary.cycleLengthLabel?.let { cycleLengthLabel ->
+                    Text(
+                        cycleLengthLabel.resolve(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 if (!uiState.selectedCycle?.notes.isNullOrBlank()) {
                     Text(
                         uiState.selectedCycle?.notes.orEmpty(),

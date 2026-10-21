@@ -16,7 +16,6 @@ import com.cyclecare.core.domain.notification.QuietHours
 import com.cyclecare.core.domain.notification.evaluateDeliveryGates
 import com.cyclecare.core.domain.notification.sendsAtLearnedTime
 import com.cyclecare.core.domain.prediction.EstimateQuality
-import com.cyclecare.core.domain.toEstimateQuality
 import com.cyclecare.core.model.ReminderEvent
 import com.cyclecare.core.model.ReminderType
 import com.cyclecare.core.model.TrackingGoal
@@ -134,11 +133,15 @@ internal object ReminderDeliveryPolicy {
         type: ReminderType,
         prediction: PredictionRepository,
     ): EstimateQuality {
-        val snapshot = prediction.observePrediction().first() ?: return EstimateQuality.INSUFFICIENT_HISTORY
+        val currentPrediction = prediction.observePrediction().first()
+            ?: return EstimateQuality.INSUFFICIENT_HISTORY
         if (type == ReminderType.DailyLog) {
             return EstimateQuality.MODERATE
         }
-        return snapshot.quality.toEstimateQuality()
+        // The prediction already carries the engine's own quality tier,
+        // so there is no second enum to translate and no chance of the
+        // two disagreeing.
+        return currentPrediction.quality
     }
 
     /**

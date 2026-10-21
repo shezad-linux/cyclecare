@@ -140,11 +140,3 @@ data class SendBudgets(
     val last7d: Int,
     val lastArbitrationWindow: Int,
 )
-
-/** The quality mapping between the model enum and the scorer's enum. */
-fun com.cyclecare.core.model.PredictionQuality.toEstimateQuality(): EstimateQuality = when (this) {
-    com.cyclecare.core.model.PredictionQuality.INSUFFICIENT_HISTORY -> EstimateQuality.INSUFFICIENT_HISTORY
-    com.cyclecare.core.model.PredictionQuality.LOW -> EstimateQuality.LOW
-    com.cyclecare.core.model.PredictionQuality.MODERATE -> EstimateQuality.MODERATE
-    com.cyclecare.core.model.PredictionQuality.HIGH -> EstimateQuality.HIGH
-}

@@ -1,10 +1,11 @@
 package com.cyclecare.feature.calendar
 
+import com.cyclecare.core.domain.prediction.EstimateQuality
 import com.cyclecare.core.designsystem.text.UiText
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
-import com.cyclecare.core.model.DateRange
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.DateWindow
+import com.cyclecare.core.domain.prediction.SamplePrediction
 import com.cyclecare.core.domain.CycleRecordValidator
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
@@ -31,17 +32,18 @@ class CalendarPresentationTest {
 
     @Test
     fun selectedDaySummary_marksOvulationAndKeepsFriendlyAction() {
-        val prediction = PredictionSnapshot(
-            generatedAt = LocalDate.of(2026, 3, 16),
+        val prediction = SamplePrediction.of(
+            generatedForDate = LocalDate.of(2026, 3, 16),
             cycleDay = 6,
             nextPeriodDate = LocalDate.of(2026, 4, 8),
             ovulationDate = LocalDate.of(2026, 3, 23),
-            fertileWindow = DateRange(
+            quality = EstimateQuality.MODERATE,
+            daysUntilNextPeriod = 23,
+            fertileWindow = DateWindow(
                 start = LocalDate.of(2026, 3, 19),
                 endInclusive = LocalDate.of(2026, 3, 24),
+                halfWidthDays = 3,
             ),
-            confidenceLabel = "Baseline estimate",
-            daysUntilNextPeriod = 23,
         )
 
         val summary = buildSelectedDaySummary(
@@ -56,17 +58,18 @@ class CalendarPresentationTest {
 
     @Test
     fun selectedDaySummary_futurePredictionHidesPeriodEntryAction() {
-        val prediction = PredictionSnapshot(
-            generatedAt = LocalDate.of(2026, 3, 16),
+        val prediction = SamplePrediction.of(
+            generatedForDate = LocalDate.of(2026, 3, 16),
             cycleDay = 6,
             nextPeriodDate = LocalDate.of(2026, 4, 8),
             ovulationDate = LocalDate.of(2026, 3, 23),
-            fertileWindow = DateRange(
+            quality = EstimateQuality.MODERATE,
+            daysUntilNextPeriod = 23,
+            fertileWindow = DateWindow(
                 start = LocalDate.of(2026, 3, 19),
                 endInclusive = LocalDate.of(2026, 3, 24),
+                halfWidthDays = 3,
             ),
-            confidenceLabel = "Baseline estimate",
-            daysUntilNextPeriod = 23,
         )
 
         val summary = buildSelectedDaySummary(
@@ -106,11 +109,19 @@ class CalendarPresentationTest {
         )
 
         assertThat(items.first().id).isEqualTo("newer")
+        // The newest cycle has no interval yet: an interval is the gap to
+        // the next start, and the next period has not happened. The
+        // stored `cycleLength` column is not read, so the label says so
+        // rather than printing an unvalidated number.
+        assertThat(items.first().cycleLengthLabel).isEqualTo(
+            UiText.Resource(R.string.history_cycle_length_unknown),
+        )
+        // The older cycle does have one, and it is the derived gap.
+        assertThat(items.last().cycleLengthLabel).isEqualTo(
+            UiText.Plural(R.plurals.history_cycle_length, 28, listOf(28)),
+        )
         assertThat(items.first().dateRangeLabel).isEqualTo(
             UiText.Resource(R.string.cycle_range, listOf("Mar 11, 2026", "Mar 15, 2026")),
-        )
-        assertThat(items.first().cycleLengthLabel).isEqualTo(
-            UiText.Plural(R.plurals.history_cycle_length, 28, listOf(28)),
         )
     }
 

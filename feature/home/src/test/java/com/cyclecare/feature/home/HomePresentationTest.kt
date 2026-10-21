@@ -1,12 +1,14 @@
 package com.cyclecare.feature.home
 
+import com.cyclecare.core.domain.VALID_CYCLE_LENGTH_RANGE
+import com.cyclecare.core.domain.prediction.EstimateQuality
 import com.cyclecare.core.model.AgeBand
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
-import com.cyclecare.core.model.DateRange
+import com.cyclecare.core.domain.prediction.DateWindow
 import com.cyclecare.core.domain.CycleRecordValidator
 import com.cyclecare.core.model.InsightSnapshot
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.SamplePrediction
 import com.cyclecare.core.model.TrackingGoal
 import com.cyclecare.core.model.UserProfile
 import com.cyclecare.core.designsystem.text.UiText
@@ -20,9 +22,10 @@ import org.junit.Test
 class HomePresentationTest {
     @Test
     fun fertileWindow_isFramedAsAnEstimate() {
-        val range = DateRange(
+        val range = DateWindow(
             start = LocalDate.of(2026, 3, 21),
             endInclusive = LocalDate.of(2026, 3, 26),
+            halfWidthDays = 3,
         )
 
         // Spec 11 §5: a fertile window always reads as an estimate.
@@ -37,9 +40,10 @@ class HomePresentationTest {
         // the mapper fills the field in with a presentation fallback.
         // Showing that would put a fertile range on the screen that the
         // engine never generated.
-        val range = DateRange(
+        val range = DateWindow(
             start = LocalDate.of(2026, 3, 19),
             endInclusive = LocalDate.of(2026, 3, 24),
+            halfWidthDays = 3,
         )
 
         assertThat(formatFertileWindow(range, supportsRange = false)).isEqualTo(
@@ -108,15 +112,15 @@ class HomePresentationTest {
         // the dispersion. A fraction of the cycle cannot reproduce it,
         // so the screen reads the engine's own window.
         val today = LocalDate.of(2026, 3, 16)
-        val prediction = PredictionSnapshot(
-            generatedAt = today,
+        val prediction = SamplePrediction.of(
+            generatedForDate = today,
             cycleDay = 6,
             nextPeriodDate = today.plusDays(22),
             ovulationDate = today.plusDays(9),
-            fertileWindow = DateRange(today.minusDays(1), today.plusDays(3)),
-            confidenceLabel = "Moderate range",
+            fertileWindow = DateWindow(start = today.minusDays(1), endInclusive = today.plusDays(3), halfWidthDays = 3),
+            quality = EstimateQuality.MODERATE,
             daysUntilNextPeriod = 22,
-            nextPeriodWindow = DateRange(today.plusDays(20), today.plusDays(24)),
+            nextPeriodWindow = DateWindow(start = today.plusDays(20), endInclusive = today.plusDays(24), halfWidthDays = 3),
         )
 
         assertThat(
@@ -135,14 +139,18 @@ class HomePresentationTest {
         // used to read "Fertile window". The engine declined to produce
         // a window here, so the screen must not invent one.
         val today = LocalDate.of(2026, 3, 16)
-        val prediction = PredictionSnapshot(
-            generatedAt = today,
+        val prediction = SamplePrediction.of(
+            generatedForDate = today,
             cycleDay = 14,
             nextPeriodDate = today.plusDays(14),
             ovulationDate = today.plusDays(1),
-            fertileWindow = DateRange(today.minusDays(4), today.plusDays(1)),
-            confidenceLabel = "Baseline estimate",
+            fertileWindow = DateWindow(start = today.minusDays(4), endInclusive = today.plusDays(1), halfWidthDays = 3),
+            quality = EstimateQuality.MODERATE,
             daysUntilNextPeriod = 14,
+            // The engine declined to produce a range, so there is no
+            // next-period window and `supportsRange` is false. That is
+            // what the screen must respect.
+            nextPeriodWindow = null,
         )
 
         assertThat(
@@ -157,9 +165,10 @@ class HomePresentationTest {
 
     @Test
     fun fertileWindow_usesNaturalDashboardDateFormatting() {
-        val range = DateRange(
+        val range = DateWindow(
             start = LocalDate.of(2026, 3, 21),
             endInclusive = LocalDate.of(2026, 3, 26),
+            halfWidthDays = 3,
         )
 
         assertThat(formatFertileWindow(range, supportsRange = true)).isEqualTo(
@@ -168,14 +177,61 @@ class HomePresentationTest {
     }
 
     @Test
-    fun cycleProgressLabel_keepsDayContextAndConfidence() {
+    fun cycleProgressLabel_keepsDayContextAndCarriesNoConfidence() {
+        // The confidence is its own element with its own resource. It
+        // used to be an argument of this sentence, which meant a
+        // translator had to carry a fragment of the engine's English
+        // prose inside a translated string.
         assertThat(
             formatCycleProgressLabel(
                 cycleDay = 6,
                 cycleLength = 28,
-                confidenceLabel = "Baseline estimate",
             ),
-        ).isEqualTo(uiText(R.string.day_slash_total_with_confidence, "6", 28, "Baseline estimate"))
+        ).isEqualTo(uiText(R.string.day_slash_total, "6", 28))
+    }
+
+    @Test
+    fun theCycleLengthRangeIsTheDomainsAndTheBoundariesAreAccepted() {
+        // The range is the domain's rule, in one place. The editor uses
+        // it, so the two cannot disagree.
+        assertThat(VALID_CYCLE_LENGTH_RANGE).isEqualTo(20..45)
+
+        val validator = com.cyclecare.core.domain.CycleRecordValidator(
+            todayProvider = { LocalDate.of(2026, 3, 16) },
+        )
+        fun errorFor(length: Int) = validateHomeEditorState(
+            editor = HomeEditorState(
+                startDateText = "2026-03-01",
+                endDateText = "2026-03-05",
+                cycleLengthText = length.toString(),
+            ),
+            cycles = emptyList(),
+            validator = validator,
+            today = LocalDate.of(2026, 3, 16),
+        ).cycleLengthError
+
+        listOf(20, 45).forEach { length ->
+            assertThat(errorFor(length)).isNull()
+        }
+        listOf(19, 46).forEach { length ->
+            assertThat(errorFor(length)).isNotNull()
+        }
+    }
+
+    @Test
+    fun everyQualityTierHasItsOwnConfidenceResource() {
+        val resources = EstimateQuality.entries.map { quality ->
+            confidenceLabelResource(quality = quality, isStale = false)
+        }
+        assertThat(resources).containsNoDuplicates()
+        assertThat(resources).hasSize(EstimateQuality.entries.size)
+    }
+
+    @Test
+    fun aStalePredictionSaysSoRatherThanClaimingANarrowRange() {
+        val stale = confidenceLabelResource(quality = EstimateQuality.HIGH, isStale = true)
+        val fresh = confidenceLabelResource(quality = EstimateQuality.HIGH, isStale = false)
+        assertThat(stale).isNotEqualTo(fresh)
     }
 
     @Test
@@ -209,13 +265,13 @@ class HomePresentationTest {
     @Test
     fun cyclePhaseLabel_usesPeriodDaysDuringCurrentCycle() {
         val today = LocalDate.of(2026, 3, 16)
-        val prediction = PredictionSnapshot(
-            generatedAt = today,
+        val prediction = SamplePrediction.of(
+            generatedForDate = today,
             cycleDay = 6,
             nextPeriodDate = today.plusDays(22),
             ovulationDate = today.plusDays(9),
-            fertileWindow = DateRange(today.plusDays(7), today.plusDays(12)),
-            confidenceLabel = "Baseline estimate",
+            fertileWindow = DateWindow(start = today.plusDays(7), endInclusive = today.plusDays(12), halfWidthDays = 3),
+            quality = EstimateQuality.MODERATE,
             daysUntilNextPeriod = 22,
         )
         val currentCycle = CycleRecord(
@@ -301,9 +357,10 @@ class HomePresentationTest {
     @Test
     fun nextPeriodRange_rendersBothEndsAndTheHalfWidth() {
         val text = formatNextPeriodRange(
-            range = DateRange(
+            range = DateWindow(
                 start = LocalDate.of(2026, 4, 7),
                 endInclusive = LocalDate.of(2026, 4, 11),
+                halfWidthDays = 2,
             ),
             supportsRange = true,
             halfWidthDays = 2,

@@ -1,5 +1,6 @@
 package com.cyclecare.feature.onboarding
 
+import com.cyclecare.core.domain.VALID_CYCLE_LENGTH_RANGE
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -177,7 +178,7 @@ class OnboardingScreenUiTest {
                     uiState = state(),
                     onAgeBandSelected = { updateState(state().copy(ageBand = it)) },
                     onCycleLengthIncrement = {
-                        updateState(state().copy(cycleLength = (state().cycleLength + it).coerceIn(20, 45)))
+                        updateState(state().copy(cycleLengthDays = (state().cycleLengthDays + it).coerceIn(VALID_CYCLE_LENGTH_RANGE)))
                     },
                     onPeriodLengthChanged = {
                         updateState(

@@ -147,63 +147,21 @@ data class SymptomLog(
             dischargeType == null && medication.isNullOrBlank() && notes.isNullOrBlank()
 }
 
-data class PredictionSnapshot(
-    val generatedAt: LocalDate,
-    val cycleDay: Int,
-    val nextPeriodDate: LocalDate,
-    val ovulationDate: LocalDate,
-    val fertileWindow: DateRange,
-    val confidenceLabel: String,
-    val daysUntilNextPeriod: Int,
-
-    // ── Added by the v2 engine ─────────────────────────────────────
-    // The v1 snapshot could not express a range, a quality tier or a
-    // phase, which forced the UI to present a single date as if it were
-    // certain. These fields carry that capability through to the UI
-    // without waiting for the full screen rewrite.
-
-    /** Null when history is too thin to support any range at all. */
-    val nextPeriodWindow: DateRange? = null,
-    /**
-     * Explicit half-width in days. Carried rather than derived from the
-     * window span, so the UI never has to infer it and cannot drift if
-     * the window representation changes.
-     */
-    val nextPeriodHalfWidthDays: Int? = null,
-    val quality: PredictionQuality = PredictionQuality.INSUFFICIENT_HISTORY,
-    val phase: PredictionPhase = PredictionPhase.UNKNOWN,
-    val warnings: Set<PredictionWarning> = emptySet(),
-    val overdueDays: Int = 0,
-    val algorithmVersion: String = "",
-) {
-    /**
-     * False when the engine declined to emit a range. Callers must show
-     * an honest empty state and must not derive reminders from the point
-     * estimate alone.
-     */
-    val supportsRange: Boolean
-        get() = nextPeriodWindow != null
-}
-
-/**
- * Mirror of the domain quality tier, kept in the model module so the UI
- * does not depend on the prediction package.
- */
-enum class PredictionQuality { INSUFFICIENT_HISTORY, LOW, MODERATE, HIGH }
-
-/** Mirror of the domain phase, for the same reason. */
-enum class PredictionPhase { MENSTRUAL, FOLLICULAR, OVULATION, LUTEAL, UNKNOWN }
-
-/** Mirror of the domain warnings, for the same reason. */
-enum class PredictionWarning {
-    NO_HISTORY,
-    IMPOSSIBLE_INTERVAL,
-    OUTLIER_EXCLUDED,
-    IRREGULAR_HISTORY,
-    STALE_HISTORY,
-    TREND_DETECTED,
-    USER_ASSUMPTION_USED,
-}
+// A prediction is no longer modelled here.
+//
+// This used to be `PredictionSnapshot`, a second shape that mirrored the
+// prediction engine's own output field by field, together with
+// `PredictionQuality`, `PredictionPhase` and `PredictionWarning`
+// mirrors of the engine's enums.
+//
+// Spec `11` §7 requires one shape: "`PredictionSnapshot` is replaced by
+// `CyclePrediction`. `confidenceLabel: String` is removed; `quality:
+// EstimateQuality` replaces it. Migrate consumers in one change, never
+// both shapes at once."
+//
+// `CyclePrediction` lives in `core:domain`, next to the engine that
+// produces it. The modules that consume a prediction already depend on
+// `core:domain`, so nothing needed a copy here.
 
 data class ReminderRule(
     val id: String,

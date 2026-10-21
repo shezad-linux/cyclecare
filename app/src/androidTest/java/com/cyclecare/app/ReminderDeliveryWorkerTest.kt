@@ -1,5 +1,8 @@
 package com.cyclecare.app
 
+import com.cyclecare.core.domain.prediction.CyclePrediction
+import com.cyclecare.core.domain.prediction.DateWindow
+import com.cyclecare.core.domain.prediction.EstimateQuality
 import android.app.Notification
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -35,7 +38,7 @@ import com.cyclecare.core.model.ExportFormat
 import com.cyclecare.core.model.InsightSnapshot
 import com.cyclecare.core.model.Mood
 import com.cyclecare.core.model.PainLevel
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.SamplePrediction
 import com.cyclecare.core.model.ReminderChannelKey
 import com.cyclecare.core.model.ReminderChannelSettings
 import com.cyclecare.core.model.ReminderDeepLinkTarget
@@ -293,26 +296,26 @@ private class WorkerFixedClock : TimeProvider {
  * trying to prove posts.
  */
 private class WorkerFakePredictionRepository : PredictionRepository {
-    private val snapshot = PredictionSnapshot(
-        generatedAt = LocalDate.of(2026, 3, 17),
-        cycleDay = 15,
-        nextPeriodDate = LocalDate.of(2026, 3, 24),
-        ovulationDate = LocalDate.of(2026, 3, 19),
-        fertileWindow = com.cyclecare.core.model.DateRange(
-            start = LocalDate.of(2026, 3, 17),
-            endInclusive = LocalDate.of(2026, 3, 22),
-        ),
-        confidenceLabel = "test",
-        daysUntilNextPeriod = 7,
-        nextPeriodWindow = com.cyclecare.core.model.DateRange(
-            start = LocalDate.of(2026, 3, 23),
-            endInclusive = LocalDate.of(2026, 3, 25),
-        ),
-        nextPeriodHalfWidthDays = 1,
-        quality = com.cyclecare.core.model.PredictionQuality.HIGH,
-    )
+    private val snapshot = SamplePrediction.of(
+            generatedForDate = LocalDate.of(2026, 3, 17),
+            cycleDay = 15,
+            nextPeriodDate = LocalDate.of(2026, 3, 24),
+            ovulationDate = LocalDate.of(2026, 3, 19),
+            daysUntilNextPeriod = 7,
+            quality = EstimateQuality.HIGH,
+            nextPeriodWindow = DateWindow(
+                start = LocalDate.of(2026, 3, 23),
+                endInclusive = LocalDate.of(2026, 3, 25),
+                halfWidthDays = 3,
+            ),
+            fertileWindow = DateWindow(
+                start = LocalDate.of(2026, 3, 17),
+                endInclusive = LocalDate.of(2026, 3, 22),
+                halfWidthDays = 3,
+            ),
+        )
 
-    override fun observePrediction(): Flow<PredictionSnapshot?> = MutableStateFlow(snapshot).asStateFlow()
+    override fun observePrediction(): Flow<CyclePrediction?> = MutableStateFlow(snapshot).asStateFlow()
 }
 
 private class FakeReminderNotificationClient : ReminderNotificationClient {
@@ -495,7 +498,7 @@ private class NoOpSymptomRepository : SymptomRepository {
 }
 
 private class NoOpPredictionRepository : PredictionRepository {
-    override fun observePrediction(): Flow<PredictionSnapshot?> = MutableStateFlow<PredictionSnapshot?>(null).asStateFlow()
+    override fun observePrediction(): Flow<CyclePrediction?> = MutableStateFlow<CyclePrediction?>(null).asStateFlow()
 }
 
 private class NoOpInsightRepository : InsightRepository {

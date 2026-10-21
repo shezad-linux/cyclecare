@@ -11,7 +11,7 @@ import com.cyclecare.core.designsystem.CycleCareTheme
 import com.cyclecare.core.designsystem.ScreenWidthPreviews
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.SamplePrediction
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -26,18 +26,7 @@ private fun CalendarScreenPreview() {
         source = CycleSource.User,
         notes = "Cycle felt regular and symptoms stayed light.",
     )
-    val samplePrediction = PredictionSnapshot(
-        generatedAt = LocalDate.of(2026, 3, 16),
-        cycleDay = 6,
-        nextPeriodDate = LocalDate.of(2026, 4, 8),
-        ovulationDate = LocalDate.of(2026, 3, 23),
-        fertileWindow = com.cyclecare.core.model.DateRange(
-            start = LocalDate.of(2026, 3, 19),
-            endInclusive = LocalDate.of(2026, 3, 24),
-        ),
-        confidenceLabel = "Baseline estimate",
-        daysUntilNextPeriod = 23,
-    )
+    val samplePrediction = SamplePrediction.from()
     val previewMonth = YearMonth.of(2026, 3)
 
     CycleCareTheme {

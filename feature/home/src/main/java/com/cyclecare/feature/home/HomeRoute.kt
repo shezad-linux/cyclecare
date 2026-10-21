@@ -29,7 +29,7 @@ import com.cyclecare.core.domain.ReminderScheduler
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
 import com.cyclecare.core.model.InsightSnapshot
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.CyclePrediction
 import com.cyclecare.core.model.ReminderRule
 import com.cyclecare.core.model.ReminderType
 import com.cyclecare.core.model.UserProfile
@@ -49,7 +49,7 @@ import kotlinx.coroutines.launch
 private data class HomeBaseState(
     val profile: UserProfile? = null,
     val cycles: List<CycleRecord> = emptyList(),
-    val prediction: PredictionSnapshot? = null,
+    val prediction: CyclePrediction? = null,
     val insights: InsightSnapshot? = null,
     val reminderRules: List<ReminderRule> = emptyList(),
 )
@@ -68,7 +68,7 @@ private object HomeStateKeys {
 
 private fun buildCycleModeLabel(
     currentCycle: CycleRecord?,
-    prediction: PredictionSnapshot?,
+    prediction: CyclePrediction?,
 ): UiText = when {
     currentCycle != null -> uiText(R.string.currently_logged)
     prediction != null -> uiText(R.string.based_on_your_history)
@@ -101,13 +101,13 @@ private fun buildLatestCycleSummary(
 
 private fun buildVariabilityText(
     insights: InsightSnapshot?,
-    confidenceLabel: String,
+    confidenceLabelRes: Int?,
 ): UiText = when {
     insights == null || !insights.hasEnoughCycleData ->
-        // The confidence label comes from the domain as English prose, which
-        // is a known boundary gap. The fallback is ours, so it is a
-        // resource rather than a literal.
-        confidenceLabel.ifBlank { null }?.let { UiText.Raw(it) }
+        // With no usable history the only thing to say about the range
+        // is the engine's own confidence tier, which is a resource. A
+        // translation never has to carry a fragment of English prose.
+        confidenceLabelRes?.let { uiText(it) }
             ?: uiText(R.string.from_your_setup)
     insights.minCycleLength == insights.maxCycleLength ->
         uiText(R.string.n_d_steady, insights.averageCycleLength)
@@ -117,7 +117,7 @@ private fun buildVariabilityText(
 
 private fun buildReminderTeaser(
     profile: UserProfile?,
-    prediction: PredictionSnapshot?,
+    prediction: CyclePrediction?,
     rules: List<ReminderRule>,
     cycles: List<CycleRecord>,
     planner: ReminderSchedulePlanner,
@@ -232,7 +232,7 @@ class HomeViewModel(
         // cannot disagree about the user's cycle length on the same day,
         // which they could when Today showed the onboarding baseline
         // and Insights showed what the logged history actually says.
-        val cycleLength = resolveAverageCycleLength(
+        val cycleLengthDays = resolveAverageCycleLength(
             insights = base.insights,
             profile = base.profile,
         )
@@ -245,30 +245,30 @@ class HomeViewModel(
             daysUntilNextPeriod = base.prediction?.daysUntilNextPeriod,
             nextPeriodDateText = formatDashboardDate(base.prediction?.nextPeriodDate),
             cycleDay = base.prediction?.cycleDay,
-            cycleLength = cycleLength,
+            cycleLengthDays = cycleLengthDays,
             averagePeriodLength = base.profile?.periodLength ?: latestCycle?.let { cycle ->
                 java.time.temporal.ChronoUnit.DAYS.between(cycle.startDate, cycle.endDate).toInt() + 1
             } ?: 5,
             variabilityText = buildVariabilityText(
                 insights = base.insights,
-                confidenceLabel = base.prediction?.confidenceLabel.orEmpty(),
+                confidenceLabelRes = base.prediction?.confidenceLabelRes(),
             ),
             fertileWindowText = formatFertileWindow(
                 range = base.prediction?.fertileWindow,
                 supportsRange = base.prediction?.supportsRange ?: false,
             ),
             ovulationEstimateText = formatDashboardDate(base.prediction?.ovulationDate),
-            confidenceLabel = base.prediction?.confidenceLabel.orEmpty(),
+            confidenceLabelRes = base.prediction?.confidenceLabelRes(),
             nextPeriodRangeText = formatNextPeriodRange(
                 range = base.prediction?.nextPeriodWindow,
                 supportsRange = base.prediction?.supportsRange ?: false,
-                halfWidthDays = base.prediction?.nextPeriodHalfWidthDays,
+                halfWidthDays = base.prediction?.nextPeriodWindow?.halfWidthDays,
             ),
             supportsRange = base.prediction?.supportsRange ?: false,
             overdueDays = base.prediction?.overdueDays ?: 0,
             hasCurrentCycle = currentCycle != null,
             cycleModeLabel = buildCycleModeLabel(currentCycle, base.prediction),
-            cyclePhaseLabel = buildHomeCyclePhaseLabel(currentCycle, base.prediction, cycleLength),
+            cyclePhaseLabel = buildHomeCyclePhaseLabel(currentCycle, base.prediction, cycleLengthDays),
             cycleSourceSummary = buildCycleSourceSummary(
                 profile = base.profile,
                 currentCycle = currentCycle,

@@ -1,5 +1,6 @@
 package com.cyclecare.feature.home
 
+import com.cyclecare.core.domain.prediction.DateWindow
 import com.cyclecare.core.designsystem.text.UiText
 import com.cyclecare.core.designsystem.text.uiText
 import com.google.common.truth.Truth.assertThat
@@ -24,10 +25,11 @@ class HomeEstimateFramingTest {
             nextPeriodDateText = UiText.Raw("Apr 9"),
             supportsRange = true,
             nextPeriodRangeText = formatNextPeriodRange(
-                range = com.cyclecare.core.model.DateRange(
+                range = com.cyclecare.core.domain.prediction.DateWindow(
                     start = java.time.LocalDate.parse("2026-04-07"),
                     endInclusive = java.time.LocalDate.parse("2026-04-11"),
-                ),
+                halfWidthDays = 3,
+            ),
                 supportsRange = true,
                 halfWidthDays = 2,
             ),

@@ -9,8 +9,22 @@ data class CycleValidationResult(
     val message: String? = null,
 )
 
+/**
+ * The cycle lengths a user may record.
+ *
+ * This is the domain's rule, so it lives here rather than being copied
+ * into the screens that enforce it. It was written out as a literal
+ * `20..45` in the validator and again in three feature modules, which
+ * is four places for one rule to drift.
+ *
+ * The screens that need it already depend on `core:domain`, and
+ * `core:domain` has no Android or Compose dependency, so a shared
+ * constant here costs nothing and creates no cycle.
+ */
+val VALID_CYCLE_LENGTH_RANGE: IntRange = 20..45
+
 class CycleRecordValidator(
-    private val validCycleLengthRange: IntRange = 20..45,
+    private val validCycleLengthRange: IntRange = VALID_CYCLE_LENGTH_RANGE,
     private val validPeriodLengthRange: IntRange = 2..10,
     private val todayProvider: () -> LocalDate = { LocalDate.now() },
 ) {

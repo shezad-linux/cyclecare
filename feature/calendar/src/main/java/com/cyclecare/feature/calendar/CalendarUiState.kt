@@ -5,11 +5,13 @@
 
 package com.cyclecare.feature.calendar
 
+import com.cyclecare.core.domain.VALID_CYCLE_LENGTH_RANGE
 import androidx.compose.runtime.getValue
 import com.cyclecare.core.domain.CycleRecordValidator
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.derivedIntervalsByRecordId
+import com.cyclecare.core.domain.prediction.CyclePrediction
 import com.cyclecare.core.designsystem.text.UiText
 import com.cyclecare.core.designsystem.text.pluralUiText
 import com.cyclecare.core.designsystem.text.resolve
@@ -27,7 +29,7 @@ data class CalendarUiState(
     val selectedDaySummary: SelectedDaySummary = buildSelectedDaySummary(LocalDate.now(), null, null),
     val selectedCycle: CycleRecord? = null,
     val cycles: List<CycleRecord> = emptyList(),
-    val prediction: PredictionSnapshot? = null,
+    val prediction: CyclePrediction? = null,
     val historyItems: List<CycleHistoryItem> = emptyList(),
     val historyEmptyMessage: UiText? = null,
     val legendItems: List<CalendarLegendItem> = defaultCalendarLegendItems(),
@@ -40,6 +42,16 @@ data class SelectedDaySummary(
     val dateLabel: String,
     val statusLabel: UiText,
     val detail: UiText,
+    /**
+     * The cycle length of the selected cycle, as its own line.
+     *
+     * It is a separate element rather than part of [detail] because the
+     * length is not known for every cycle: it is the gap to the next
+     * start, and the most recent cycle has no next start yet. Folding it
+     * into the sentence would have meant either a placeholder for a
+     * missing value or a sentence assembled from translated fragments.
+     */
+    val cycleLengthLabel: UiText? = null,
     val primaryActionLabel: UiText?,
     val type: CalendarLegendType,
 )
@@ -144,26 +156,44 @@ internal fun formatCycleRangeLabel(
 internal fun buildHistoryItems(
     cycles: List<CycleRecord>,
     locale: Locale = Locale.getDefault(),
-): List<CycleHistoryItem> =
-    cycles
+): List<CycleHistoryItem> {
+    // The cycle length shown here is the derived interval, the gap from
+    // this cycle's start to the next one, taken from the shared
+    // extractor.
+    //
+    // The stored `cycleLength` column is not read. Spec `02` §9.4.5
+    // requires application code to take intervals from the shared
+    // extractor, and the column is written at logging time from
+    // whatever the user last reported, so it can disagree with the real
+    // gap. The most recent cycle has no next start yet, so its interval
+    // is not known, and the label says so rather than presenting an
+    // unvalidated stored number as a confirmed history value.
+    val derivedIntervals = derivedIntervalsByRecordId(cycles)
+    return cycles
         .filter { it.source != CycleSource.Predicted }
         .sortedByDescending { it.startDate }
         .take(6)
         .map { cycle ->
+            val derivedInterval = derivedIntervals[cycle.id]
             CycleHistoryItem(
                 id = cycle.id,
                 startDate = cycle.startDate,
                 dateRangeLabel = formatCycleRangeLabel(cycle.startDate, cycle.endDate, locale),
-                cycleLengthLabel = pluralUiText(
-                    R.plurals.history_cycle_length,
-                    cycle.cycleLength,
-                    cycle.cycleLength,
-                ),
+                cycleLengthLabel = if (derivedInterval != null) {
+                    pluralUiText(
+                        R.plurals.history_cycle_length,
+                        derivedInterval,
+                        derivedInterval,
+                    )
+                } else {
+                    uiText(R.string.history_cycle_length_unknown)
+                },
                 notesPreview = cycle.notes?.takeIf { it.isNotBlank() }?.let { notes ->
                     if (notes.length > 90) "${notes.take(87)}..." else notes
                 },
             )
         }
+}
 
 internal fun validateCycleEditorState(
     editor: CycleEditorState,
@@ -190,7 +220,11 @@ internal fun validateCycleEditorState(
     val cycleLengthError = when {
         editor.cycleLengthText.isBlank() -> uiText(R.string.editor_cycle_length_required)
         cycleLength == null -> uiText(R.string.editor_cycle_length_whole_number)
-        cycleLength !in 20..45 -> uiText(R.string.editor_cycle_length_range, 20, 45)
+        cycleLength !in VALID_CYCLE_LENGTH_RANGE -> uiText(
+            R.string.editor_cycle_length_range,
+            VALID_CYCLE_LENGTH_RANGE.first,
+            VALID_CYCLE_LENGTH_RANGE.last,
+        )
         else -> null
     }
 
@@ -283,7 +317,12 @@ internal fun calendarGridStart(
 internal fun buildSelectedDaySummary(
     selectedDate: LocalDate,
     selectedCycle: CycleRecord?,
-    prediction: PredictionSnapshot?,
+    prediction: CyclePrediction?,
+    /**
+     * The selected cycle's derived interval, in days, or null when it
+     * has none yet.
+     */
+    derivedCycleLength: Int? = null,
     today: LocalDate = LocalDate.now(),
     locale: Locale = Locale.getDefault(),
 ): SelectedDaySummary {
@@ -307,22 +346,25 @@ internal fun buildSelectedDaySummary(
             val isLastDay = selectedDate == selectedCycle.endDate
             val detail = when {
                 isFirstDay && cycleNotes != null ->
-                    uiText(R.string.summary_period_detail_first_day_notes, periodLength, selectedCycle.cycleLength, cycleNotes)
+                    uiText(R.string.summary_period_detail_first_day_notes, periodLength, cycleNotes)
                 isFirstDay ->
-                    uiText(R.string.summary_period_detail_first_day, periodLength, selectedCycle.cycleLength)
+                    uiText(R.string.summary_period_detail_first_day, periodLength)
                 isLastDay && cycleNotes != null ->
-                    uiText(R.string.summary_period_detail_last_day_notes, periodLength, selectedCycle.cycleLength, cycleNotes)
+                    uiText(R.string.summary_period_detail_last_day_notes, periodLength, cycleNotes)
                 isLastDay ->
-                    uiText(R.string.summary_period_detail_last_day, periodLength, selectedCycle.cycleLength)
+                    uiText(R.string.summary_period_detail_last_day, periodLength)
                 cycleNotes != null ->
-                    uiText(R.string.summary_period_detail_notes, periodLength, selectedCycle.cycleLength, cycleNotes)
+                    uiText(R.string.summary_period_detail_notes, periodLength, cycleNotes)
                 else ->
-                    uiText(R.string.summary_period_detail, periodLength, selectedCycle.cycleLength)
+                    uiText(R.string.summary_period_detail, periodLength)
             }
             SelectedDaySummary(
                 dateLabel = formatCalendarDate(selectedDate, locale),
                 statusLabel = uiText(R.string.summary_status_period_day),
                 detail = detail,
+                cycleLengthLabel = derivedCycleLength?.let { derived ->
+                    pluralUiText(R.plurals.history_cycle_length, derived, derived)
+                } ?: uiText(R.string.history_cycle_length_unknown),
                 primaryActionLabel = uiText(R.string.update_entry),
                 type = CalendarLegendType.Period,
             )
