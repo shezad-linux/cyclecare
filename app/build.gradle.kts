@@ -1,3 +1,4 @@
+import java.io.File
 import java.util.Properties
 
 plugins {
@@ -6,20 +7,70 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-// Release signing material is resolved from environment variables first,
-// then from the gitignored keystore.properties file for local
-// convenience. Nothing here reads a password from a committed file, and
-// a build with no credentials configured simply produces an unsigned
-// release artifact, which is what CI needs.
+// ── Release version ────────────────────────────────────────────────
+//
+// versionCode is the monotonically increasing integer the Play Store
+// orders releases by, so it must never repeat and must never go
+// backwards. versionName is the string a human reads; the release tag
+// carries it.
+//
+// Both defaults are declared here, in one place, in a shape that
+// scripts/check-release-version.sh can read:
+//
+//   val defaultVersionCode = <positive integer>
+//   val defaultVersionName = "<non-empty string>"
+//
+// A release build may override either with -Pcyclecare.versionCode= /
+// -Pcyclecare.versionName=, or with the CYCLECARE_VERSION_CODE /
+// CYCLECARE_VERSION_NAME environment variables. The release workflow
+// passes back exactly the values the version check validated, so the
+// artifact that is built is the artifact that was checked.
+val defaultVersionCode = 7
+val defaultVersionName = "1.0"
+
+val releaseVersionCode: Int = run {
+    val raw = (providers.gradleProperty("cyclecare.versionCode").orNull
+        ?: providers.environmentVariable("CYCLECARE_VERSION_CODE").orNull
+        ?: defaultVersionCode.toString()).trim()
+    raw.toIntOrNull()?.takeIf { it > 0 }
+        ?: throw GradleException(
+            "cyclecare.versionCode must be a positive integer, but was '$raw'.",
+        )
+}
+
+val releaseVersionName: String = run {
+    val raw = (providers.gradleProperty("cyclecare.versionName").orNull
+        ?: providers.environmentVariable("CYCLECARE_VERSION_NAME").orNull
+        ?: defaultVersionName).trim()
+    if (raw.isEmpty()) {
+        throw GradleException("cyclecare.versionName must not be empty.")
+    }
+    raw
+}
+
+// ── Release signing ────────────────────────────────────────────────
+//
+// Signing material is resolved from environment variables first, then
+// from a keystore.properties file. Nothing here reads a password from a
+// committed file, and a build with no credentials configured simply
+// produces an unsigned release artifact, which is what the CI release
+// build in ci.yml needs.
 //
 // Environment variables:
 //   CYCLECARE_STORE_FILE, CYCLECARE_STORE_PASSWORD,
 //   CYCLECARE_KEY_ALIAS, CYCLECARE_KEY_PASSWORD
+//   CYCLECARE_KEYSTORE_PROPERTIES — optional. The path to the
+//     keystore.properties file when it is not the repository root.
+//     The release workflow reconstructs that file in the runner's
+//     temporary directory and points this at it, so no file holding a
+//     password ever exists inside the repository.
+val keystorePropertiesFile: File? = (
+    providers.environmentVariable("CYCLECARE_KEYSTORE_PROPERTIES").orNull?.let(::File)
+        ?: rootProject.file("keystore.properties")
+    ).takeIf { it.exists() }
+
 val keystoreProperties = Properties().apply {
-    val keystorePropertiesFile = rootProject.file("keystore.properties")
-    if (keystorePropertiesFile.exists()) {
-        keystorePropertiesFile.inputStream().use(::load)
-    }
+    keystorePropertiesFile?.inputStream()?.use(::load)
 }
 
 val releaseStoreFile: String? =
@@ -50,8 +101,8 @@ android {
         applicationId = "com.cyclecare.tracker"
         minSdk = 26
         targetSdk = 36
-        versionCode = 7
-        versionName = "1.0"
+        versionCode = releaseVersionCode
+        versionName = releaseVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
