@@ -189,7 +189,7 @@ class MigratedV2DatabaseLaunchTest {
                     database = migrated,
                 ),
                 appResetRepository = LocalAppResetRepository(context, migrated),
-                reminderScheduler = NoOpReminderScheduler,
+                reminderScheduler = StubReminderScheduler,
                 notificationPermissionController = AndroidNotificationPermissionController(context),
                 appVisibilityObserver = ProcessAppVisibilityObserver(onEnteredForeground = {}),
                 reminderNavigationCoordinator = InMemoryReminderNavigationCoordinator(),
@@ -311,6 +311,16 @@ private class MigratedLaunchPrivacyRepository : PrivacyRepository {
  * The reminders in the fixture are all switched off, so there is
  * nothing to schedule, and a test has no business posting alarms.
  */
-private object NoOpReminderScheduler : ReminderScheduler {
+/**
+ * A scheduler that arms nothing.
+ *
+ * Named distinctly from the production `NoOpReminderScheduler` in
+ * `ReminderCenterScreen.kt`. Both are file-private in Kotlin, so the
+ * compiler is happy, but they share a fully qualified name at the
+ * bytecode level, and the androidTest APK's copy shadows the production
+ * one. A sibling clash on `NoOpReminderRepository` produced a
+ * `NoSuchFieldError` at runtime, so neither is left to chance.
+ */
+private object StubReminderScheduler : ReminderScheduler {
     override suspend fun refreshSchedules(now: ZonedDateTime): List<ScheduledReminder> = emptyList()
 }
