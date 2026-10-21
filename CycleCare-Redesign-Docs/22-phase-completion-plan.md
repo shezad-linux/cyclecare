@@ -35,12 +35,27 @@ observation is fixed and the test now passes. Fixing its control also
 exposed an order dependency inside that test class, which is fixed by
 re-establishing the notification permission in `setUp`.
 
-One further failure, in `ReThemeScreenshotTest`, is **intermittent and
-open**: the dashboard root is intermittently absent when the capture
-runs in the same process as the other app-module classes, although the
-test passes in isolation. It is a pre-existing fragility of the capture
-harness, not one of the seven, and it is recorded here rather than
-worked around.
+One further failure, in `ReThemeScreenshotTest`, is **pre-existing,
+intermittent, and open**. It is not one of the seven.
+
+Evidence that it predates this investigation: reverting the reset-test
+fix to commit `8414a43` and running the app module twice failed
+`captureAllTopLevelScreensAtEveryWidthAndScheme` in **both** runs, so it
+is independent of the fix and of the Phase 2/4/7 integration. It passes
+when the capture class is run on its own, and fails intermittently when
+it shares the process with the other app-module classes.
+
+A second intermittent symptom was observed in the same process:
+`TalkBackSemanticsTest.thePrivacyPrimaryActionIsAnnouncedAsAButton`
+throwing *"Detected multithreaded access to SnapshotStateObserver"* —
+Compose observing state from a thread other than the one that laid out.
+That is a test-infrastructure threading fault, not a product fault, and
+it is recorded rather than papered over.
+
+Neither was in scope for the seven, and neither is worked around here.
+Both need their own investigation: the capture harness and the
+accessibility suite both need to be isolated per class rather than
+sharing a process.
 | **Environment** | `cc36` AVD, API 36, Android 16, 320x640 at 160dpi, `emulator-5556` |
 
 The 2026-10-20 audit of commit `d689a7e` recorded 333 unit and 166
