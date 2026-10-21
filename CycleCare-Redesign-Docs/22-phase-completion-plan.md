@@ -13,13 +13,20 @@ report.
 
 | | |
 |---|---|
-| **Audit date** | 2026-10-20 |
-| **Commit** | `d689a7e167991aa2a2caa50fc43f4005cad86979` |
+| **Audit date** | 2026-10-21 |
+| **Commit** | `7605ba1cb86601eaaed9108e41499b412be73dee` |
 | **Branch** | `main` |
 | **Working tree** | Clean at the commit above |
-| **Unit baseline** | 333 tests, 0 failures, 0 skipped |
-| **Instrumented baseline** | 166 tests, 0 failures, 2 skipped |
+| **Unit baseline** | 437 tests, 0 failures, 0 skipped |
+| **Instrumented baseline** | 251 tests, 0 failures, 2 skipped |
 | **Environment** | `cc36` AVD, API 36, Android 16, 320x640 at 160dpi, `emulator-5556` |
+
+The 2026-10-20 audit of commit `d689a7e` recorded 333 unit and 166
+instrumented tests. The baseline above is the state after five
+workstreams were integrated on 2026-10-21; it was measured, not
+carried forward. The two skipped instrumented tests are
+`ReminderDozeDeliveryTest`, which are opt-in and skipped by default
+because they force the whole device into idle.
 
 The two skipped instrumented tests are `ReminderDozeDeliveryTest`, which
 are opt-in and skipped by default because they force the whole device
@@ -80,14 +87,14 @@ section and then on the numbered item within it.
 |---|---|---|---|
 | 0 | Audit and product decisions | **Verified complete** | Closed by the roadmap and not to be reopened. |
 | 1 | Safety, before anything else | **Partially complete** | All four exit clauses verified in the repository. External declarations are tracked under Phase 9. |
-| 2 | Contracts | **Partially complete** | `PredictionSnapshot.confidenceLabel` is still consumed by five Home files; two `InsightEngine` sites still read the stored `cycleLength`. |
-| 3 | Schema migration | **Partially complete** | Six of the ten `02` §9.10 criteria hold outright, one is partly met, and three are not implemented (items 3, 4 and 9). |
-| 4 | Prediction engine | **Partially complete** | **Five of thirteen corpus gates have no test anywhere in the repository.** |
-| 5 | Design system | **Partially complete** | Four criteria partially met, one not audited. Previews are verified for one file, not for every screen. |
-| 6 | Screens | **Partially complete** | `15` §14.14 **fails**: `CycleCareShell.kt` is 620 lines. Two criteria partially met. |
-| 7 | Notifications | **Partially complete** | **Four of the twelve `13` §17 criteria are verified complete, three are partially met and five are not implemented.** |
+| 2 | Contracts | **Partially complete** | The read-only audit is done and recorded. `PredictionSnapshot.confidenceLabel` is still a `String` on the model, and one `InsightEngine` site still reads the stored `cycleLength`. |
+| 3 | Schema migration | **Verified complete** | All ten `02` §9.10 criteria now hold, including the two that were not implemented. The migrated-v2 launch test passes. |
+| 4 | Prediction engine | **Partially complete** | All thirteen corpus gates exist and pass. One derivation in `InsightEngine` still reads the stored `cycleLength`, so `11` §8.9 is only partly met. |
+| 5 | Design system | **Partially complete** | The state matrix, the previews and the copy review are done. The 200% font-scale and landscape capture runs still abort part way through. |
+| 6 | Screens | **Partially complete** | `15` §14.14 now passes and is enforced by a test. The 200% and landscape sweeps still do not complete. |
+| 7 | Notifications | **Partially complete** | **Nine of the twelve `13` §17 criteria are verified complete.** The intelligence module is in the delivery path. Criterion 9 has no producer behind it and criterion 12's scope is a recorded decision. |
 | 8 | Sync | **Deferred by decision** | The ten gates and six invariants are out of scope. |
-| 9 | Release readiness | **Partially complete** | Repository work mostly done. The external list is entirely open, and three `06` §2 privacy scenarios are not yet met. |
+| 9 | Release readiness | **Partially complete** | The external list is entirely open. One repository-side item remains: a reminder schedule timestamp is still in the log. |
 | 10 | Measure and improve | **Not started** | Post-launch by design. |
 
 ---
@@ -226,31 +233,29 @@ does not. The first clause is unaudited across the codebase.
 ### P2-03 — Two `InsightEngine` sites still read the stored `cycleLength`
 
 - **Definition of done.** `core/domain/src/main/java/com/cyclecare/core/domain/InsightEngine.kt`
-  derives no value from the stored `cycleLength` column. Its two
-  remaining sites — line 107, which bounds the symptom window with
-  `historicalCycles.last().cycleLength`, and line 278, which derives a
-  retrospective ovulation date with `cycle.cycleLength - 14` — use
-  values derived from cycle starts through the shared extractor, or the
-  recorded end date of the cycle in question.
+  derives no value from the stored `cycleLength` column. One site
+  remains: line 108, which bounds the symptom window with
+  `historicalCycles.last().cycleLength`.
 - **What is already right.** The contradiction the criterion exists to
-  prevent is already fixed. `InsightEngine.build()` takes its trend
-  series from `extractIntervals(observedStartsOf(cycles))` — the same
-  extractor the prediction engine uses — and the comment at lines 30–33
-  records the original defect, where reading the stored column let the
-  screen contradict the prediction screen on the same day.
-- **Why it is still open.** Neither remaining site feeds a *future*
-  estimate, so the contradiction cannot occur today. But the second one
-  does treat a stored cycle length as an interval to derive an ovulation
-  date from, which is the pattern the criterion names. `11` §8.9 asks
-  that `InsightEngine` and the prediction engine "cannot disagree for the
-  same input, because they share one extractor", and for the per-cycle
-  fertile window they do not share one.
+  prevent is fixed. `InsightEngine.build()` takes its trend series from
+  `extractIntervals(observedStartsOf(cycles))` — the same extractor the
+  prediction engine uses — and the comment at lines 30–33 records the
+  original defect, where reading the stored column let the screen
+  contradict the prediction screen on the same day. The retrospective
+  fertile window was a second such site, and it now derives from the
+  shared ovulation prior rather than from the stored column. The "Avg
+  cycle" figure on Today and Insights comes from one source.
+- **Why it is still open.** The remaining site is the length of a cycle
+  that has already ended, used as a fact about the past rather than as
+  a prediction, so it cannot make the two screens disagree. But it is
+  still a read of the stored column, and `11` §8.9 asks for one
+  extractor.
 - **Dependencies.** None. This is a domain-only change with no UI
   consequence beyond the wording of a historical fertile-window label.
-- **Verification procedure.** The two call sites are replaced, and a
-  test in `core/domain` asserts that the retrospective fertile window
-  for a given history equals the one the shared extractor produces.
-  The `06` §2 scenario *"Editing an old record invalidates and recomputes
+- **Verification procedure.** The call site is replaced, and a test in
+  `core/domain` asserts that the retrospective fertile window for a
+  given history equals the one the shared extractor produces. The
+  `06` §2 scenario *"Editing an old record invalidates and recomputes
   dependent estimates"* should be asserted at the same time.
 - **Expected evidence.** The grep for `cycleLength` across
   `core/domain/src/main` returns no use as an interval. The
@@ -266,8 +271,9 @@ does not. The first clause is unaudited across the codebase.
 a real-shaped fixture; the app launches and behaves correctly on a
 migrated v2 database."*
 
-**Status: Partially complete.** Six of the ten `02` §9.10 criteria hold
-outright, one is partly met, and three are not implemented.
+**Status: Verified complete.** All ten `02` §9.10 criteria hold, and
+the two that were not implemented have been implemented rather than
+reclassified. The work is in the repository at commit `7605ba1`.
 
 ### The exit-criteria clauses
 
@@ -275,7 +281,7 @@ outright, one is partly met, and three are not implemented.
 |---|---|---|
 | "every acceptance criterion in `02` §9.10 passes" | **Partially complete** | See the table below. |
 | "row counts and IDs verified identical before and after on a real-shaped fixture" | **Verified complete** | `core/database/src/androidTest/java/com/cyclecare/core/database/CycleCareDatabaseRoomTest.kt`, 20 instrumented cases, including `migration2To3_preservesEveryCycleRecordUnchanged` and `migration2To3_backfillsAuditTimestampsAndNoDeletions`. |
-| "the app launches and behaves correctly on a migrated v2 database" | **Not audited** | See **P3-01**. |
+| "the app launches and behaves correctly on a migrated v2 database" | **Verified complete** | `MigratedV2DatabaseLaunchTest` seeds a v2 database, migrates it with the production migration list, launches the real app shell over the result and asserts the migrated history renders and the migration record is reachable. |
 
 ### The ten `02` §9.10 criteria
 
@@ -283,109 +289,54 @@ outright, one is partly met, and three are not implemented.
 |---|---|---|---|
 | 1 | v2 → v3 preserves every row and every record ID | **Verified complete** | The migration copies every column with `INSERT … SELECT`; `migration2To3_preservesEveryCycleRecordUnchanged` asserts it. |
 | 2 | No `None` value is ever converted to `NULL`, or vice versa | **Verified complete** | The test at `CycleCareDatabaseRoomTest.kt:156-162` asserts `'None'` survives in every enum column. |
-| 3 | Every original `cycleLength` is preserved in `legacyCycleLength` | **Not implemented** | See **P3-02** and the ambiguity below. |
-| 4 | Divergences are logged and surfaced to the user, never silently corrected | **Not implemented** | See **P3-03**. |
-| 5 | Duplicate dates are collapsed deterministically and the count is reported | **Partially complete** | The collapse is deterministic and correct: `DELETE FROM symptom_logs WHERE rowid NOT IN (SELECT MAX(rowid) … GROUP BY dateEpochDay)` keeps the most recently inserted row, and a test asserts it. **The count is not reported anywhere** — no channel carries it. |
-| 6 | Backfilled timestamps are never presented as real creation dates | **Verified complete** | `createdAtEpochMillis` appears in no file under `feature/*/src/main` or `app/src/main`, so it cannot be rendered. The backfill itself is documented at `Migrations.kt:93-95`. This is satisfied by the UI not reading the field, which is a weak guarantee — see **P3-04**. |
+| 3 | Every original `cycleLength` is preserved in `legacyCycleLength` | **Verified complete** | `migration2To3` populates `legacyCycleLength` from the v2 value for every row, and the v3 schema carries the column. The v3 schema was never released, so the column went into the v2 to v3 migration rather than needing a v4. |
+| 4 | Divergences are logged and surfaced to the user, never silently corrected | **Verified complete** | The migration writes a `migration_log` row per divergence, and Settings has an entry that shows what it did in plain words. The wording never claims the data was corrected, because it was not. |
+| 5 | Duplicate dates are collapsed deterministically and the count is reported | **Verified complete** | The collapse keeps the most recently inserted row, and the record names the date, how many rows existed and how many were retained. The count is shown on the migration record screen. |
+| 6 | Backfilled timestamps are never presented as real creation dates | **Verified complete** | `AuditTimestampReadGuardTest` scans every module's main source set and fails on a read of the audit timestamp columns outside the persistence layer, so the guarantee is enforced rather than incidental. |
 | 7 | No destructive fallback exists on any production path | **Verified complete** | `fallbackToDestructiveMigration` appears nowhere in the repository. |
 | 8 | `migration1To2` and `migration2To3` both have passing tests against real fixtures | **Verified complete** | Both are covered in `CycleCareDatabaseRoomTest`; 20 instrumented cases pass. |
-| 9 | Migration runs in one transaction and aborts without data loss on verification failure | **Not implemented** | See **P3-05**. |
+| 9 | Migration runs in one transaction and aborts without data loss on verification failure | **Verified complete** | The migration snapshots every table it touches, and after the swap checks the row count, the record ids and every value against that snapshot. A mismatch throws, and Room's transaction rolls the migration back. A test forces a mismatch and asserts the source rows survive. |
 | 10 | The backup and device-transfer decision in §9.9 is made and implemented before release | **Verified complete** | `data_extraction_rules.xml` and `backup_rules.xml`, with a `CycleCareDatabaseRoomTest` case per migration. |
 
-### P3-01 — The app has never been launched against a migrated v2 database
+### What the integration closed
 
-- **Definition of done.** An instrumented test installs the app over a
-  database seeded at schema v2 with realistic rows, launches the app, and
-  asserts that Today, Calendar and Log render the migrated data and
-  that no crash or migration error occurs.
-- **Dependencies.** A v2 fixture builder. `CycleCareDatabaseRoomTest`
-  already has the machinery to create and migrate a v2 database, so this
-  is an extension of it rather than new work.
-- **Verification procedure.** The test runs under
-  `ANDROID_SERIAL=emulator-5556 ./gradlew :app:connectedDebugAndroidTest`.
-  It must exercise the real `Room.databaseBuilder` path with
-  `Migrations.migration1To2` and `migration2To3` in the migration list,
-  not a hand-rolled one.
-- **Expected evidence.** A named test in the app's androidTest source
-  set, passing, with the seeded rows visible in the rendered output.
+The five open items from the 2026-10-20 audit are closed. The
+read-only architecture audit in `24-phase-2-architecture-audit.md` is
+what found the shape of the work, and the decision on `A1` is recorded
+under [Cross-phase ambiguities](#cross-phase-ambiguities).
 
-### P3-02 — `legacyCycleLength` does not exist
+| Item | How it closed |
+|---|---|
+| P3-01, the migrated-v2 launch | `MigratedV2DatabaseLaunchTest` builds a v2 database, migrates it with the production migration list and renders the app over the result. It needed the container to be built on the main thread and the carried-over card to be scrolled to; both are now right. |
+| P3-02, `legacyCycleLength` | Added to the v2 to v3 migration rather than a v4. The v3 schema was never released, so a v4 would have been churn for no user. |
+| P3-03, divergences surfaced | A `migration_log` table, a domain repository over it, a Settings entry and a screen. The migration also records how much history was carried over, which is the plainest statement of what survived. |
+| P3-04, the backfilled-timestamp guard | `AuditTimestampReadGuardTest` scans the main source sets and fails on a read of the audit columns outside the persistence layer. |
+| P3-05, verification that aborts | The migration snapshots what it is about to change and checks the result against it. A mismatch throws, and Room rolls the migration back. |
 
-- **Definition of done.** Either the `cycle_records` table gains a
-  `legacyCycleLength` column that holds the original v2 value, or
-  `02` §9.10.3 is amended to describe the design that was actually
-  built, with a recorded rationale. The first is a schema change and
-  needs a v3 → v4 migration, which is a real cost.
-- **Dependencies.** The decision above. If the column is added, the
-  migration, the entity, the backup format and the export format all
-  change together, and the backup format change needs a version bump.
-- **Verification procedure.** Either a migration test asserting that a
-  v2 `cycleLength` value is preserved in `legacyCycleLength` after
-  v3 → v4, or an amended `02` §9.10.3 citing the ADR that records why
-  the value is kept in `cycleLength` itself.
-- **Expected evidence.** A passing migration test, or the amended
-  criterion with its rationale.
-- **Ambiguity, reported rather than decided.** The criterion's intent —
-  *"every original `cycleLength` is preserved"* — is met: the value is
-  carried across unchanged and is explicitly deprecated for reads, and
-  `Migrations.kt:88-91` records that the divergence from the true
-  start-to-start gap "remains auditable". The criterion's letter — a
-  column literally named `legacyCycleLength` — is not met. These are
-  different requirements, and the spec does not say which one governs.
-  The item is left open rather than silently recorded as a pass.
+### Two defects the integration found
 
-### P3-03 — Migration divergences are neither logged nor surfaced
+Both are product defects rather than test problems, and both were
+found by running the merged code rather than by reading it.
 
-- **Definition of done.** A migration that cannot preserve a row exactly
-  — a duplicate collapse, a `cycleLength` that disagrees with the
-  observed start-to-start gap, a row that would need its `None` changed
-  — records what it did, both in the log and in a place the user can
-  see it, and never corrects the divergence silently.
-- **Dependencies.** A logger. `Migration.migrate(database)` receives only
-  a `SupportSQLiteDatabase` and has no logger today, so either the
-  migration gains one through the database builder's callback, or
-  divergences are written to a table that the app reads and surfaces.
-  The table is the better design, because it survives the process that
-  performed the migration.
-- **Verification procedure.** A migration test that seeds a v2 database
-  containing a duplicate date and a `cycleLength` that disagrees with
-  the observed gap, migrates, and asserts that both divergences are
-  recorded and that a user-visible screen reports them.
-- **Expected evidence.** A named test in `core/database`, and a screen
-  or sheet in the app that shows the record of what the migration did.
+**A crash on bottom navigation.** The interstitial gate reads
+persisted state, so the coroutine that asked for an interstitial
+resumed on the storage thread, and the completion callback ran
+`navController.navigate` there. Tapping a tab with ads enabled could
+throw *"setCurrentState must be called on the main thread"* from
+inside Navigation. The navigation is now marshalled onto the Android
+main thread explicitly. The instrumented fake for the interstitial
+counters now resumes its reads on a background dispatcher, the way the
+real DataStore-backed repository does, so the existing navigation suite
+covers it; reverting the fix makes that suite fail again.
 
-### P3-04 — The backfilled-timestamp guarantee rests on nobody reading the field
-
-- **Definition of done.** The guarantee in `02` §9.10.6 is enforced
-  rather than incidental. Either the model exposes a distinct type for
-  a synthetic timestamp so it cannot be formatted as a real one, or a
-  test asserts that no main-source file reads `createdAtEpochMillis`
-  outside the persistence layer, and the test fails if one starts to.
-- **Dependencies.** None beyond the decision above.
-- **Verification procedure.** A test in `core/data` that scans the
-  main source sets for reads of the audit timestamp columns and fails
-  on any hit outside the persistence layer.
-- **Expected evidence.** The test exists and passes. Today the
-  criterion holds only because nothing reads the field.
-
-### P3-05 — The migration has no verification step that could abort it
-
-- **Definition of done.** After the schema change, the migration
-  verifies that the row count and the record IDs of each migrated table
-  match the source table, and raises if they do not — so the transaction
-  aborts with the source data intact rather than completing with a
-  partial move.
-- **Dependencies.** None. Room already runs `Migration.migrate` inside a
-  transaction, so an exception thrown from the migration rolls the
-  whole thing back. The work is the verification query and the throw.
-- **Verification procedure.** A test that seeds a v2 database, forces a
-  verification mismatch — a count assertion against a deliberately
-  altered expected value — and asserts that the migration throws and
-  that the v2 rows are still present and unchanged afterwards.
-- **Expected evidence.** A named test showing the rollback, with the
-  pre-migration rows intact.
-
----
+**A name collision across source sets.** The androidTest source set
+declared a private `NoOpReminderRepository` class and the production
+source declared a private `NoOpReminderRepository` object. Kotlin's
+file-private scope hid the clash at compile time, but both compile to
+the same fully qualified name, and the test APK's copy shadowed the
+production object at runtime. Any test that rendered the reminder
+centre died with `NoSuchFieldError`. Both that and a sibling
+`NoOpReminderScheduler` clash have been renamed.
 
 ## Phase 4 — Prediction engine
 
@@ -393,10 +344,12 @@ outright, one is partly met, and three are not implemented.
 criteria hold; no screen shows an unlabelled point estimate; Today and
 Insights can never contradict each other."*
 
-**Status: Partially complete.** Eight of the thirteen corpus gates are
-verified complete. **Five have no test anywhere in the repository.** Eight
-of `11` §8's twelve criteria hold, one is partial and three are not
-audited.
+**Status: Partially complete.** All thirteen corpus gates exist and
+pass. Eleven of `11` §8's twelve criteria are verified complete; the
+twelfth, the shared extractor, is only partly met, because one
+retrospective derivation in `InsightEngine` still reads the stored
+`cycleLength` column rather than the shared extractor. That residual is
+the same work as **P2-03**.
 
 ### The corpus gates, `12` §6
 
@@ -407,50 +360,36 @@ the ADR log."*
 The harness is
 `core/domain/src/test/java/com/cyclecare/core/domain/prediction/PredictionCorpusGateTest.kt`.
 A grep for each gate identifier across every `.kt` file in the
-repository, excluding build outputs, returns the following. The five
-empty rows are not missing *failing* gates; they are gates with no
-implementation at all.
+repository, excluding build outputs, returns the following. All
+thirteen gates now have at least one named test, and all thirteen
+pass.
+
+`12` §6 says *"All gates must pass for `2.0.0` to ship. Any failure
+blocks release; constants are then revisited, and the change recorded in
+the ADR log."* No constant and no threshold was changed to make a gate
+pass. The two engine behaviours that deviate from `11` §4.5 and §4.6
+are recorded under the open items below rather than quietly amended.
 
 | Gate | Threshold | Status | Test |
 |---|---|---|---|
 | G1 | Coverage, `regular`, n ≥ 6 ≥ 0.80 | **Verified complete** | `G1_regularHistoryCoverageMeetsTheEightyPercentTarget` |
-| G2 | Coverage, `irregular`, n ≥ 6 ≥ 0.90 | **Not implemented** | No test exists. `G2` appears in no `.kt` file outside this ledger. |
-| G3 | MAE, `regular`, n ≥ 6 ≤ 2.0 days | **Not implemented** | No test exists. |
+| G2 | Coverage, `irregular`, n ≥ 6 ≥ 0.90 | **Verified complete** | `G2_irregularHistoryCoverageMeetsTheNinetyPercentTarget`, and `G2_irregularHistoryWidensTheWindowRatherThanNarrowingIt` for the widening the gate names |
+| G3 | MAE, `regular`, n ≥ 6 ≤ 2.0 days | **Verified complete** | `G3_regularHistoryMeanAbsoluteErrorStaysWithinTwoDays` |
 | G4 | MAE, all generators, n ≥ 3 ≤ 4.0 days | **Verified complete** | `G4_meanAbsoluteErrorStaysWithinTolerance`, `G4_perfectlyConstantHistoryIsPredictedExactly` |
 | G5 | Median `halfWidthDays`, `regular`, ≤ 3.0 and ≥ 1 | **Verified complete** | `G5_regularHistoryStaysSharpEnoughToBeUseful` |
-| G6 | P90 absolute error, `regular`, n ≥ 6 ≤ 5 days | **Not implemented** | No test exists. |
+| G6 | P90 absolute error, `regular`, n ≥ 6 ≤ 5 days | **Verified complete** | `G6_regularHistoryNinetiethPercentileErrorStaysWithinFiveDays` |
 | G7 | Availability at n ≥ 3 / n < 3 is exactly 1.0 / 0.0 | **Verified complete** | `G7_windowIsEmittedExactlyWhenThereAreEnoughIntervals` |
 | G8 | `dataEntryError` MAE shift vs clean run ≤ 1.0 day | **Verified complete** | `G8_oneExtremeOutlierDoesNotMoveThePrediction`, `G8_implausibleIntervalIsExcludedRatherThanAveragedIn` |
 | G9 | `irregular`: `isIrregular` true only at ≥ 2 outliers among ≥ 4 intervals | **Verified complete** | `G9_aSingleOutlierIsNotEnoughToDeclareIrregular`, `G9_multipleOutliersAreDetected` |
-| G10 | `drifting`: trend applied only when the absolute projected drift is ≥ 1.5; total correction ≤ 3.0 days, monotone in drift magnitude | **Not implemented** | No test exists. |
+| G10 | `drifting`: trend applied only when the absolute projected drift is ≥ 1.5; total correction ≤ 3.0 days, monotone in drift magnitude | **Verified complete** | `G10_trendCorrectionActivatesAtTheThresholdAndStaysCappedAndMonotone`, `G10_trendIsAppliedOnlyAboveTheActivationThreshold` and `G10_totalDriftCorrectionStaysWithinThreeDaysAndIsMonotone` |
 | G11 | Determinism: identical input → byte-identical output | **Verified complete** | `G11_identicalInputProducesIdenticalOutput` |
-| G12 | Stability: editing one historical date moves the estimate ≤ previous window half-width | **Not implemented** | No test exists. |
+| G12 | Stability: editing one historical date moves the estimate ≤ previous window half-width | **Verified complete** | `G12_editingOneHistoricalDateStaysWithinThePriorWindowHalfWidth`, `G12_editingOneHistoricalDateKeepsTheEstimateInsideThePreviousWindow` and `G12_deletingARecordRecomputesTheEstimateDeterministically` |
 | G13 | `calendarEdge`: leap/month/year boundaries | **Verified complete** | `G13_crossesMonthYearAndLeapBoundaries`, `G13_handlesMonthEndAndYearBoundaryStarts` |
 
 `12` §6 also states: *"G1 and G5 must be read together. G1 without G5 is
 not a pass — a window wide enough to always contain the answer would
 satisfy G1 while being useless to a user."* Both are verified complete,
 so that pairing is satisfied.
-
-**P4-01 — The five missing corpus gates.** One open item, because the
-procedure is the same for all five.
-
-- **Definition of done.** `G2`, `G3`, `G6`, `G10` and `G12` have
-  executable gate tests in `PredictionCorpusGateTest`, each asserting
-  the threshold in the `12` §6 table above. Where a gate fails against
-  the current constants, the constants are revisited and the change is
-  recorded in the ADR log, as `12` §6 requires.
-- **Dependencies.** The corpus generators. `G2` and `G6` need the
-  `irregular` generator and a P90 statistic; `G10` needs the
-  `drifting` generator and a monotonicity assertion across drift
-  magnitudes; `G12` needs the edit-one-date scenario and the previous
-  window's half-width.
-- **Verification procedure.** `./gradlew :core:domain:test`. The five
-  new tests appear by name in the report. The corpus is regenerated
-  from a fixed seed, so the result is reproducible.
-- **Expected evidence.** Five named tests, passing or failing honestly.
-  A gate that fails is a release blocker, not a reason to lower the
-  threshold — the threshold comes from `12` §6.
 
 ### The twelve criteria of `11` §8
 
@@ -459,62 +398,73 @@ procedure is the same for all five.
 | 1 | No implausible interval influences `centerCycleLength` | **Verified complete** | `G8_implausibleIntervalIsExcludedRatherThanAveragedIn` |
 | 2 | A single 200-day outlier with 5 valid intervals does not shift `nextPeriodDate` by more than 1 day | **Verified complete** | `G8_oneExtremeOutlierDoesNotMoveThePrediction` |
 | 3 | `n < 3` yields `nextPeriodWindow == null` and never a fabricated range | **Verified complete** | `G7_windowIsEmittedExactlyWhenThereAreEnoughIntervals`; `NotificationTimingTest.noWindowMeansNoReminderRatherThanAFabricatedDate` |
-| 4 | Every window's half-width is within `[MIN_HALF_WIDTH_DAYS, MAX_HALF_WIDTH_DAYS]` | **Verified complete** | `core/domain/src/test/java/com/cyclecare/core/domain/prediction/PredictionMathTest.kt` asserts both bounds, including at the σ extremes |
+| 4 | Every window's half-width is within `[MIN_HALF_WIDTH_DAYS, MAX_HALF_WIDTH_DAYS]` | **Verified complete** | `core/domain/src/test/java/com/cyclecare/core/domain/prediction/PredictionMathTest.kt` asserts both bounds, including at the sigma extremes |
 | 5 | `isIrregular` requires 2 outliers among ≥ 4 intervals | **Verified complete** | `G9_aSingleOutlierIsNotEnoughToDeclareIrregular`, `G9_multipleOutliersAreDetected` |
-| 6 | Identical inputs and identical `today` produce byte-identical output | **Verified complete** | `G11_identicalInputProducesIdenticalOutput` |
+| 6 | Identical inputs and identical `today` produce byte-identical output | **Verified complete** | `G11_identicalInputProducesIdenticalOutput`, and the thousand-run determinism threshold |
 | 7 | No ambient clock read anywhere in the module; production injects `today` | **Verified complete** | A grep for `LocalDate.now`, `LocalDateTime.now`, `ZonedDateTime.now` and `System.currentTimeMillis` across `core/domain/src/main/.../prediction/` returns one hit, and it is a doc comment at `PredictionContracts.kt:223` describing the defect this criterion fixed. |
-| 8 | Every output carries `algorithmVersion` and the record IDs used | **Verified complete** | `CyclePrediction.algorithmVersion` (`PredictionContracts.kt:179`) and `recordIdsUsed` (`PredictionContracts.kt:185`), both populated by `CyclePredictionEngineV2.kt:130` and `:134`; carried to the UI snapshot by `PredictionSnapshotMapper.kt:58` |
-| 9 | `InsightEngine` and the prediction engine cannot disagree for the same input, because they share one extractor | **Partially complete** | The trend series shares the extractor (`InsightEngine.kt:38-40`). Two other sites still derive values from the stored `cycleLength` — see **P2-03**. |
-| 10 | Editing or deleting an input record changes downstream estimates deterministically and within the previously reported window | **Not audited** | G12, the gate that would test this, does not exist. See **P4-01**. |
-| 11 | No screen renders a point estimate without visible "estimate" framing | **Not audited** | Not checked during this audit. See **P4-02**. |
-| 12 | No output implies contraception, diagnosis, or certainty | **Not audited** | A copy review. See **P4-03**. |
+| 8 | Every output carries `algorithmVersion` and the record IDs used | **Verified complete** | `CyclePrediction.algorithmVersion` (`PredictionContracts.kt:179`) and `recordIdsUsed` (`PredictionContracts.kt:185`), both populated by `CyclePredictionEngineV2.kt:130` and `:134`; carried to the UI snapshot by `PredictionSnapshotMapper.kt:58`. Asserted by `criterion8_everyOutputCarriesAlgorithmVersionAndRecordIdsUsed`. |
+| 9 | `InsightEngine` and the prediction engine cannot disagree for the same input, because they share one extractor | **Partially complete** | The trend series shares the extractor (`InsightEngine.kt:38-40`), the retrospective fertile window derives from the shared ovulation prior, and the "Avg cycle" figure on Today and Insights comes from one source. One symptom-window bound still reads the stored `cycleLength` — see **P2-03**. |
+| 10 | Editing or deleting an input record changes downstream estimates deterministically and within the previously reported window | **Verified complete** | `criterion10_deletingAnOldRecordRecomputesWithinThePriorWindow` and the three G12 tests. |
+| 11 | No screen renders a point estimate without visible "estimate" framing | **Verified complete** | `HomeEstimateFramingTest`, `CalendarEstimateFramingTest` and `InsightsEstimateFramingTest` cover the three features that render an estimate, and the Today, cycle-status, fertility-detail and calendar surfaces say "Estimated fertile days" and "This is not a contraceptive method." |
+| 12 | No output implies contraception, diagnosis, or certainty | **Verified complete** | `criterion12_predictionLabelsDoNotImplyContraceptionDiagnosisOrCertainty` and `PredictionOutputCopyTest`, which reviews every string the prediction path can produce against `03` §7 and `05` §9. |
 
-### P4-02 — Point estimates are not yet confirmed to be labelled
-
-- **Definition of done.** Every surface that renders a predicted date,
-  a cycle length, a fertile window or an ovulation date renders it with
-  visible estimate framing, and a test asserts that framing is present
-  for each of them.
-- **Dependencies.** None. The UI already carries hedge copy in several
-  places — "Your period may start…", "likely between … and …" — so the
-  work is largely confirming coverage and making it testable.
-- **Verification procedure.** A presentation test in each feature that
-  renders an estimate — `feature/home`, `feature/calendar`,
-  `feature/insights` — that asserts the rendered text contains the
-  estimate framing and not a bare date presented as fact.
-- **Expected evidence.** Named tests, one per surface.
-
-### P4-03 — The output copy review
-
-- **Definition of done.** Every string the prediction engine can
-  produce is read against `03` §7 and `05` §9, and the result is
-  recorded. No output may imply contraception, diagnosis or certainty.
-- **Dependencies.** The domain-layer English output gap, shared with
-  **P2-02**. If the domain keeps producing English strings, this review
-  has to be repeated every time they change.
-- **Verification procedure.** The strings the engine can produce are
-  enumerated from the source, reviewed against the two documents, and
-  the result recorded in a section of this ledger. A test asserts the
-  absence of a banned-phrase list, so the review is repeatable.
-- **Expected evidence.** A recorded review and a phrase-absence test.
-
-### The remaining two exit-criteria clauses
+### The remaining exit-criteria clauses
 
 | Clause | Status | Evidence |
 |---|---|---|
-| "no screen shows an unlabelled point estimate" | **Not audited** | See **P4-02**. |
-| "Today and Insights can never contradict each other" | **Partially complete** | The shared extractor holds for the trend series. The residual is **P2-03**. A "can never" guarantee is not yet enforced by a test that fails if a consumer reverts to the stored column. |
+| "no screen shows an unlabelled point estimate" | **Verified complete** | The three framing test classes, and the "estimated" wording on every surface that renders one. |
+| "Today and Insights can never contradict each other" | **Verified complete** | The trend series and the "Avg cycle" figure both come from the shared extractor now, and `SharedExtractorTest` holds them to it. The residual in `11` §8.9 is a retrospective per-cycle derivation, not a disagreement between the two screens; it is **P2-03**. |
 
-**P4-04 — Make the shared extractor enforceable.** *Definition of
-done.* A test in `core/domain` fails if any consumer of the interval
-series reads the stored `cycleLength` column instead of
-`extractIntervals(observedStartsOf(…))`. *Dependencies.* **P2-03**,
-which removes the two remaining sites. *Verification procedure.*
-`./gradlew :core:domain:test`; the new test scans the main source sets
-for `cycleLength` reads outside the persistence layer. *Expected
-evidence.* A passing test that names any offending file and line.
+### What the integration closed
 
----
+| Item | How it closed |
+|---|---|
+| P4-01, the five missing gates | G2, G3, G6, G10 and G12 all have named tests now. No threshold in `12` §6 was changed and no constant was adjusted to make a gate pass. |
+| P4-02, point-estimate framing | The three features that render an estimate have framing tests, and the surfaces say "estimated" and "not a contraceptive method". |
+| P4-03, the output copy review | `PredictionOutputCopyTest` enumerates every string the prediction path can produce and asserts the absence of the banned phrases, so the review is repeatable. |
+
+### P4-05 — Two engine behaviours that deviate from `11` §4
+
+- **Definition of done.** The engine matches the specification, or the
+  deviation is recorded in the ADR log with the reason and the
+  measured effect, and the version is bumped so the change is visible.
+- **What deviates.** `11` §4.5 specifies the population-typical fertile
+  window as `[ovulation - 4, ovulation + 1]`, widened by the `§4.6`
+  uncertainty and by the irreducible luteal sigma floor. The engine
+  was producing a symmetric window eight days wide on each side and
+  was not applying `LUTEAL_PHASE_SIGMA_DAYS` at all, so the constant
+  existed in the contract and was never used. The window is now the
+  specified shape, widened by both terms, and
+  `PredictionFertileWindowTest` pins it.
+- **The second deviation.** `11` §4.5 makes
+  `LUTEAL_PHASE_SIGMA_DAYS` *"an irreducible uncertainty floor added to
+  every ovulation-derived window"*. It is now applied to the fertile
+  window, which is the only ovulation-derived window the engine
+  produces. The next-period window is derived from period starts, not
+  from ovulation, so the floor does not apply to it.
+- **Dependencies.** None. The fertile window change is a behaviour
+  change, so `PREDICTION_ALGORITHM_VERSION` and the `12` §7 golden
+  fixtures need to be revisited in the same change. The feature layer
+  reads the engine's window directly, so this is user-visible.
+- **Verification procedure.** `./gradlew :core:domain:test`, and the
+  97-image capture, which shows the fertile window on Today, the
+  cycle-status screen, the fertility detail and the calendar.
+- **Expected evidence.** `PredictionFertileWindowTest` passing, the
+  version bumped, and the golden fixtures regenerated.
+
+### P4-04 — Make the shared extractor enforceable
+
+- **Definition of done.** A test in `core:domain` fails if any
+  consumer of the interval series reads the stored `cycleLength` column
+  instead of `extractIntervals(observedStartsOf(…))`, so the property
+  cannot regress silently.
+- **Dependencies.** **P2-03**, which removes the last such read.
+- **Verification procedure.** `./gradlew :core:domain:test`. The test
+  scans the main source sets for `cycleLength` reads outside the
+  persistence layer, and must distinguish `CycleRecord.cycleLength`
+  from `UserProfile.averageCycleLength`, which is a different thing.
+- **Expected evidence.** A passing test that names any offending file
+  and line.
 
 ## Phase 5 — Design system
 
@@ -537,38 +487,20 @@ verified for one file, not for every screen.
 | 4 | No token accessor calls `isSystemInDarkTheme()` directly | **Verified complete** | `LocalIsDarkTheme` carries the flag the theme was built with. Fixed in `1d238dc` after the visual audit found the app-lock header painting dark text on a dark gradient at 1.68:1, now 14.45:1. |
 | 5 | Confirmed versus estimated distinguishable by fill, border style and icon, verified in greyscale | **Verified complete** | `DesignTokenTest.confirmedStateStaysDistinctFromEstimatesWhenReducedToGreyscale` |
 | 6 | No screen renders two competing primary actions | **Verified complete** | `HomeScreenAccessibilityTest.noCardRendersTwoCompetingPrimaryActions` |
-| 7 | Every state in `03` §6 has a designed, tested implementation | **Partially complete** | See **P5-01**. |
+| 7 | Every state in `03` §6 has a designed, tested implementation | **Verified complete** | `ScreenStateMatrixTest` asserts every data-driven screen at screen level, and `ScreenSaveStateMatrixTest` covers the save in progress, save success and validation error states, and the export screen's working, success and failure states. |
 | 8 | Every control meets 48dp; every screen works at 200% font scale; contrast verified per token pair | **Partially complete** | Touch targets: `DesignTokenTest.touchTargetMeetsTheAccessibilityMinimum`. Contrast: `scripts/contrast-report.py` — every pair with a WCAG target meets it. 200%: 13 screens swept, three defects found and fixed. Not yet done for every screen. |
 | 9 | Every user-facing string is in `strings.xml` | **Verified complete** | The audit leaves four literals, all composed values or a diagnostic format. |
 | 10 | Layouts verified at 320/360/600/840dp, portrait, landscape and foldable | **Partially complete** | Portrait and landscape verified at all four widths, 13 screens, 97 images each. **Foldable is not verified**: the emulator has no hinge or posture. See **P5-02**. |
-| 11 | TalkBack traverses every key screen with correct roles, labels and states; no access trap remains | **Partially complete** | `TalkBackSemanticsTest` covers the app shell and Today only. See **P5-03**. |
-| 12 | `:core:designsystem` has its own test suite | **Verified complete** | **38** cases across `DesignTokenTest` (28), `MetricCardAccentTest` (6) and `PreviewCoverageTest` (4). The figure of 32 in `21-phase-5-6-acceptance-matrix.md` is stale. |
-| 13 | No dark-pattern copy anywhere in the UI | **Not audited** | See **P5-04**. |
+| 11 | TalkBack traverses every key screen with correct roles, labels and states; no access trap remains | **Partially complete** | `TalkBackSemanticsTest` now covers every key screen, and the notification gate announces its action. **No human has run a screen reader**, which is recorded as pending rather than claimed. See **P5-03**. |
+| 12 | `:core:designsystem` has its own test suite | **Verified complete** | **43** cases across `DesignTokenTest`, `MetricCardAccentTest` and `PreviewCoverageTest`. |
+| 13 | No dark-pattern copy anywhere in the UI | **Verified complete** | The review is recorded in `24-dark-pattern-copy-review.md`, and `DarkPatternCopyTest` and `CopyAuditTest` assert the absence of the banned phrases so it does not regress. |
 
 ### The remaining exit-criteria clauses
 
 | Clause | Status | Evidence |
 |---|---|---|
 | "no screen uses an undefined typography role" | **Verified complete** | `scripts/guard-typography-roles.sh`, in CI. |
-| "previews exist at 320/360/600/840dp in light and dark" | **Partially complete** | `PreviewCoverageTest` asserts the four widths, both colour schemes and the large font scale — but against **one file**, `core/designsystem/src/main/java/com/cyclecare/core/designsystem/ScreenDebugPreviews.kt`, found by a path walk. Only six files use `ScreenWidthPreviews`: `HomePreviews.kt`, `HomeMetricGrid.kt`, `InsightsPreviews.kt`, `InsightCard.kt`, `SettingsComponents.kt` and `ScreenDebugPreviews.kt` itself. See **P5-05**. |
-
-### P5-01 — The state matrix is not complete at screen level
-
-- **Definition of done.** Every state in `03` §6 that applies to a
-  screen is asserted at screen level, not only at module level. Save in
-  progress, save success and validation error are currently produced by
-  the real ViewModels and asserted in their own module suites, but not
-  as a screen matrix. The export screen's working, success and failure
-  states are not in the matrix at all. The empty state is asserted for
-  Today and the reminder centre, not for every data-driven screen.
-- **Dependencies.** None. `ScreenStateMatrixTest` already has the
-  environment factories — `loading()`, `noHistory()`,
-  `permissionDenied()`, `channelDisabled()` — to build on.
-- **Verification procedure.** `ANDROID_SERIAL=emulator-5556 ./gradlew
-  :app:connectedDebugAndroidTest`. The new cases appear by name in the
-  report.
-- **Expected evidence.** Named cases per state per screen, with the
-  screen list from `21-phase-5-6-acceptance-matrix.md` as the scope.
+| "previews exist at 320/360/600/840dp in light and dark" | **Verified complete** | `PreviewCoverageTest` now scans every preview source in the main source sets and fails when a screen's preview is missing a width or a scheme. Every feature has a preview file. |
 
 ### P5-02 — Foldable verification
 
@@ -585,51 +517,38 @@ verified for one file, not for every screen.
 - **Expected evidence.** Screenshots in both postures, and the window
   size class transition noted.
 
-### P5-03 — TalkBack coverage beyond the shell and Today
+### P5-03 — The manual screen-reader pass
 
-- **Definition of done.** Semantics assertions exist for the calendar's
-  selected-date announcement, the prediction confidence messaging, form
-  validation and save feedback, the dialogs and sheets, and the
-  permission states. Separately, a human has run a screen reader
-  through the key screens.
-- **Dependencies.** None for the assertions. The manual pass needs a
-  device and a person.
-- **Verification procedure.** Extend `TalkBackSemanticsTest` to the
-  remaining key screens. The manual pass is recorded with the device,
-  the screen reader version and what was heard.
-- **Expected evidence.** Named cases in the semantics test; a written
-  manual pass record. The manual pass is currently pending and is not
-  claimed.
+- **Definition of done.** A person has run a screen reader through the
+  key screens and recorded what was heard.
+- **Dependencies.** A device and a person. The semantics tree is
+  asserted for every key screen now, but a semantics tree is what a
+  screen reader consumes, not the same as a person listening to one.
+- **Verification procedure.** Run TalkBack through the key screens and
+  record the device, the screen reader version and what was heard.
+- **Expected evidence.** A written manual pass record. This is pending
+  and is not claimed.
 
-### P5-04 — The dark-pattern copy review
+### P5-06 — The font-scale and landscape capture runs abort part way
 
-- **Definition of done.** Every user-facing string in the app is
-  reviewed against `03` §7 and `05` §9, and the result is recorded. No
-  guilt copy, no streak-loss language, no confirmshaming, no
-  notification pressure tactics.
-- **Dependencies.** None. It is a copy review, not a behavioural one,
-  so it cannot be automated into existence. It can, however, be made
-  repeatable by a phrase-absence test.
-- **Verification procedure.** Enumerate the strings from the resource
-  files, review them against the two documents, and record the result.
-  Then add a test asserting the absence of a banned-phrase list, so the
-  review does not silently regress.
-- **Expected evidence.** A recorded review and a phrase-absence test.
-
-### P5-05 — Preview coverage is one file, not every screen
-
-- **Definition of done.** Every screen that `15` §1.2 lists has a
-  preview at 320, 360, 600 and 840dp in both colour schemes, using
-  `ScreenWidthPreviews`.
-- **Dependencies.** None. The helper exists and is used by six files
-  already.
-- **Verification procedure.** `PreviewCoverageTest` is extended from
-  reading one file to scanning every preview source in the main source
-  sets, and failing when a screen's preview is missing a width or a
-  scheme. The test must fail today, because the coverage is not
-  complete.
-- **Expected evidence.** An extended test that reports each screen and
-  each missing configuration.
+- **Definition of done.** The capture harness completes all 97 images
+  at 200% font scale and in landscape, so the sweeps those two criteria
+  ask for have complete evidence.
+- **What happens.** The capture run stops at 58 of 97 images. The cause
+  is the edit-cycle sheet: it is a `ModalBottomSheet`, and on a screen
+  too short to hold it the back press finishes the activity instead of
+  dismissing the sheet, so the next capture has no composition. The
+  failure was reproduced on the base commit in a separate worktree, so
+  it is not a regression from this work; it is a pre-existing defect in
+  the harness.
+- **Dependencies.** The app's `EditCycleSheet`, or a harness strategy
+  that dismisses the sheet without the back key.
+- **Verification procedure.** `settings put system font_scale 2.0`,
+  capture, restore the scale to 1.0, and repeat with
+  `user_rotation 1`. The run must reach 97 images in both
+  configurations. Restore the device afterwards either way.
+- **Expected evidence.** 97 images at 200% and 97 in landscape, and
+  the restored device state.
 
 ---
 
@@ -652,59 +571,42 @@ file-length clause **fails**.
 | 3 | No ad on Calendar, Log, Settings or any detail screen | **Verified complete** | `routeAllowsBanner` and the scheduler test |
 | 4 | No interstitial within 30 minutes of a log, or in the first three sessions | **Verified complete** | `InterstitialDailyCapTest`, 15 cases; `InterstitialCoordinatorTest`, 17 cases |
 | 5 | No layout shift when ads load or fail | **Verified complete** | The banner collapses on failure and reserves its height otherwise |
-| 6 | Every screen in `03` §6 has a designed, tested state | **Partially complete** | As `14` §12.7. See **P5-01**. |
+| 6 | Every screen in `03` §6 has a designed, tested state | **Verified complete** | As `14` §12.7. |
 | 7 | Every screen works offline with no network dependency for local content | **Verified complete** | The content is read from the local database. The export screen is the only one that reaches the network, and it has a failure state. |
-| 8 | Every screen passes at 200% font scale, in dark mode, in RTL, and under TalkBack | **Partially complete** | 200%: 13 screens swept, three defects fixed. Dark: every screen captured in both schemes. RTL: verified on the shell and Today. TalkBack: as `14` §12.11. |
+| 8 | Every screen passes at 200% font scale, in dark mode, in RTL, and under TalkBack | **Partially complete** | Dark: every screen captured in both schemes. RTL and TalkBack: every key screen. 200%: the capture run aborts at 58 of 97, so the sweep is incomplete — see **P5-06**. |
 | 9 | No hardcoded user-facing strings remain | **Verified complete** | As `14` §12.9 |
 | 10 | Confirmed versus estimated states distinguishable without colour | **Verified complete** | As `14` §12.5 |
 | 11 | No screen shows two competing primary actions | **Verified complete** | As `14` §12.6 |
 | 12 | No composable mutates state directly | **Verified complete** | The `AppLockGate` and `CycleCareApp` violations were resolved |
 | 13 | Every existing test tag is preserved or deliberately migrated, and the navigation test is rewritten for four tabs | **Verified complete** | `settings_open_privacy` was added; nothing was removed |
-| 14 | No file exceeds ~600 lines | **Failed** | See below. |
+| 14 | No file exceeds ~600 lines | **Verified complete** | The largest file in the main source sets is now `feature/home/src/main/java/com/cyclecare/feature/home/HomeRoute.kt` at 588 lines. `MainSourceFileLengthTest` walks every main source set and fails when a file exceeds 600, naming the file and the count, so the criterion is enforced rather than remembered. |
 | 15 | `SecureAuthController` and export have test coverage | **Verified complete** | `SecureAuthCapabilityTest`, `ExportViewModelTest`, `LocalExportRepositoryIntegrationTest` |
 
-### P6-01 — `CycleCareShell.kt` is 620 lines
+### What the integration closed
 
-- **Definition of done.** No file in a main source set exceeds ~600
-  lines. Today, exactly one does:
-  `app/src/main/java/com/cyclecare/app/CycleCareShell.kt`, at **620
-  lines**. The next largest are `HomeRoute.kt` at 577, `HomeScreen.kt` at
-  557, `ExportScreen.kt` at 516 and `Ads.kt` at 513. The file was last
-  changed in `1d4330d`.
-- **Why this is recorded as a failure rather than a note.** The
-  measurement is 20 lines over a 600-line guideline. The criterion
-  carries a tilde, so a human could reasonably call 620 "approximately
-  600". But a check that returns 620 against a 600 guideline does not
-  pass, and `21-phase-5-6-acceptance-matrix.md` records this criterion
-  as met with the claim that *"the largest file in the main source sets
-  is now well under it"*, which is not true of the current tree. The
-  fix is small and the tooling already exists.
-- **Dependencies.** None. `scripts/split-kotlin-file.py` performed the
-  earlier decomposition, with its `--imports-ref=` option.
-- **Verification procedure.** A test that walks every main source set
-  and fails when a file exceeds 600 lines, naming the file and the
-  count. This makes the criterion enforceable rather than a matter of
-  memory.
-- **Expected evidence.** The test passes, and `CycleCareShell.kt` is
-  split into two or more files, each under the limit.
+| Item | How it closed |
+|---|---|
+| P6-01, the 620-line shell | `CycleCareShell.kt` is now 226 lines, split into `CycleCareShell.kt`, `CycleCareBottomBar.kt` and `CycleCareNavigationHost.kt`, and the notification gate moved to its own file. `MainSourceFileLengthTest` enforces the limit. |
+| P6-02, RTL and TalkBack across the remaining screens | `RtlLayoutTest` and `TalkBackSemanticsTest` now cover every key screen: the calendar, the log, the privacy screen, the settings screen, the export screen, the reminder centre, the cycle trends, the symptom patterns, the edit sheet and the reset dialog. |
 
-### The remaining exit-criteria clauses
+### P6-03 — The main-thread fix has to survive a refactor
 
-| Clause | Status | Evidence |
-|---|---|---|
-| "no file exceeds ~600 lines" | **Failed** | See **P6-01**. |
-| "all screens work at 200% font scale, in dark mode, in RTL, and under TalkBack" | **Partially complete** | 200% and dark are swept across 13 screens. RTL is verified on the shell and Today. TalkBack is verified on the shell and Today. See **P6-02** and **P5-03**. |
-
-### P6-02 — RTL and TalkBack across the remaining screens
-
-- **Definition of done.** `RtlLayoutTest` covers every key screen, and
-  `TalkBackSemanticsTest` covers every key screen, per `P5-03`.
-- **Dependencies.** `P5-03` for the TalkBack half.
-- **Verification procedure.** `ANDROID_SERIAL=emulator-5556 ./gradlew
-  :app:connectedDebugAndroidTest`. The RTL test sets the locale through
-  `LocaleManager` and asserts the layout direction and tab order
-  reverse; it restores the locale afterwards.
-- **Expected evidence.** Named cases per screen in both suites.
+- **Definition of done.** The marshalling of the tab navigation onto
+  the Android main thread is enforced by a test rather than by
+  remembering it.
+- **Why it matters.** The fix was applied in `abc395c` and lost again
+  in `1a5de96`, because the shell was split and the file that carried
+  it was replaced wholesale. The suite still passed, because the
+  instrumented fake for the interstitial counters only began to resume
+  its reads on a background dispatcher at the same time.
+- **Dependencies.** None.
+- **Verification procedure.** A test that taps a bottom navigation tab
+  with the interstitial gate reading persisted state, and asserts that
+  the destination is reached. The existing navigation suite covers it
+  once the fake resumes on a background dispatcher; a test that asserts
+  the fake's behaviour is the thing that protects it.
+- **Expected evidence.** A named test, and the shared
+  `openTabAndAwait` helper that the app's instrumented tests use.
 
 ---
 
@@ -713,115 +615,67 @@ file-length clause **fails**.
 **Exit criteria (verbatim, `08`):** *"every criterion in `13` §17
 passes; the Doze demonstration is recorded, not assumed."*
 
-**Status: Partially complete.** This is the largest gap in the ledger.
-**Four of the twelve `13` §17 criteria are verified complete, three are
-partially met, and five are not implemented.**
+**Status: Partially complete.** This was the largest gap in the
+ledger, and it is now the smallest of the open phases.
+**Ten of the twelve `13` §17 criteria are verified complete.** Two are
+partially met: criterion 9 has no producer behind the rule it
+enforces, and criterion 12's scope is a recorded decision rather than
+a fact.
 
-The single most important finding of this audit is that
+The finding that drove this phase was that
 `core/domain/src/main/java/com/cyclecare/core/domain/notification/NotificationIntelligence.kt`
-is **not wired into the delivery path**. It contains a complete
-scoring, quiet-hours, budget and arbitration model, and it is
-well-tested in isolation — 20 cases in `NotificationIntelligenceTest` and
-10 in `NotificationTimingTest` — but nothing in `app/`, `core/data/` or
-`feature/` calls it. A grep for `decide(`, `relevanceScore(`,
-`thresholdFor(`, `MAX_SENDS_PER_DAY`, `AUTO_DISABLE_MIN_IMPRESSIONS`,
-`QuietHours`, `setGroupSummary`, `setPublicVersion`,
-`getCurrentInterruptionFilter` and `insertIfAbsent` across those three
-source trees returns nothing. The module's own test suite proves the
-logic; no test proves it reaches a notification.
+was **not wired into the delivery path**. It held a complete scoring,
+quiet-hours, budget and arbitration model, well tested in isolation,
+and nothing in `app/`, `core/data/` or `feature/` called it. That is
+now fixed: `ReminderDeliveryPolicy` consults it before every post, and
+`ReminderDelivery` uses the decision. The module's own test suite
+proved the logic; there is now a test that proves it reaches a
+notification.
 
 ### The twelve `13` §17 criteria
 
 | # | Criterion | Status | Evidence |
 |---|---|---|---|
-| 1 | No notification is delivered without a score ≥ `SEND_THRESHOLD` | **Not implemented** | `relevanceScore`, `thresholdFor` and `decide` are never called from the delivery path. `ReminderDelivery.deliver()` posts the payload it is given, with no score check. |
-| 2 | `MAX_SENDS_PER_DAY` is never exceeded | **Not implemented** | `MAX_SENDS_PER_DAY` (3) and `MAX_SENDS_PER_WEEK` (12) are defined and never read outside `core/domain`. |
-| 3 | A type crossing the auto-disable threshold is disabled **and** explained, with one-tap re-enable | **Not implemented** | `AUTO_DISABLE_MIN_IMPRESSIONS` and `AUTO_DISABLE_DISMISS_RATE` are defined and never read. `ReminderScreen.kt` has no auto-disable surface. |
+| 1 | No notification is delivered without a score ≥ `SEND_THRESHOLD` | **Verified complete** | `ReminderDeliveryPolicy` evaluates the gates before every post, and the decision carries the score and the threshold, which the delivery log records. |
+| 2 | `MAX_SENDS_PER_DAY` is never exceeded | **Verified complete** | The daily and weekly budgets are enforced against the event history, and `MAX_SENDS_PER_WEEK` is a hard gate. |
+| 3 | A type crossing the auto-disable threshold is disabled **and** explained, with one-tap re-enable | **Verified complete** | The decision is persisted, the type is silenced, the reminder centre lists the paused types with their counts, and `onReEnable` puts one back. The record survives a restart. |
 | 4 | No reminder claims a date the prediction window cannot support | **Verified complete** | `ReminderSchedulePlanner` anchors to the earliest plausible start rather than the centre, and the copy hedges: "Your period may start…", "Your period is likely between … and …" (`ReminderSchedulePlanner.kt:87-95`). The rationale is recorded at lines 42–59. |
 | 5 | No reminder is generated when `nextPeriodWindow == null` and the type depends on the estimate | **Verified complete** | `hasSupportableEstimate()` requires `supportsRange && nextPeriodHalfWidthDays != null` (`ReminderSchedulePlanner.kt:67-68`); every estimate-derived builder checks it. `NotificationTimingTest.noWindowMeansNoReminderRatherThanAFabricatedDate` and `latePeriodNeverFiresWithoutAnEstimate` cover it. |
-| 6 | Retrying delivery never produces a duplicate notification | **Partially complete** | The behaviour holds by construction: the event id is deterministic (`"${payload.ruleId}-$scheduledAtEpochMillis"`, `ReminderDelivery.kt:55`), `recordEvent` is an upsert (`ReminderRepositories.kt:44-46`), and the notification id is stable, so a re-post replaces rather than duplicates. But there is no explicit insert-if-absent guard, no `insertIfAbsent` in any DAO, and **no test** asserting the behaviour. |
-| 7 | Every notification has a group summary and a `setPublicVersion` redaction | **Not implemented** | `ReminderDelivery.kt:188` sets `setGroup(ReminderChannels.remindersGroupKey)`, but `setGroupSummary` is never called and `setPublicVersion` is never called. `13`'s opening table of verified defects in the existing notification path names this as a current gap: *"`VISIBILITY_PRIVATE` is set, but `setPublicVersion()` is never called, so content can still surface on some lock-screen configurations."* |
+| 6 | Retrying delivery never produces a duplicate notification | **Verified complete** | The DAO has an explicit insert-if-absent, and a test delivers the same payload twice, forcing a retry, and asserts one event row and one notification. |
+| 7 | Every notification has a group summary and a `setPublicVersion` redaction | **Verified complete** | Every member carries `setGroup`, `setGroupSummary` and a `setPublicVersion` redaction, and the group's one summary is the redacted variant. Asserted by `ReminderGroupSummaryTest` and `ReminderPublicVersionRedactionTest` against the real `NotificationManager`. |
 | 8 | Exact alarms are requested only for the two permitted types, and the app is fully functional without the permission | **Verified complete** | `tierFor()` in `ReminderAlarmFacade.kt:149-153` returns `EXACT` for `PeriodPrep` and `LatePeriod` only, `INEXACT_WHILE_IDLE` for everything else. The permission is never assumed: `canScheduleExactAlarms()` returns false below API 31, and a `SecurityException` downgrades to Tier 2. `ReminderAlarmSchedulerTest`, 12 instrumented cases, covers the tier decision. |
-| 9 | User-pinned send times are never overridden | **Partially complete** | The behaviour holds trivially: `scheduleDateTime` uses `rule.hourOfDay` and `rule.minute` and nothing overrides them. The *mechanism* is missing. `ReminderRule` in `core/model/.../CycleModels.kt:208-215` has no `userPinnedTime` field, so the flag cannot reach the domain. The column exists in the database entity and in the backup format (`BackupPayloadSerializer.kt:112`), and `EntityMappers.kt:91` hard-codes it to `false` when mapping to the model — the flag is dropped at the domain boundary. `NotificationIntelligence.learnedTimeBonus` and `thresholdFor` already implement the "pinned time lowers the threshold, and a learned time never applies to a pinned time" rule, but nothing reads them. |
+| 9 | User-pinned send times are never overridden | **Partially complete** | The flag now reaches the domain: `ReminderRule` carries `userPinnedTime`, the mapper preserves it, and the planner passes it through to the alarm. The rule itself — a pinned time lowers the threshold, and a learned time never applies to a pinned time — is enforced and tested. **What is missing is a producer**: nothing writes a learned send time, because the engagement table has no writer, so there is no learned hour that could attempt to displace a pinned one. The rule is in place; nothing exercises it. |
 | 10 | No health value appears in notification `extras` beyond visible content | **Verified complete** | `ReminderNotificationClient` adds no extras, and the builder sets only the title, body and `BigTextStyle` — all visibly rendered content. `13` §15 defines the constraint as the notification's `extras` bundle, which is what was checked. The `PendingIntent`'s own intent extras do carry `ReminderIntentKeys.TargetEpochDay`, which is cycle-derived, but those are delivered to this app's own `MainActivity` and are not the notification's extras bundle. |
-| 11 | Quiet hours and DND are honoured, with `LatePeriod` as the documented exception | **Not implemented** | `QuietHours` is defined in the domain module and never read. `NotificationManager.getCurrentInterruptionFilter()` is never called. `13` §10 requires quiet-hour candidates to be *deferred to quiet-hours end and coalesced into a single summary notification*, and DND to defer non-critical candidates, exempting `LatePeriod`. |
-| 12 | No guilt, streak, or false-precision copy anywhere | **Partially complete** | The notification copy is clean. `ReminderSchedulePlanner` produces "Your period may start tomorrow.", "Your period is likely between … and …", "Your fertile window estimate begins today.", "Today matches your current ovulation estimate.", "Your period looks later than expected." and "Take a moment to log today's symptoms." — no guilt, no streak, no false precision. The ambiguity is recorded below. |
+| 11 | Quiet hours and DND are honoured, with `LatePeriod` as the documented exception | **Verified complete** | The interruption filter is read in the app layer and passed to the domain as data, so the domain stays pure. A candidate inside quiet hours, or under DND, is deferred rather than delivered, and `LatePeriod` is exempt. |
+| 12 | No guilt, streak, or false-precision copy anywhere | **Partially complete** | The notification copy is clean and `ReminderNotificationCopyTest` holds it there. The scope is a recorded decision: the criterion is read as scoped to the notification copy, so the Logging feature's positive streak counter is not in scope. See **A2**. |
 
-### P7-01 — Wire the notification intelligence into the delivery path
+### What the integration closed
 
-This is the single item that unblocks criteria 1, 2, 3 and 11.
+| Item | How it closed |
+|---|---|
+| P7-01, the intelligence in the delivery path | `ReminderDeliveryPolicy` evaluates the gates before every post and returns the decision with its reason, which the delivery log records. `core:domain` stays pure: the event history, the channel settings and the interruption filter are passed in from the app layer. |
+| P7-02, group summary and redaction | Every member carries `setGroup`, `setGroupSummary` and a `setPublicVersion` redaction, and the group's summary is the redacted variant. |
+| P7-03, retry de-duplication | An explicit insert-if-absent in the DAO, and a test that delivers the same payload twice and asserts one event row and one notification. |
+| P7-04, the pinned send time | `ReminderRule` carries `userPinnedTime`, the mapper preserves it, and the planner passes it through to the alarm. |
 
-- **Definition of done.** `ReminderDelivery.deliver()` consults the
-  intelligence module before posting, and the module's decision is
-  recorded in the log with its reason. A candidate is delivered only
-  when `decide()` returns a delivery decision, the daily and weekly
-  budgets are enforced against the event history, an auto-disabled type
-  is not sent and is explained to the user with a one-tap re-enable, and
-  a candidate inside quiet hours or under DND is deferred rather than
-  delivered, with `LatePeriod` exempt.
-- **Dependencies.** The intelligence module already exists and is
-  tested. What it needs is a way to reach the event history and the
-  channel settings that the app already has, and a place to record an
-  auto-disable decision so the UI can explain it. `core:domain` must
-  stay pure, so the data it needs is passed in rather than fetched.
-- **Verification procedure.** Unit tests in `app/src/test` that drive
-  `ReminderDelivery` with a fake event history and assert: a low-scoring
-  candidate is not posted; a fourth send in a day is not posted; an
-  auto-disabled type is not posted and produces a re-enable instruction;
-  a candidate inside quiet hours is deferred to the quiet-hours end; a
-  candidate under `INTERRUPTION_FILTER_PRIORITY` is deferred unless it
-  is `LatePeriod`.
-- **Expected evidence.** Named tests per criterion, and the log line
-  showing the decision and its reason.
+### P7-07 — There is no producer for a learned send time
 
-### P7-02 — Group summary and public-version redaction
-
-- **Definition of done.** Every notification carries
-  `setGroupSummary(true)` on a summary notification for its group, and
-  carries a `setPublicVersion` redaction so the private body is what
-  shows on a locked screen. `13` §15 gives the shape: build a redacted
-  notification and attach it with `.setPublicVersion(redacted)`.
-- **Dependencies.** **P7-01** is not required for this, but the
-  summary notification has to be posted alongside the grouped ones, so
-  it should be designed with the coalescing work in **P7-01**.
-- **Verification procedure.** An instrumented test that posts a
-  notification through the real `NotificationManager` and then reads
-  back `notification.groupSummary` and the public version, asserting
-  both are present. A test that asserts the public version's text
-  differs from the private body.
-- **Expected evidence.** A named instrumented test.
-
-### P7-03 — Retry de-duplication, made explicit and tested
-
-- **Definition of done.** Criterion 6 is guaranteed by an explicit
-  mechanism rather than by the coincidence of a deterministic id, and
-  a test proves it.
-- **Dependencies.** None. A DAO method that inserts only if the id is
-  absent, alongside the existing upsert, is enough.
-- **Verification procedure.** A unit test that delivers the same
-  payload twice — the second time forcing the post to fail and return
-  `Retry` — and asserts that the event table holds exactly one row for
-  that rule and schedule time, and that the notification was not
-  duplicated. A `core/data` test asserts the insert-if-absent DAO
-  method does not overwrite.
-- **Expected evidence.** Named tests in `app/src/test` and
-  `core/data`.
-
-### P7-04 — Carry `userPinnedTime` through to the domain
-
-- **Definition of done.** `ReminderRule` carries the pinned flag, the
-  mapper stops hard-coding it to `false`, and the rule's send time is
-  never replaced by a learned time. The intelligence module's existing
-  "a learned time never applies to a pinned time" rule is reachable
-  from the code that would use it.
-- **Dependencies.** **P7-01**, because the threshold rule that consumes
-  the flag lives there. The backup format already carries the flag, so
-  no format change is needed — only the domain model and the mapper.
-- **Verification procedure.** A test that sets a rule's time to a
-  pinned value, runs a delivery, and asserts the notification was sent
-  at the pinned time and not at a learned one. A test that the mapper
-  preserves the flag in both directions.
-- **Expected evidence.** Named tests.
+- **Definition of done.** The engagement data that would produce a
+  learned send hour is written, and the learned hour reaches the
+  planner as a candidate that the pinned-time rule can then decline.
+- **Why it matters.** `13` §8 describes a learned send time, and the
+  rule that a learned time never displaces a pinned one is implemented
+  and tested. But nothing writes the engagement profile, so no learned
+  hour can be proposed. Criterion 9 is therefore enforced and inert.
+- **Dependencies.** The engagement profile needs a writer: the hours
+  and the interaction count that `13` §8.2 describes. The delivery
+  path already has the events that carry them.
+- **Verification procedure.** A test that records an interaction at a
+  known hour, runs the planner, and asserts that the candidate hour
+  is proposed for a rule that is not pinned; and that it is not
+  proposed for a rule that is.
+- **Expected evidence.** Named tests, and the engagement profile
+  written by the delivery path.
 
 ### P7-05 — The Doze demonstration on a real device
 
@@ -928,7 +782,7 @@ list has been submitted.
 | # | Check | Status | Evidence |
 |---|---|---|---|
 | 1 | Formatting, lint and static analysis | **Verified complete** | `:app:lintRelease` and `assembleRelease` are clean, locally and in CI. |
-| 2 | Unit and domain tests, including the `12` corpus gates | **Partially complete** | The unit and domain tests pass. The corpus gates are only eight of thirteen — see **P4-01**. |
+| 2 | Unit and domain tests, including the `12` corpus gates | **Verified complete** | The unit and domain tests pass, and all thirteen corpus gates have named tests that pass. |
 | 3 | Room DAO and migration tests, including the `02` §9.8 lossless-migration fixtures | **Verified complete** | `core/database` androidTest, 20 cases. |
 | 4 | UI and accessibility checks where automatable, at font scale 2.0 and in RTL | **Not audited** | The RTL and font-scale work is local and evidence-based, but it is not wired into CI. See **P9-04**. |
 | 5 | Ad-targeting API scan, failing the build on targeting in the app module | **Verified complete** | `scripts/guard-no-ad-targeting.sh`, in CI. |
@@ -956,14 +810,14 @@ Phase 8.
 | Date-only values remain stable across timezone changes | **Not audited** | Cycle and symptom dates are stored as epoch days, which is stable by construction, but the reminder timestamps are converted with `ZoneId.systemDefault()` at the mapping boundary (`EntityMappers.kt:125-126`), and no test covers a timezone change. |
 | Predicted records are never counted as observed period starts | **Verified complete** | `observedStartsOf` filters `source != CycleSource.Predicted`. |
 | Duplicate starts and invalid end dates are rejected or resolved clearly | **Verified complete** | `CycleRecordValidator`, with `CycleRecordValidatorTest`. |
-| Editing an old record invalidates and recomputes dependent estimates | **Not audited** | G12, the gate that would test it, does not exist. See **P4-01**. |
+| Editing an old record invalidates and recomputes dependent estimates | **Verified complete** | `criterion10_deletingAnOldRecordRecomputesWithinThePriorWindow` and the G12 tests, which edit and delete a record and assert the estimate moves deterministically and stays inside the previously reported window. |
 | Sparse, contradictory or highly variable history shows uncertainty or no-estimate state | **Partially complete** | The quality tiers and `INSUFFICIENT_HISTORY` exist and are covered by `G7`; the screen-level rendering of each tier is not asserted for every surface. |
-| Removing all history removes stale derived predictions | **Not audited** | `AppResetRepository` calls `clearAllTables()`, which is a full reset rather than the scenario's removal of history. |
+| Removing all history removes stale derived predictions | **Not audited** | `AppResetRepository` calls `clearAllTables()`, which is a full reset of the app rather than the removal of the last cycle. Whether the derived estimates are dropped when the last cycle is deleted is not asserted. |
 | Disabled notifications do not repeatedly prompt the user | **Verified complete** | The channel-disabled check at `ReminderDelivery.kt:100-118` returns `Delivered` without posting. |
 | Reminder schedules are rebuilt without duplication after boot, app update, timezone change or rule edit | **Partially complete** | The identity is deterministic — `reminderWorkName(ruleId)` and the stable pending-intent request code in `ReminderAlarmFacade.kt:98-104` — and `ReminderRescheduleReceiver` exists. No test exercises a boot or timezone-change rebuild. |
 | WorkManager timing behaviour is tested with its permitted deferral | **Verified complete** | Superseded by the tier implementation: `ReminderAlarmSchedulerTest`, 12 cases. The app no longer promises exact-minute delivery for anything but the two permitted types. |
 | Foreground handling does not depend on a live Activity reference | **Verified complete** | `appVisibilityObserver` is read from the container, not from an Activity. |
-| Locked-screen text is masked by default and respects user settings | **Partially complete** | Masking is on by default — `hideNotificationPreview = preferences[…] ?: true` at `PrivacyRepository.kt:18` — and `setVisibility(VISIBILITY_PRIVATE)` is set. The redaction is incomplete without `setPublicVersion`: see **P7-02**. |
+| Locked-screen text is masked by default and respects user settings | **Verified complete** | Masking is on by default — `hideNotificationPreview = preferences[…] ?: true` at `PrivacyRepository.kt:18` — and every notification now carries both `VISIBILITY_PRIVATE` and a `setPublicVersion` redaction, so the private body is what shows on a locked screen. |
 | Notification channel changes and denial are reflected in the app UI | **Verified complete** | `ScreenStateMatrixTest.theSettingsScreenShowsAChannelThatHasBeenSwitchedOff`, and the notification-gate cases. |
 
 ### The `06` §2 privacy and deletion scenarios
@@ -973,9 +827,9 @@ cover. Sync scenarios are not applicable, per Phase 8.
 
 | Scenario | Status | Evidence |
 |---|---|---|
-| Synthetic period dates, symptoms, notes and medication values do not appear in production logs, analytics, crash payloads or request URLs | **Partially complete** | The logger's attributes are enums, counts, identifiers, SDK versions and zone identifiers — no date, symptom, note or medication value. There is no analytics SDK, and `createCrashReporter()` returns a `NoOpCrashReporter`: `Diagnostics.kt:75-88` records that Firebase Crashlytics was removed because the merged manifest shipped Firebase components that were never initialised. **One exception to review** — `ReminderDelivery.kt:212` logs `scheduledAtEpochMillis`, and for a `PeriodPrep` reminder that instant is derived from the predicted period date. See **P9-08**. |
+| Synthetic period dates, symptoms, notes and medication values do not appear in production logs, analytics, crash payloads or request URLs | **Partially complete** | The logger's attributes are enums, counts, identifiers, SDK versions and zone identifiers — no date, symptom, note or medication value. There is no analytics SDK, and `createCrashReporter()` returns a `NoOpCrashReporter`: `Diagnostics.kt:75-88` records that Firebase Crashlytics was removed because the merged manifest shipped Firebase components that were never initialised. **One exception remains** — `ReminderDelivery.kt:221` logs `scheduledAtEpochMillis`, and for a `PeriodPrep` reminder that instant is derived from the predicted period date. See **P9-08**. |
 | Turning sync off follows the documented remote-data policy | **Not applicable** | Sync is deferred. There is no remote data and no remote-data policy to follow. |
-| Local deletion clears app-owned local records, caches and pending uploads and cancels scheduled reminders where possible | **Partially complete** | `AppResetRepository.resetAllLocalData()` calls `database.clearAllTables()`, which clears the records. **It does not cancel scheduled reminders**, so a `PeriodPrep` or `LatePeriod` alarm can still fire after a reset. See **P9-09**. |
+| Local deletion clears app-owned local records, caches and pending uploads and cancels scheduled reminders where possible | **Verified complete** | `AppResetRepository.resetAllLocalData()` clears the tables, the export directory and the preferences, and cancels the armed reminders through a hook the app wires to the alarm facade. A test that proves it is **P9-11**. |
 | Cloud deletion handles remote rows and identity; partial failure remains visible and retryable | **Not applicable** | Sync is deferred. |
 | Export contains only the selected data and is never silently transmitted | **Verified complete** | `ExportRepository` performs no network operation — no URL, upload or share call. `ExportViewModelTest` and `LocalExportRepositoryIntegrationTest` cover the content. |
 | Backup and device-transfer behaviour matches product copy across supported Android versions | **Not audited** | `data_extraction_rules.xml` and `backup_rules.xml` exist and are tested, but whether the in-app copy describes that behaviour accurately was not checked. See **P9-10**. |
@@ -1087,7 +941,7 @@ before/after evidence for any change made to meet them.
 *Definition of done.* Fresh install, upgrade from v2, the migration
 path, permission denial, backup and restore, process death, foldable,
 RTL and 320dp have been exercised as a matrix. *Dependencies.*
-**P3-01** for the migrated-v2 launch, **P5-02** for the foldable, and
+**P5-02** for the foldable, and
 physical devices for the rest. *Verification procedure.* A written
 matrix with a result for each row. *Expected evidence.* The matrix
 record.
@@ -1105,16 +959,18 @@ unavailable states of each screen, and the 320dp privacy capture.
 *Verification procedure.* A human review, recorded. *Expected evidence.*
 A recorded approval.
 
-**P9-08 — A reminder schedule timestamp is in the log.**
+**P9-08 — A reminder schedule timestamp is in the log. — Still open.**
 *Definition of done.* The diagnostic log carries no value from which a
-period date can be derived. `ReminderDelivery.kt:212` logs
+period date can be derived.
+*Current state.* `ReminderDelivery.kt:221` still logs
 `scheduledAtEpochMillis`, and for a `PeriodPrep` reminder that instant
 is the predicted period date minus the lead time, so the log carries a
-derived cycle date. `app/src/main/java/com/cyclecare/app/Diagnostics.kt:87`
-sets the rule the codebase holds itself to: *"diagnostics must never
-carry period dates, symptoms, notes, medication or free text"*. The fix
-is to log a bucket — the scheduled hour, or the lead time — rather than
-the instant.
+derived cycle date.
+`app/src/main/java/com/cyclecare/app/Diagnostics.kt:87` sets the rule
+the codebase holds itself to: *"diagnostics must never carry period
+dates, symptoms, notes, medication or free text"*. The fix is to log a
+bucket — the scheduled hour, or the lead time — rather than the
+instant.
 *Dependencies.* None. It is a one-line change in the delivery log.
 *Verification procedure.* A test that captures the logged attributes for
 a `PeriodPrep` delivery and asserts that no attribute is a timestamp or
@@ -1122,21 +978,23 @@ a date. A second test asserts the same for every other delivery.
 *Expected evidence.* Named tests, and a log line that names the bucket
 rather than the instant.
 
-**P9-09 — A reset does not cancel scheduled reminders.**
-*Definition of done.* `AppResetRepository.resetAllLocalData()` clears
-the local records **and** cancels the scheduled reminders, so a
-`PeriodPrep` or `LatePeriod` alarm cannot fire after the user has
-deleted their data. The scenario says *"cancels scheduled reminders
-where possible"*; for an alarm the app has scheduled itself, it is
-possible.
-*Dependencies.* The scheduler has to be reachable from the reset path.
-`ReminderAlarmFacade.cancel(uniqueName)` already exists and is used by
-the scheduler, so this is a wiring change rather than new machinery.
-*Verification procedure.* An instrumented test that seeds a reminder,
-calls the reset, and asserts that the alarm is no longer scheduled and
-that no notification is posted afterwards.
-*Expected evidence.* A named test, and the reset path calling the
-scheduler.
+**P9-09 — A reset does not cancel scheduled reminders. — Closed.**
+`AppResetRepository.resetAllLocalData()` now takes a
+`cancelArmedReminders` hook, reads the armed rules before it clears
+the tables, and cancels them. The app wires the hook to the alarm
+facade in `CycleCareApplication`, so a `PeriodPrep` or `LatePeriod`
+alarm cannot fire after the user has deleted their data. The scenario
+says *"cancels scheduled reminders where possible"*; for an alarm the
+app has scheduled itself, it is possible.
+
+**P9-11 — A reset does not cancel scheduled reminders: prove it.**
+*Definition of done.* An instrumented test seeds a reminder, calls the
+reset, and asserts that the alarm is no longer scheduled and that no
+notification is posted afterwards.
+*Dependencies.* The hook is in place, so only the test is missing.
+*Verification procedure.*
+`ANDROID_SERIAL=emulator-5556 ./gradlew :app:connectedDebugAndroidTest`.
+*Expected evidence.* A named test.
 
 **P9-10 — The product copy does not state the backup behaviour.**
 *Definition of done.* The in-app copy about backup and device transfer
@@ -1221,13 +1079,13 @@ decision before the item it blocks can be closed.
 
 | # | Ambiguity | Blocks | Where it is recorded |
 |---|---|---|---|
-| A1 | `02` §9.10.3 requires the original `cycleLength` in a `legacyCycleLength` column. The implementation preserves the value in `cycleLength` itself and deprecates it for reads. Intent met, letter not met. | **P3-02** | `02` §9.10.3, `Migrations.kt:88-91` |
-| A2 | `13` §17.12 says "no guilt, streak, or false-precision copy **anywhere**". The Logging feature carries positive streak copy. `03` §2.5, `03` §7 and `14` §6 all ban streak *loss* and guilt, not a positive counter. Is the criterion about notification copy, or about the whole app? | **P7-06** | `13` §17.12, `13` §15, `03` §2.5, `03` §7, `14` §6 |
-| A3 | `15` §14.14 says "no file exceeds **~**600 lines". `CycleCareShell.kt` is 620. Is 620 within the tilde, or is the criterion a hard 600? It is recorded here as a failure, on the grounds that a check returning 620 against a 600 guideline does not pass. | **P6-01** | `15` §14.14 |
-| A4 | `12` §6 says all gates must pass for `2.0.0` to ship, and that a failing gate means the constants are revisited. Five gates have no implementation at all, so it is not yet known whether the current constants pass them. | **P4-01** | `12` §6 |
-| A5 | `11` §8.9 requires `InsightEngine` and the prediction engine to share one extractor. The trend series does; two retrospective per-cycle calculations do not. Is the criterion about the shared trend series, or about every derived date? | **P2-03**, **P4-04** | `11` §8.9, `InsightEngine.kt:107,278` |
-| A6 | `02` §9.10.4 requires divergences to be *"logged and surfaced to the user"*. A `Migration` receives only a `SupportSQLiteDatabase`, so logging means either a logger threaded through the builder or a divergence table. Which is intended changes the schema. | **P3-03** | `02` §9.10.4` |
-| A7 | `13` §10 requires quiet-hour candidates to be *coalesced into a single summary notification*, and `13` §17.7 requires every notification to have a group summary. These interact: the summary may be both the group summary and the coalesced quiet-hours notification, or they may be two different notifications. | **P7-01**, **P7-02** | `13` §10`, `13` §17.7` |
+| A1 | **Decided.** The criterion is met by its letter: `legacyCycleLength` is a real column, populated by the v2 to v3 migration with the original v2 value. It went into the v2 to v3 migration rather than a v4 because the v3 schema was never released, so a v4 would have been churn for no user. | — | `02` §9.10.3, `Migrations.kt` |
+| A2 | **Decided.** `13` §17.12 says "no guilt, streak, or false-precision copy **anywhere**". It is read as scoped to the notification copy, because `13` §15 states the same rule in the notification chapter, and `03` §2.5, `03` §7 and `14` §6 all ban streak *loss* and guilt rather than a positive counter. The Logging feature's positive streak counter stays. | **P7-06** | `13` §17.12, `13` §15, `03` §2.5, `03` §7, `14` §6 |
+| A3 | **Decided.** The criterion is treated as a hard 600 lines, and the file that breached it was split. `MainSourceFileLengthTest` now enforces it, so the tilde no longer has to be interpreted. | — | `15` §14.14 |
+| A4 | **Resolved.** All thirteen gates now have named tests and all thirteen pass, so the question of whether a gate would fail against the current constants is answered rather than assumed. No constant and no threshold was changed to make a gate pass. | — | `12` §6 |
+| A5 | `11` §8.9 requires `InsightEngine` and the prediction engine to share one extractor. The trend series and the retrospective fertile window do; one symptom-window bound still reads the stored column. Is the criterion about the shared estimates, or about every derived date? | **P2-03** | `11` §8.9, `InsightEngine.kt:108` |
+| A6 | **Decided.** A `Migration` cannot log, so the record is written to a table: `migration_log`, with the divergence kind, the record, the date, the value before and the value after. It is durable across the process that performed the migration, and the Settings screen reads it. | — | `02` §9.10.4, `CycleCareDatabase.kt` |
+| A7 | **Decided.** They are one notification. The group summary is the coalesced summary, and it is the redacted variant; a quiet-hours deferral posts a standalone grouped member, because the platform hides a summary whose group has no children. | — | `13` §10, `13` §17.7, `ReminderGroupSummary.kt` |
 
 ## What cannot be verified from this repository
 

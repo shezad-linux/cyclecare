@@ -55,15 +55,15 @@ Always pass `ANDROID_SERIAL=emulator-5556`.
 
 | Check | Command | Expected |
 |---|---|---|
-| Unit tests | `./gradlew test` | 333 tests, 0 failures, 0 skipped |
-| Instrumented tests | `ANDROID_SERIAL=emulator-5556 ./gradlew connectedDebugAndroidTest` | 166 tests, 0 failures, 2 skipped |
+| Unit tests | `./gradlew test` | 437 tests, 0 failures, 0 skipped |
+| Instrumented tests | `ANDROID_SERIAL=emulator-5556 ./gradlew connectedDebugAndroidTest` | 251 tests, 0 failures, 2 skipped |
 | Ad-targeting guard | `./scripts/guard-no-ad-targeting.sh` | `OK: no ad-targeting API found.` |
 | Typography guard | `./scripts/guard-typography-roles.sh` | `All 15 typography roles are defined and referenced.` |
 | Contrast | `python3 scripts/contrast-report.py` | `All pairs with a WCAG target meet it.` |
 | Release build | `./gradlew assembleRelease` | `BUILD SUCCESSFUL` |
 | Release lint | `./gradlew :app:lintRelease` | no errors |
-| Corpus gates | `./gradlew :core:domain:test` | 8 of 13 gates exist; see §3.3 |
-| Migration tests | `ANDROID_SERIAL=emulator-5556 ./gradlew :core:database:connectedDebugAndroidTest` | 20 tests, 0 failures |
+| Corpus gates | `./gradlew :core:domain:test` | All 13 gates have named tests and pass |
+| Migration tests | `ANDROID_SERIAL=emulator-5556 ./gradlew :core:database:connectedDebugAndroidTest` | 25 tests, 0 failures |
 | Screenshots | see §5 | 97 images |
 | Doze (opt-in) | see §7 | 2 tests, on a real device only for sign-off |
 
@@ -77,25 +77,25 @@ Always pass `ANDROID_SERIAL=emulator-5556`.
 ./gradlew test
 ```
 
-During the audit this reported **333 tests, 0 failures, 0 errors, 0
+During the audit this reported **437 tests, 0 failures, 0 errors, 0
 skipped**, spread as:
 
 | Module | Tests |
 |---|---|
-| `app` | 34 |
-| `core/data` | 3 |
-| `core/designsystem` | 38 |
-| `core/domain` | 129 |
+| `app` | 65 |
+| `core/data` | 4 |
+| `core/designsystem` | 43 |
+| `core/domain` | 177 |
 | `core/security` | 25 |
-| `feature/calendar` | 22 |
+| `feature/calendar` | 24 |
 | `feature/export` | 13 |
-| `feature/home` | 15 |
-| `feature/insights` | 2 |
-| `feature/logging` | 23 |
+| `feature/home` | 24 |
+| `feature/insights` | 4 |
+| `feature/logging` | 26 |
 | `feature/onboarding` | 7 |
 | `feature/privacy` | 18 |
-| `feature/settings` | 4 |
-| **Total** | **333** |
+| `feature/settings` | 7 |
+| **Total** | **437** |
 
 To read the results as XML:
 
@@ -126,20 +126,29 @@ Run a single class or method with `--tests`:
 ANDROID_SERIAL=emulator-5556 ./gradlew connectedDebugAndroidTest
 ```
 
-This took **3m 8s** and reported **166 tests, 0 failures, 2 skipped**:
+This took **5m 6s** and reported **251 tests, 0 failures, 2 skipped**:
 
 | Module | Tests |
 |---|---|
-| `app` | 80 (2 skipped) |
-| `core/data` | 27 |
-| `core/database` | 20 |
+| `app` | 156 (2 skipped) |
+| `core/data` | 31 |
+| `core/database` | 25 |
 | `feature/calendar` | 6 |
 | `feature/home` | 12 |
 | `feature/insights` | 2 |
 | `feature/logging` | 2 |
 | `feature/onboarding` | 7 |
 | `feature/privacy` | 10 |
-| **Total** | **166** |
+| **Total** | **251** |
+
+The suite is order-independent. It was not always: the interstitial
+gate reads persisted state, so a tab navigation happens when the read
+returns rather than inside the click handler, and three tests that
+clicked a tab and asserted immediately were racing that. The app's
+instrumented tests now use the shared `openTabAndAwait` helper, which
+waits for the destination to be on screen. A suite that passes alone
+and fails in a run is not a suite worth trusting, so this is worth
+knowing about when adding a test that navigates.
 
 The two skipped are `ReminderDozeDeliveryTest`. See §7.
 
@@ -341,6 +350,14 @@ Then capture with the procedure in §5.1, and afterwards **restore it**:
 adb -s emulator-5556 shell settings put system font_scale 1.0
 ```
 
+The capture currently **aborts at 58 of 97 images**. The cause is the
+edit-cycle sheet: it is a `ModalBottomSheet`, and on a screen too short
+to hold it the back press finishes the activity instead of dismissing
+the sheet, so the next capture has no composition. The failure
+reproduces on the base commit in a separate worktree, so it is a
+pre-existing harness defect and not a regression from this work. See
+the ledger's **P5-06**.
+
 `NavLabelScalingTest` covers the in-app check at 1.5× by overriding
 `LocalDensity` inside the test, which needs no device state change:
 
@@ -375,7 +392,8 @@ adb -s emulator-5556 shell settings put system user_rotation 1
 ```
 
 Capture, then restore with `user_rotation 0` and `accelerometer_rotation 1`
-as in §9.
+as in §9. This aborts at the same 58 of 97 images, for the same reason
+as the font-scale sweep.
 
 ### 6.4 Touch targets and the 320dp case
 
@@ -514,5 +532,6 @@ recorded so that nobody reads them as findings.
 | The privacy screen is captured once, at 360dp in light | Rendering, navigating and rendering again in one test leaves the previous composition registered and the next one fails — `ComposeRootRegistry.withRegistry`. |
 | `ReminderDozeDeliveryTest` forces device-wide idle | It is opt-in. Left enabled, it breaks 28 other instrumented tests. |
 | `PreviewCoverageTest` reads one source file | It asserts the widths and schemes against `ScreenDebugPreviews.kt` only, not against every screen. See **P5-05**. |
-| `CycleCareShell.kt` is 620 lines | The `15` §14.14 criterion is **~600**. See **P6-01**. |
+| The 200% and landscape capture runs abort at 58 of 97 | The edit-cycle sheet does not take the back key on a screen too short to hold it, so the activity finishes and the next capture has no composition. Pre-existing; see **P5-06**. |
+| A tab navigation is not synchronous | The interstitial gate reads persisted state, so the navigation happens when the read returns, on a background thread, and is then posted to the main thread. A test that clicks a tab and asserts immediately races it; use `openTabAndAwait`. |
 | The macrobenchmark module has no baseline | `06` §4 budgets cannot be set until measurements exist. See **P9-05**. |

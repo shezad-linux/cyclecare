@@ -23,10 +23,10 @@ submitted, and no claim is made about its state.
 
 | | |
 |---|---|
-| **Audit date** | 2026-10-20 |
-| **Commit** | `d689a7e167991aa2a2caa50fc43f4005cad86979` |
-| **Unit tests** | 333, 0 failures |
-| **Instrumented tests** | 166, 0 failures, 2 skipped (the opt-in Doze tests) |
+| **Audit date** | 2026-10-21 |
+| **Commit** | `7605ba1cb86601eaaed9108e41499b412be73dee` |
+| **Unit tests** | 437, 0 failures |
+| **Instrumented tests** | 251, 0 failures, 2 skipped (the opt-in Doze tests) |
 | **Release build** | `assembleRelease` and `:app:lintRelease` clean |
 | **Guards** | Ad-targeting, typography and contrast all pass |
 
@@ -41,7 +41,7 @@ submitted, and no claim is made about its state.
 | CI with secret scanning and the ad-targeting guard | `.github/workflows/ci.yml`: gitleaks, the signing-secret check, `guard-no-ad-targeting.sh`, `guard-typography-roles.sh` |
 | The ad-targeting guard | `scripts/guard-no-ad-targeting.sh`, passing |
 | Privacy policy corrected against the verified implementation | `docs/privacy-policy.html`, corrected in the commit that fixed the three false claims |
-| Unit and instrumented test suites | 333 unit and 166 instrumented, both green on the API 36 emulator |
+| Unit and instrumented test suites | 437 unit and 251 instrumented, both green on the API 36 emulator |
 | Encryption for local export and import | `core/security`, with a passphrase-derived key, AAD binding and a fail-closed import |
 
 ## External: Play Console, not done
@@ -68,6 +68,23 @@ complete them is prepared below.
 | Foldable layout verification | **P5-02** |
 | Manual screen-reader pass | **P5-03** |
 | Hosted privacy policy page | Owned by the user. Must match `docs/privacy-policy.html` |
+
+## Repository work still open
+
+| Item | Ledger reference |
+|---|---|
+| A reminder schedule timestamp is in the diagnostic log | **P9-08** |
+| A reset that cancels reminders has no test | **P9-11** |
+| The 200% font-scale and landscape capture runs abort part way | **P5-06** |
+| `PredictionSnapshot.confidenceLabel` is still a `String` on the model | **P2-02** |
+| One `InsightEngine` site still reads the stored `cycleLength` | **P2-03** |
+| Every constant has a documented rationale | **P2-01** |
+| There is no producer for a learned send time | **P7-07** |
+| A dependency vulnerability review in CI | **P9-02** |
+| A privacy manifest and store disclosure review | **P9-03** |
+| The accessibility checks wired into CI | **P9-04** |
+| A performance baseline and budgets | **P9-05** |
+| The manual screen-reader pass | **P5-03** |
 
 ## Not started
 
