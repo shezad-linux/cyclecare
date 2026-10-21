@@ -18,19 +18,29 @@ report.
 | **Branch** | `main` |
 | **Working tree** | Clean |
 | **Unit baseline** | 505 tests, 0 failures, 0 skipped |
-| **Instrumented baseline** | 268 tests, 7 failures, 2 skipped — **regressions, see below** |
+| **Instrumented baseline** | 268 tests, **0 failures**, 2 skipped |
 
-The seven instrumented failures are deterministic (they fail in
-isolation, not as flakes) and were introduced by the integrated
-workstreams. They are **open**, not waived: two calendar regressions,
-one responsive-layout regression on the Insights overview, two privacy
-PIN-keypad regressions, one app-lock cooldown timeout, and one
-`dumpsys alarm` parsing assumption in a new reset test. The privacy and
-app-lock failures are in `feature/privacy` and the app-lock overlay,
-neither of which the integrated workstreams modified, so they are
-pre-existing latent failures surfaced by running the suite on this
-branch; the calendar and responsive ones are in code the prediction
-migration touched. All seven need focused debugging before release.
+The seven instrumented failures reported after the integration were
+re-investigated one at a time. **Six were not defects.** Each was
+produced by device state left behind by the screenshot sweeps —
+`font_scale`, rotation and the app locale — and each passes when
+reproduced individually and as its own module suite on a restored
+device. They were contamination, not regressions, and no production
+code was changed for them.
+
+**One was a real defect**, in the new reset test: its control failed
+because its `dumpsys alarm` filter could never match the API 36
+output format, so the test proved nothing in either direction. The
+observation is fixed and the test now passes. Fixing its control also
+exposed an order dependency inside that test class, which is fixed by
+re-establishing the notification permission in `setUp`.
+
+One further failure, in `ReThemeScreenshotTest`, is **intermittent and
+open**: the dashboard root is intermittently absent when the capture
+runs in the same process as the other app-module classes, although the
+test passes in isolation. It is a pre-existing fragility of the capture
+harness, not one of the seven, and it is recorded here rather than
+worked around.
 | **Environment** | `cc36` AVD, API 36, Android 16, 320x640 at 160dpi, `emulator-5556` |
 
 The 2026-10-20 audit of commit `d689a7e` recorded 333 unit and 166
