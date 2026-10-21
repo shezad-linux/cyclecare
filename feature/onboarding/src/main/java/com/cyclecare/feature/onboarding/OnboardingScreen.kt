@@ -55,7 +55,7 @@ internal fun SavedStateHandle.toOnboardingUiState(): OnboardingUiState {
         ageBand = get<String>(OnboardingStateKeys.AgeBand)
             ?.let { value -> runCatching { AgeBand.valueOf(value) }.getOrNull() }
             ?: AgeBand.Twenties,
-        cycleLength = get<Int>(OnboardingStateKeys.CycleLength) ?: 28,
+        cycleLengthDays = get<Int>(OnboardingStateKeys.CycleLength) ?: 28,
         periodLength = get<Int>(OnboardingStateKeys.PeriodLength) ?: 5,
         lastPeriodStart = lastPeriodStart,
         lastPeriodStartLabel = lastPeriodStart.formatOnboardingDate(),
@@ -69,7 +69,7 @@ internal fun SavedStateHandle.toOnboardingUiState(): OnboardingUiState {
 
 internal fun SavedStateHandle.persistDraft(state: OnboardingUiState) {
     this[OnboardingStateKeys.AgeBand] = state.ageBand.name
-    this[OnboardingStateKeys.CycleLength] = state.cycleLength
+    this[OnboardingStateKeys.CycleLength] = state.cycleLengthDays
     this[OnboardingStateKeys.PeriodLength] = state.periodLength
     this[OnboardingStateKeys.LastPeriodStartEpochDay] = state.lastPeriodStart.toEpochDay()
     this[OnboardingStateKeys.Goal] = state.goal.name

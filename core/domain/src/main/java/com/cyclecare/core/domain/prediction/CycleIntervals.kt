@@ -88,6 +88,25 @@ fun recentCycleLengthsOf(cycles: List<CycleRecord>, limit: Int): List<Int> =
         .map { it.lengthDays }
 
 /**
+ * The derived interval for each record, keyed by the record the interval
+ * starts from.
+ *
+ * A cycle's interval is the gap from its start to the next observed
+ * start, so only a record that has a successor has one. The most recent
+ * record has no entry, which is the honest answer rather than a guess:
+ * its interval is not yet known, because the next period has not
+ * happened.
+ *
+ * Only plausible intervals are included. An implausible gap is excluded
+ * by the extractor, and an excluded interval must not be presented as a
+ * derived length.
+ */
+fun derivedIntervalsByRecordId(cycles: List<CycleRecord>): Map<String, Int> =
+    extractIntervals(observedStartsOf(cycles))
+        .filter { it.usable }
+        .associate { it.fromRecordId to it.lengthDays }
+
+/**
  * The single definition of the "average cycle length" figure.
  *
  * Every surface that labels a number "Avg cycle" must use this, so two

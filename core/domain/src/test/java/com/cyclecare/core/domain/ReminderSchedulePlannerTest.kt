@@ -1,9 +1,10 @@
 package com.cyclecare.core.domain
 
-import com.cyclecare.core.model.DateRange
+import com.cyclecare.core.domain.prediction.EstimateQuality
+import com.cyclecare.core.domain.prediction.DateWindow
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.SamplePrediction
 import com.cyclecare.core.model.ReminderChannelKey
 import com.cyclecare.core.model.ReminderDeepLinkTarget
 import com.cyclecare.core.model.ReminderRule
@@ -275,22 +276,26 @@ class ReminderSchedulePlannerTest {
         // A supportable estimate carries a real range. Tests that mean to
         // exercise suppression pass a narrower snapshot explicitly.
         halfWidthDays: Int? = 1,
-    ) = PredictionSnapshot(
-        generatedAt = LocalDate.parse("2026-03-10"),
-        cycleDay = 10,
-        nextPeriodDate = nextPeriodDate,
-        ovulationDate = ovulationDate,
-        fertileWindow = DateRange(
-            start = fertileStart,
-            endInclusive = fertileEnd,
-        ),
-        confidenceLabel = "Stable",
-        daysUntilNextPeriod = daysUntilNextPeriod,
-        nextPeriodWindow = halfWidthDays?.let {
-            DateRange(nextPeriodDate.minusDays(it.toLong()), nextPeriodDate.plusDays(it.toLong()))
-        },
-        nextPeriodHalfWidthDays = halfWidthDays,
-    )
+    ) = SamplePrediction.of(
+            generatedForDate = LocalDate.parse("2026-03-10"),
+            cycleDay = 10,
+            nextPeriodDate = nextPeriodDate,
+            ovulationDate = ovulationDate,
+            quality = EstimateQuality.MODERATE,
+            daysUntilNextPeriod = daysUntilNextPeriod,
+            nextPeriodWindow = halfWidthDays?.let {
+                DateWindow(
+                    start = nextPeriodDate.minusDays(it.toLong()),
+                    endInclusive = nextPeriodDate.plusDays(it.toLong()),
+                    halfWidthDays = it,
+                )
+            },
+            fertileWindow = DateWindow(
+                start = fertileStart,
+                endInclusive = fertileEnd,
+                halfWidthDays = 3,
+            ),
+        )
 
     @Test
     fun buildSchedules_withholdsPeriodReminderWhenHistoryIsInsufficient() {

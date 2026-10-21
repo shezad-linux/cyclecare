@@ -5,6 +5,7 @@
 
 package com.cyclecare.feature.calendar
 
+import com.cyclecare.core.domain.prediction.derivedIntervalsByRecordId
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,7 +23,7 @@ import com.cyclecare.core.domain.PredictionRepository
 import com.cyclecare.core.domain.ReminderScheduler
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.CyclePrediction
 import com.cyclecare.core.designsystem.text.UiText
 import com.cyclecare.core.designsystem.text.uiText
 import java.time.LocalDate
@@ -41,7 +42,7 @@ private data class CalendarBaseState(
     val month: YearMonth,
     val selectedDate: LocalDate,
     val cycles: List<CycleRecord>,
-    val prediction: PredictionSnapshot?,
+    val prediction: CyclePrediction?,
 )
 
 /**
@@ -153,6 +154,9 @@ class CalendarViewModel(
                 selectedDate = base.selectedDate,
                 selectedCycle = selectedCycle,
                 prediction = base.prediction,
+                derivedCycleLength = selectedCycle?.let {
+                    derivedIntervalsByRecordId(base.cycles)[it.id]
+                },
             ),
             selectedCycle = selectedCycle,
             cycles = base.cycles,
@@ -205,19 +209,33 @@ class CalendarViewModel(
         val today = LocalDate.now()
         val editorStartDate = selectedDate.coerceAtMost(today)
         val editorEndDate = editorStartDate.plusDays(4).coerceAtMost(today)
+        // The cycle length the editor starts from is the derived
+        // interval, not the stored column.
+        //
+        // Spec `02` §9.4.5: application code never reads `cycleLength`.
+        // The stored value is written at logging time from whatever the
+        // user last reported, so it can disagree with the real gap. The
+        // most recent cycle has no derived interval yet, so the editor
+        // starts from the default the user can change.
+        val derivedInterval = uiState.value.selectedCycle?.let { selected ->
+            derivedIntervalsByRecordId(uiState.value.cycles)[selected.id]
+        }
         editorFlow.update {
             CycleEditorState(
                 isVisible = true,
                 startDateText = editorStartDate.toString(),
                 endDateText = editorEndDate.toString(),
-                cycleLengthText = uiState.value.selectedCycle?.cycleLength?.toString() ?: "28",
+                cycleLengthText = derivedInterval?.toString() ?: DEFAULT_CYCLE_LENGTH_DAYS,
             ).also(savedStateHandle::persistCycleEditorState)
         }
     }
 
     fun openEditSelectedCycle() {
         val cycle = uiState.value.selectedCycle ?: return
-        editorFlow.update { cycle.toEditorState().also(savedStateHandle::persistCycleEditorState) }
+        val derivedInterval = derivedIntervalsByRecordId(uiState.value.cycles)[cycle.id]
+        editorFlow.update {
+            cycle.toEditorState(derivedInterval).also(savedStateHandle::persistCycleEditorState)
+        }
     }
 
     fun openHistoryEditor(id: String) {
@@ -226,7 +244,10 @@ class CalendarViewModel(
         selectedDateFlow.update { cycle.startDate }
         anchorDayOfMonthFlow.update { cycle.startDate.dayOfMonth }
         persistCalendarPosition(YearMonth.from(cycle.startDate), cycle.startDate, cycle.startDate.dayOfMonth)
-        editorFlow.update { cycle.toEditorState().also(savedStateHandle::persistCycleEditorState) }
+        val derivedInterval = derivedIntervalsByRecordId(uiState.value.cycles)[cycle.id]
+        editorFlow.update {
+            cycle.toEditorState(derivedInterval).also(savedStateHandle::persistCycleEditorState)
+        }
         messageFlow.update { null }
     }
 
@@ -363,15 +384,27 @@ fun CalendarRoute(
     )
 }
 
-private fun CycleRecord.toEditorState(): CycleEditorState =
+/**
+ * The editor state for editing a cycle.
+ *
+ * The cycle length comes from the derived interval. The stored
+ * `cycleLength` column is not read: spec `02` §9.4.5 requires
+ * application code to take intervals from the shared extractor, and the
+ * stored value can disagree with the real gap. A cycle with no derived
+ * interval yet starts from the default, which the user can change.
+ */
+private fun CycleRecord.toEditorState(derivedIntervalDays: Int?): CycleEditorState =
     CycleEditorState(
         isVisible = true,
         editingId = id,
         startDateText = startDate.toString(),
         endDateText = endDate.toString(),
-        cycleLengthText = cycleLength.toString(),
+        cycleLengthText = derivedIntervalDays?.toString() ?: DEFAULT_CYCLE_LENGTH_DAYS,
         notes = notes.orEmpty(),
     )
+
+/** The cycle length the editor starts from when nothing is derived yet. */
+private const val DEFAULT_CYCLE_LENGTH_DAYS = "28"
 
 internal fun String.toLocalDateOrNull(): LocalDate? = runCatching { LocalDate.parse(this) }.getOrNull()
 

@@ -6,10 +6,10 @@ import com.cyclecare.core.model.DeferredReminder
 import com.cyclecare.core.model.ExportArtifact
 import com.cyclecare.core.model.ExportFormat
 import com.cyclecare.core.model.InsightSnapshot
-import com.cyclecare.core.model.PredictionSnapshot
 import com.cyclecare.core.model.ReminderAutoDisabled
 import com.cyclecare.core.model.ReminderChannelSettings
 import com.cyclecare.core.model.ReminderEvent
+import com.cyclecare.core.domain.prediction.CyclePrediction
 import com.cyclecare.core.model.ReminderRule
 import com.cyclecare.core.model.ReminderType
 import com.cyclecare.core.model.ScheduledReminder
@@ -38,8 +38,16 @@ interface SymptomRepository {
     suspend fun upsertSymptom(log: SymptomLog)
 }
 
+/**
+ * The prediction the app is currently showing.
+ *
+ * Spec `11` §7: "`PredictionSnapshot` is replaced by `CyclePrediction`."
+ * The repository therefore yields the engine's own output rather than a
+ * second shape that mirrors it, and there is no longer an adapter
+ * between the two.
+ */
 interface PredictionRepository {
-    fun observePrediction(): Flow<PredictionSnapshot?>
+    fun observePrediction(): Flow<CyclePrediction?>
 }
 
 interface InsightRepository {

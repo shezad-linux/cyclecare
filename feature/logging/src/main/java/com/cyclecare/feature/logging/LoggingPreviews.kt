@@ -12,10 +12,10 @@ import com.cyclecare.core.model.DischargeType
 import com.cyclecare.core.model.EnergyLevel
 import com.cyclecare.core.model.Mood
 import com.cyclecare.core.model.PainLevel
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.SamplePrediction
 import com.cyclecare.core.model.SymptomLog
 import com.cyclecare.core.model.TrackingGoal
-import com.cyclecare.core.model.DateRange
+import com.cyclecare.core.domain.prediction.DateWindow
 import com.cyclecare.core.model.UserProfile
 import java.time.LocalDate
 
@@ -92,18 +92,7 @@ internal fun previewLoggingUiState(
         remindersEnabled = true,
         privacyModeEnabled = true,
     ),
-    prediction = PredictionSnapshot(
-        generatedAt = LocalDate.of(2026, 3, 17),
-        cycleDay = 6,
-        nextPeriodDate = LocalDate.of(2026, 4, 10),
-        ovulationDate = LocalDate.of(2026, 3, 27),
-        fertileWindow = DateRange(
-            start = LocalDate.of(2026, 3, 23),
-            endInclusive = LocalDate.of(2026, 3, 28),
-        ),
-        confidenceLabel = "Baseline estimate",
-        daysUntilNextPeriod = 24,
-    ),
+    prediction = SamplePrediction.from(today = LocalDate.of(2026, 3, 17)),
     todayEntry = if (hasExistingEntry) {
         SymptomLog(
             id = "preview-log",

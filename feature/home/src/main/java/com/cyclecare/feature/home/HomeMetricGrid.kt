@@ -82,7 +82,7 @@ internal fun HomeMetricGrid(
             ) {
                 MetricCard(
                     label = uiText(R.string.avg_cycle),
-                    value = pluralStringResource(R.plurals.n_days, uiState.cycleLength, uiState.cycleLength),
+                    value = pluralStringResource(R.plurals.n_days, uiState.cycleLengthDays, uiState.cycleLengthDays),
                     modifier = Modifier.fillMaxWidth(),
                     accent = neutralAccent,
                 )
@@ -116,7 +116,7 @@ internal fun HomeMetricGrid(
                 ) {
                     MetricCard(
                         label = uiText(R.string.avg_cycle),
-                        value = pluralStringResource(R.plurals.n_days, uiState.cycleLength, uiState.cycleLength),
+                        value = pluralStringResource(R.plurals.n_days, uiState.cycleLengthDays, uiState.cycleLengthDays),
                         modifier = Modifier.weight(1f),
                         accent = neutralAccent,
                     )

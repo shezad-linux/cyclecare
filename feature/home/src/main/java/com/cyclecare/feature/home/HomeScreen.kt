@@ -110,9 +110,8 @@ import com.cyclecare.core.domain.ReminderSchedulePlanner
 import com.cyclecare.core.domain.ReminderScheduler
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
-import com.cyclecare.core.model.DateRange
 import com.cyclecare.core.model.InsightSnapshot
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.CyclePrediction
 import com.cyclecare.core.model.ReminderRule
 import com.cyclecare.core.model.ReminderType
 import com.cyclecare.core.model.ScheduledReminder
@@ -151,20 +150,20 @@ internal fun HomeScreen(
     onSaveCycle: () -> Unit,
     inlineAd: (@Composable () -> Unit)? = null,
 ) {
-    val progress = remember(uiState.cycleDay, uiState.cycleLength) {
+    val progress = remember(uiState.cycleDay, uiState.cycleLengthDays) {
         uiState.cycleDay
-            ?.let { cycleDay -> (cycleDay.toFloat() / uiState.cycleLength.toFloat()).coerceIn(0f, 1f) }
+            ?.let { cycleDay -> (cycleDay.toFloat() / uiState.cycleLengthDays.toFloat()).coerceIn(0f, 1f) }
             ?: 0f
     }
     // Resolved once at the composable boundary so the progress bar's
     // accessibility state description stays locale-correct without
     // calling stringResource inside the modifier lambda.
-    val progressStateDescriptionText = progressStateDescription(uiState.cycleDay, uiState.cycleLength).resolve()
+    val progressStateDescriptionText = progressStateDescription(uiState.cycleDay, uiState.cycleLengthDays).resolve()
     // Resolved outside the semantics block, which is not a composable
     // context, so a string resource cannot be read inside it.
     val cycleProgressStateDescription = progressStateDescription(
         uiState.cycleDay,
-        uiState.cycleLength,
+        uiState.cycleLengthDays,
     ).resolve()
     val heroTitle = homeHeroTitle(uiState).resolve()
     val heroSubtitle = homeHeroSubtitle(uiState).resolve()
@@ -172,14 +171,6 @@ internal fun HomeScreen(
     // than sit side by side.
     val largeFontScale = LocalDensity.current.fontScale > 1.2f
     val heroGradientColors = if (uiState.hasCurrentCycle) PeriodActiveGradientColors() else null
-    val cycleProgressLabel = remember(uiState.cycleDay, uiState.cycleLength, uiState.confidenceLabel) {
-        formatCycleProgressLabel(
-            cycleDay = uiState.cycleDay,
-            cycleLength = uiState.cycleLength,
-            confidenceLabel = uiState.confidenceLabel,
-        )
-    }
-
     LazyColumn(
         modifier = Modifier
             .padding(horizontal = CycleCareSpace.space16)
@@ -211,7 +202,7 @@ internal fun HomeScreen(
                             text = stringResource(
                                 R.string.day_of_cycle,
                                 uiState.cycleDay?.toString() ?: "--",
-                                uiState.cycleLength.toString(),
+                                uiState.cycleLengthDays.toString(),
                             ),
                             tone = MetricPillTone.Inverse,
                         )
@@ -313,7 +304,7 @@ internal fun HomeScreen(
             FertilityTeaserCard(
                 fertileWindowText = uiState.fertileWindowText.resolve(),
                 ovulationEstimateText = uiState.ovulationEstimateText.resolve(),
-                confidenceLabel = uiState.confidenceLabel,
+                confidenceLabelRes = uiState.confidenceLabelRes,
                 onOpenFertilityDetail = onOpenFertilityDetail,
             )
         }

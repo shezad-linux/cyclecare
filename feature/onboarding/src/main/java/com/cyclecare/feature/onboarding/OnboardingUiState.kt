@@ -5,6 +5,7 @@
 
 package com.cyclecare.feature.onboarding
 
+import com.cyclecare.core.domain.VALID_CYCLE_LENGTH_RANGE
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.cyclecare.core.designsystem.text.UiText
@@ -16,7 +17,7 @@ import java.time.LocalDate
 
 data class OnboardingUiState(
     val ageBand: AgeBand = AgeBand.Twenties,
-    val cycleLength: Int = 28,
+    val cycleLengthDays: Int = 28,
     val periodLength: Int = 5,
     val lastPeriodStart: LocalDate = LocalDate.now().minusDays(5),
     val lastPeriodStartLabel: String = LocalDate.now().minusDays(5).formatOnboardingDate(),
@@ -26,10 +27,18 @@ data class OnboardingUiState(
     val showDatePicker: Boolean = false,
     val saving: Boolean = false,
 ) {
-    val cycleLengthLabel: UiText get() = pluralUiText(R.plurals.n_days, cycleLength, cycleLength)
+    val cycleLengthLabel: UiText get() = pluralUiText(R.plurals.n_days, cycleLengthDays, cycleLengthDays)
     val periodLengthLabel: UiText get() = pluralUiText(R.plurals.n_days, periodLength, periodLength)
     val cycleLengthError: UiText?
-        get() = if (cycleLength in 20..45) null else uiText(R.string.cycle_length_out_of_range)
+        get() = if (cycleLengthDays in VALID_CYCLE_LENGTH_RANGE) {
+            null
+        } else {
+            uiText(
+                R.string.cycle_length_out_of_range,
+                VALID_CYCLE_LENGTH_RANGE.first,
+                VALID_CYCLE_LENGTH_RANGE.last,
+            )
+        }
     val periodLengthError: UiText?
         get() = if (periodLength in 2..10) null else uiText(R.string.period_length_out_of_range)
     val lastPeriodStartError: UiText?

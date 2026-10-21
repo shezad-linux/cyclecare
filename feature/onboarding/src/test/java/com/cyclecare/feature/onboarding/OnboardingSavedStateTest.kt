@@ -13,7 +13,7 @@ class OnboardingSavedStateTest {
         val handle = SavedStateHandle()
         val expected = OnboardingUiState(
             ageBand = AgeBand.Thirties,
-            cycleLength = 31,
+            cycleLengthDays = 31,
             periodLength = 6,
             lastPeriodStart = LocalDate.of(2026, 3, 9),
             lastPeriodStartLabel = "March 9, 2026",
@@ -26,7 +26,7 @@ class OnboardingSavedStateTest {
         val restored = handle.toOnboardingUiState()
 
         assertThat(restored.ageBand).isEqualTo(expected.ageBand)
-        assertThat(restored.cycleLength).isEqualTo(expected.cycleLength)
+        assertThat(restored.cycleLengthDays).isEqualTo(expected.cycleLengthDays)
         assertThat(restored.periodLength).isEqualTo(expected.periodLength)
         assertThat(restored.lastPeriodStart).isEqualTo(expected.lastPeriodStart)
         assertThat(restored.goal).isEqualTo(expected.goal)

@@ -14,7 +14,7 @@ import com.cyclecare.core.model.DischargeType
 import com.cyclecare.core.model.EnergyLevel
 import com.cyclecare.core.model.Mood
 import com.cyclecare.core.model.PainLevel
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.CyclePrediction
 import com.cyclecare.core.model.SymptomLog
 import com.cyclecare.core.model.UserProfile
 import java.time.LocalDate
@@ -95,7 +95,7 @@ internal fun buildLogDateLabel(
 
 internal fun buildCycleProgressLabel(
     profile: UserProfile?,
-    prediction: PredictionSnapshot?,
+    prediction: CyclePrediction?,
 ): UiText? = if (profile != null && prediction != null) {
     uiText(R.string.cycle_progress_day, prediction.cycleDay, profile.averageCycleLength)
 } else {
@@ -114,7 +114,7 @@ internal object LoggingTags {
 
 internal fun buildCycleProgressRatio(
     profile: UserProfile?,
-    prediction: PredictionSnapshot?,
+    prediction: CyclePrediction?,
 ): Float = if (profile != null && prediction != null) {
     (prediction.cycleDay.toFloat() / profile.averageCycleLength.toFloat()).coerceIn(0f, 1f)
 } else {
@@ -123,7 +123,7 @@ internal fun buildCycleProgressRatio(
 
 internal fun buildLogHeroMode(
     profile: UserProfile?,
-    prediction: PredictionSnapshot?,
+    prediction: CyclePrediction?,
     cycles: List<CycleRecord> = emptyList(),
     today: LocalDate = LocalDate.now(),
 ): PeriodHeroMode {
@@ -188,7 +188,7 @@ private fun resolveCyclePhase(
     cycleDay: Int?,
     cycleLength: Int,
     heroMode: PeriodHeroMode,
-    prediction: PredictionSnapshot?,
+    prediction: CyclePrediction?,
     today: LocalDate,
 ): CyclePhase? {
     if (heroMode == PeriodHeroMode.Active) return CyclePhase.PERIOD_DAYS
@@ -215,7 +215,7 @@ private fun resolveCyclePhase(
  * already started, because "starts in zero days" is not a countdown.
  */
 private fun daysUntilFertileWindow(
-    prediction: PredictionSnapshot?,
+    prediction: CyclePrediction?,
     today: LocalDate,
 ): Int? = prediction
     ?.takeIf { it.supportsRange }
@@ -362,7 +362,7 @@ internal fun buildCompletionInsight(logs: List<SymptomLog>, today: LocalDate): U
 internal fun buildLoggingUiState(
     today: LocalDate,
     profile: UserProfile?,
-    prediction: PredictionSnapshot?,
+    prediction: CyclePrediction?,
     todayEntry: SymptomLog?,
     editor: LoggingEditorState,
     saveMessage: UiText?,

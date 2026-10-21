@@ -43,7 +43,14 @@
     <string name="insights">Insights</string>
     <string name="see_patterns_from_logged_data">See patterns from your logged data.</string>
     <string name="day_slash_total">Day %1$s / %2$d</string>
-    <string name="day_slash_total_with_confidence">Day %1$s / %2$d • %3$s</string>
+    <!-- The confidence wording. Each tier has its own whole string, so
+         no sentence has to carry the engine's prose as an argument and
+         a translator never has to reorder a fragment. -->
+    <string name="confidence_baseline_estimate">Baseline estimate</string>
+    <string name="confidence_estimate_may_be_out_of_date">Estimate may be out of date</string>
+    <string name="confidence_narrow_range">Narrow range</string>
+    <string name="confidence_moderate_range">Moderate range</string>
+    <string name="confidence_wide_range">Wide range</string>
     <string name="cycle_progress_unavailable">Cycle progress unavailable</string>
     <string name="day_x_of_y">Day %1$d of %2$d</string>
     <string name="one_day_past_the_expected_date">1 day past the expected date</string>
@@ -104,7 +111,7 @@
     <string name="end_date_cannot_be_future">End date cannot be in the future.</string>
     <string name="cycle_length_required">Cycle length is required.</string>
     <string name="cycle_length_whole_number">Cycle length must be a whole number.</string>
-    <string name="cycle_length_range_error">Cycle length must stay between 20 and 45 days.</string>
+    <string name="cycle_length_range_error">Cycle length must stay between %1$d and %2$d days.</string>
     <string name="period_reminder">Period reminder</string>
     <string name="fertile_window_reminder">Fertile window reminder</string>
     <string name="ovulation_reminder">Ovulation reminder</string>

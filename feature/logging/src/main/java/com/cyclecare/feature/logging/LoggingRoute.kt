@@ -24,7 +24,7 @@ import com.cyclecare.core.model.DischargeType
 import com.cyclecare.core.model.EnergyLevel
 import com.cyclecare.core.model.Mood
 import com.cyclecare.core.model.PainLevel
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.CyclePrediction
 import com.cyclecare.core.model.SymptomLog
 import com.cyclecare.core.model.UserProfile
 import java.time.LocalDate
@@ -40,7 +40,7 @@ import kotlinx.coroutines.launch
 private data class LoggingContext(
     val profile: UserProfile? = null,
     val cycles: List<CycleRecord> = emptyList(),
-    val prediction: PredictionSnapshot? = null,
+    val prediction: CyclePrediction? = null,
     val todayEntry: SymptomLog? = null,
     val symptoms: List<SymptomLog> = emptyList(),
 )

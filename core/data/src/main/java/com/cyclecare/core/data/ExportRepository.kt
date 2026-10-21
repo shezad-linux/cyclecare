@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
 import androidx.room.withTransaction
+import com.cyclecare.core.domain.prediction.derivedIntervalsByRecordId
 import com.cyclecare.core.database.CycleCareDatabase
 import com.cyclecare.core.domain.CycleRepository
 import com.cyclecare.core.domain.ExportRepository
@@ -361,8 +362,21 @@ internal fun buildReportContent(
     val cycleLines = if (cycles.isEmpty()) {
         listOf("No cycle history has been logged yet.")
     } else {
+        // The cycle length in the report is the derived interval, the gap
+        // from this cycle's start to the next one, so the report cannot
+        // contain two different cycle-length figures.
+        //
+        // The stored `cycleLength` column is not read. Spec `02` §9.4.5
+        // requires application code to take intervals from the shared
+        // extractor, and the column is written at logging time from
+        // whatever the user last reported. The most recent cycle has no
+        // interval yet, and the report says so rather than printing an
+        // unvalidated number as a fact.
+        val derivedIntervals = derivedIntervalsByRecordId(cycles)
         cycles.takeLast(8).map { cycle ->
-            "${cycle.startDate} to ${cycle.endDate} (${cycle.cycleLength} day cycle)"
+            val derivedInterval = derivedIntervals[cycle.id]
+            val lengthNote = derivedInterval?.let { "$it day cycle" } ?: "cycle length not known yet"
+            "${cycle.startDate} to ${cycle.endDate} ($lengthNote)"
         }
     }
     val profileLines = listOf(

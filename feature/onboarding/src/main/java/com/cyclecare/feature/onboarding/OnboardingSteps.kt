@@ -81,21 +81,21 @@ internal fun OnboardingBaselineStep(
                 valueLabel = uiState.cycleLengthLabel,
                 onDecrement = { onCycleLengthIncrement(-1) },
                 onIncrement = { onCycleLengthIncrement(1) },
-                decrementEnabled = uiState.cycleLength > 20,
-                incrementEnabled = uiState.cycleLength < 45,
+                decrementEnabled = uiState.cycleLengthDays > 20,
+                incrementEnabled = uiState.cycleLengthDays < 45,
                 contentDescriptionBase = stringResource(R.string.cycle_length),
                 valueTestTag = OnboardingTags.CYCLE_LENGTH_VALUE,
                 modifier = Modifier
                     .testTag(OnboardingTags.CYCLE_LENGTH_SLIDER)
                     .semantics {
                         progressBarRangeInfo = ProgressBarRangeInfo(
-                            current = uiState.cycleLength.toFloat(),
+                            current = uiState.cycleLengthDays.toFloat(),
                             range = 20f..45f,
                             steps = 24,
                         )
                         setProgress { target ->
                             val targetLength = target.roundToInt().coerceIn(20, 45)
-                            onCycleLengthIncrement(targetLength - uiState.cycleLength)
+                            onCycleLengthIncrement(targetLength - uiState.cycleLengthDays)
                             true
                         }
                     },

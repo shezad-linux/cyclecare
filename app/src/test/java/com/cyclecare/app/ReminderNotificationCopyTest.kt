@@ -1,10 +1,11 @@
 package com.cyclecare.app
 
+import com.cyclecare.core.domain.prediction.CyclePrediction
+import com.cyclecare.core.domain.prediction.EstimateQuality
 import com.cyclecare.core.domain.ReminderDefaults
 import com.cyclecare.core.domain.ReminderSchedulePlanner
-import com.cyclecare.core.model.DateRange
-import com.cyclecare.core.model.PredictionQuality
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.DateWindow
+import com.cyclecare.core.domain.prediction.SamplePrediction
 import com.cyclecare.core.model.ReminderType
 import com.cyclecare.core.model.TrackingGoal
 import com.google.common.truth.Truth.assertThat
@@ -142,24 +143,24 @@ class ReminderNotificationCopyTest {
             ?: error("strings.xml not found from ${File(".").absolutePath}")
     }
 
-    private fun prediction(): PredictionSnapshot = PredictionSnapshot(
-        generatedAt = LocalDate.of(2026, 3, 10),
-        cycleDay = 12,
-        nextPeriodDate = LocalDate.of(2026, 3, 28),
-        ovulationDate = LocalDate.of(2026, 3, 14),
-        fertileWindow = DateRange(
-            start = LocalDate.of(2026, 3, 10),
-            endInclusive = LocalDate.of(2026, 3, 15),
-        ),
-        confidenceLabel = "test",
-        daysUntilNextPeriod = 18,
-        nextPeriodWindow = DateRange(
-            start = LocalDate.of(2026, 3, 27),
-            endInclusive = LocalDate.of(2026, 3, 29),
-        ),
-        nextPeriodHalfWidthDays = 1,
-        quality = PredictionQuality.HIGH,
-    )
+    private fun prediction(): CyclePrediction = SamplePrediction.of(
+            generatedForDate = LocalDate.of(2026, 3, 10),
+            cycleDay = 12,
+            nextPeriodDate = LocalDate.of(2026, 3, 28),
+            ovulationDate = LocalDate.of(2026, 3, 14),
+            daysUntilNextPeriod = 18,
+            quality = EstimateQuality.HIGH,
+            nextPeriodWindow = DateWindow(
+                start = LocalDate.of(2026, 3, 27),
+                endInclusive = LocalDate.of(2026, 3, 29),
+                halfWidthDays = 3,
+            ),
+            fertileWindow = DateWindow(
+                start = LocalDate.of(2026, 3, 10),
+                endInclusive = LocalDate.of(2026, 3, 15),
+                halfWidthDays = 3,
+            ),
+        )
 
     private companion object {
         /**

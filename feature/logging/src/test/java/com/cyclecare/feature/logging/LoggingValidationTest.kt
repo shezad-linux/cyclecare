@@ -1,5 +1,6 @@
 package com.cyclecare.feature.logging
 
+import com.cyclecare.core.domain.prediction.SamplePrediction
 import androidx.lifecycle.SavedStateHandle
 import com.cyclecare.core.designsystem.text.pluralUiText
 import com.cyclecare.core.domain.CycleRepository
@@ -8,7 +9,7 @@ import com.cyclecare.core.domain.PredictionRepository
 import com.cyclecare.core.domain.ProfileRepository
 import com.cyclecare.core.domain.SymptomRepository
 import com.cyclecare.core.model.CycleRecord
-import com.cyclecare.core.model.PredictionSnapshot
+import com.cyclecare.core.domain.prediction.CyclePrediction
 import com.cyclecare.core.model.SymptomLog
 import com.cyclecare.core.model.UserProfile
 import com.google.common.truth.Truth.assertThat
@@ -137,9 +138,9 @@ private class EmptyCycleRepository : CycleRepository {
 }
 
 private class EmptyPredictionRepository : PredictionRepository {
-    private val state = MutableStateFlow<PredictionSnapshot?>(null)
+    private val state = MutableStateFlow<CyclePrediction?>(null)
 
-    override fun observePrediction(): Flow<PredictionSnapshot?> = state.asStateFlow()
+    override fun observePrediction(): Flow<CyclePrediction?> = state.asStateFlow()
 }
 
 private class BlockingSymptomRepository : SymptomRepository {

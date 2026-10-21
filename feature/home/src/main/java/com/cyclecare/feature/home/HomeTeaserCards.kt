@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cyclecare.core.designsystem.DashboardPill
+import com.cyclecare.core.designsystem.text.uiText
 import com.cyclecare.core.designsystem.DashboardSectionCard
 
 @Composable
@@ -109,7 +110,7 @@ internal fun HomeDashboardHeader(
 internal fun FertilityTeaserCard(
     fertileWindowText: String,
     ovulationEstimateText: String,
-    confidenceLabel: String,
+    confidenceLabelRes: Int?,
     onOpenFertilityDetail: () -> Unit,
 ) {
     DashboardSectionCard(
@@ -136,8 +137,8 @@ internal fun FertilityTeaserCard(
                 }
             }
             val confidence = @Composable {
-                if (confidenceLabel.isNotBlank()) {
-                    DashboardPill(text = confidenceLabel)
+                confidenceLabelRes?.let { confidenceRes ->
+                    DashboardPill(text = uiText(confidenceRes).resolve())
                 }
             }
             if (largeFontScale) {

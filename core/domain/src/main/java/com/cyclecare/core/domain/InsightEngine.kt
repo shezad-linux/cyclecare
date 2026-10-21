@@ -61,7 +61,7 @@ class InsightEngine {
         } >= IRREGULAR_MIN_OUTLIERS
         val minCycleLength = recentCycleLengths.minOrNull() ?: averageCycleLength
         val maxCycleLength = recentCycleLengths.maxOrNull() ?: averageCycleLength
-        val relevantSymptoms = relevantSymptomsForWindow(historicalCycles, symptoms)
+        val relevantSymptoms = relevantSymptomsForWindow(historicalCycles, symptoms, averageCycleLength)
         val hasEnoughCycleData = historicalCycles.size >= 2
         val hasEnoughSymptomData = relevantSymptoms.size >= 5
 
@@ -101,11 +101,22 @@ class InsightEngine {
     private fun relevantSymptomsForWindow(
         historicalCycles: List<CycleRecord>,
         symptoms: List<SymptomLog>,
+        canonicalIntervalDays: Int,
     ): List<SymptomLog> {
         if (historicalCycles.isEmpty()) return symptoms.sortedBy { it.date }
 
         val start = historicalCycles.first().startDate
-        val end = historicalCycles.last().startDate.plusDays(historicalCycles.last().cycleLength.toLong() - 1L)
+        // The window ends at the end of the canonical interval, which is
+        // the same derived figure the "Avg cycle" metric shows.
+        //
+        // The stored `cycleLength` column is not read. It is written at
+        // logging time from whatever the user last reported, and spec
+        // `02` §9.4.5 requires application code to take intervals from
+        // the shared extractor instead: "Application code reads intervals
+        // through the shared extractor in `11` §7 and never reads
+        // `cycleLength`."
+        val end = historicalCycles.last().startDate
+            .plusDays(canonicalIntervalDays.toLong() - 1L)
         return symptoms
             .filter { symptom -> !symptom.date.isBefore(start) && !symptom.date.isAfter(end) }
             .sortedBy { it.date }
