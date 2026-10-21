@@ -139,7 +139,7 @@ class NavLabelScalingTest {
 
         composeRule.onNodeWithTag(navTag("home")).assertIsSelected()
 
-        composeRule.onNodeWithTag(navTag("insights")).performClick()
+        composeRule.openTabAndAwait("insights")
         composeRule.waitForIdle()
 
         composeRule.onNodeWithTag(navTag("insights")).assertIsSelected()

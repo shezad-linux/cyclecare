@@ -75,21 +75,6 @@ private fun buildCycleModeLabel(
     else -> uiText(R.string.waiting_for_prediction)
 }
 
-internal fun buildCyclePhaseLabel(
-    cycleDay: Int?,
-    cycleLength: Int,
-): UiText {
-    if (cycleDay == null) return uiText(R.string.empty_label)
-    val cycleProgress = cycleDay.toFloat() / cycleLength.toFloat()
-    return when {
-        cycleProgress < 0.15f -> uiText(R.string.early_cycle)
-        cycleProgress < 0.40f -> uiText(R.string.mid_cycle)
-        cycleProgress < 0.60f -> uiText(R.string.fertile_window)
-        cycleProgress < 0.85f -> uiText(R.string.late_cycle)
-        else -> uiText(R.string.approaching_next_period)
-    }
-}
-
 private fun buildCycleSourceSummary(
     profile: UserProfile?,
     currentCycle: CycleRecord?,
@@ -242,7 +227,15 @@ class HomeViewModel(
         val currentCycle = base.currentUserCycle()
         val userCycles = base.cycles.filter { it.source == CycleSource.User || it.source == CycleSource.Imported }
         val latestCycle = userCycles.lastOrNull()
-        val cycleLength = base.profile?.averageCycleLength ?: base.cycles.lastOrNull()?.cycleLength ?: 28
+        // The observed average is the canonical figure. Insights renders
+        // the same number from the same snapshot, so the two screens
+        // cannot disagree about the user's cycle length on the same day,
+        // which they could when Today showed the onboarding baseline
+        // and Insights showed what the logged history actually says.
+        val cycleLength = resolveAverageCycleLength(
+            insights = base.insights,
+            profile = base.profile,
+        )
         val validatedEditor = validateHomeEditorState(
             editor = editor,
             cycles = base.cycles,
@@ -260,7 +253,10 @@ class HomeViewModel(
                 insights = base.insights,
                 confidenceLabel = base.prediction?.confidenceLabel.orEmpty(),
             ),
-            fertileWindowText = formatFertileWindow(base.prediction?.fertileWindow),
+            fertileWindowText = formatFertileWindow(
+                range = base.prediction?.fertileWindow,
+                supportsRange = base.prediction?.supportsRange ?: false,
+            ),
             ovulationEstimateText = formatDashboardDate(base.prediction?.ovulationDate),
             confidenceLabel = base.prediction?.confidenceLabel.orEmpty(),
             nextPeriodRangeText = formatNextPeriodRange(

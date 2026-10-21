@@ -14,6 +14,7 @@ import com.cyclecare.core.domain.CycleRecordValidator
 import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
 import com.cyclecare.core.model.DateRange
+import com.cyclecare.core.model.InsightSnapshot
 import com.cyclecare.core.model.PredictionSnapshot
 import com.cyclecare.core.model.UserProfile
 import java.time.LocalDate
@@ -130,11 +131,12 @@ internal object HomeTags {
     const val REMINDER_DETAIL_CTA = "home_reminder_detail_cta"
     const val INSIGHTS_DETAIL_CTA = "home_insights_detail_cta"
     const val CYCLE_STATUS_SCREEN = "home_cycle_status_screen"
-    const val CYCLE_STATUS_HERO = "home_cycle_status_hero"
-    const val FERTILITY_DETAIL_SCREEN = "home_fertility_detail_screen"
     const val EDITOR_START_DATE = "home_editor_start_date"
     const val EDITOR_END_DATE = "home_editor_end_date"
     const val EDITOR_CYCLE_LENGTH = "home_editor_cycle_length"
+    const val EDITOR_NOTES = "home_editor_notes"
+    const val CYCLE_STATUS_HERO = "home_cycle_status_hero"
+    const val FERTILITY_DETAIL_SCREEN = "home_fertility_detail_screen"
     const val EDITOR_SAVE = "home_editor_save"
 
     fun actionTag(type: HomeQuickActionType): String = "home_action_${type.name}"
@@ -228,9 +230,25 @@ internal fun formatOverdue(days: Int): UiText = when {
     else -> pluralUiText(R.plurals.n_days_past_the_expected_date, days, days)
 }
 
-internal fun formatFertileWindow(range: DateRange?): UiText =
-    range?.let { uiText(R.string.date_range, it.start.format(dashboardDateFormatter), it.endInclusive.format(dashboardDateFormatter)) }
-        ?: uiText(R.string.fertile_window_unavailable)
+/**
+ * The fertile window, framed as an estimate, or an honest absence.
+ *
+ * The snapshot always carries a `fertileWindow`: when the engine
+ * declined to produce one, the mapper fills the field in with a
+ * presentation fallback so the old screens do not crash. That fallback is
+ * not an estimate, so the feature gates on `supportsRange` — the flag
+ * that says whether the engine actually produced a window. Without the
+ * gate a one-cycle user is shown a fertile range the engine never
+ * generated.
+ */
+internal fun formatFertileWindow(range: DateRange?, supportsRange: Boolean): UiText = when {
+    range != null && supportsRange -> uiText(
+        R.string.estimated_fertile_days,
+        range.start.format(dashboardDateFormatter),
+        range.endInclusive.format(dashboardDateFormatter),
+    )
+    else -> uiText(R.string.not_enough_history_for_fertile_days)
+}
 
 internal fun formatDashboardDate(date: LocalDate?): UiText =
     date?.let { UiText.Raw(it.format(dashboardDateFormatter)) } ?: uiText(R.string.unavailable)
@@ -255,14 +273,74 @@ internal fun formatCycleRange(record: CycleRecord?): UiText = when {
         )
 }
 
+/**
+ * The average cycle length the dashboard shows.
+ *
+ * The observed average is the canonical figure: Insights renders the
+ * same number from the same snapshot, so the two screens cannot
+ * disagree about the user's cycle on the same day. They used to, because
+ * Today showed the onboarding baseline while Insights showed what the
+ * logged history actually says.
+ *
+ * The profile baseline and then 28 are the fallbacks for before the
+ * insights have arrived.
+ */
+internal fun resolveAverageCycleLength(
+    insights: InsightSnapshot?,
+    profile: UserProfile?,
+): Int = insights?.averageCycleLength
+    ?: profile?.averageCycleLength
+    ?: 28
+
+/**
+ * Which part of the cycle the user is in.
+ *
+ * The fertile window comes from the engine, not from a fraction of the
+ * cycle. The engine derives it from the ovulation estimate and the
+ * dispersion of the observed history, so no fixed fraction of the cycle
+ * reproduces it, and the Log screen and the calendar used to derive it
+ * differently from each other. The prediction carries the engine's own
+ * window, so the screen reads it rather than recomputing it.
+ *
+ * The window is only shown when the engine produced one. `supportsRange`
+ * is false when the engine declined, and the range in the snapshot is
+ * then a presentation fallback rather than an estimate.
+ *
+ * The remaining labels are fractions of the cycle, which is what they
+ * always were. The fertile band is gone from them: with the window
+ * coming from the engine, there is exactly one derivation.
+ */
+internal fun buildCyclePhaseLabel(
+    cycleDay: Int?,
+    cycleLength: Int,
+    prediction: PredictionSnapshot? = null,
+    today: LocalDate = LocalDate.now(),
+): UiText {
+    if (cycleDay == null) return uiText(R.string.empty_label)
+    val engineWindow = prediction
+        ?.takeIf { it.supportsRange }
+        ?.fertileWindow
+    if (engineWindow != null && !today.isBefore(engineWindow.start) && !today.isAfter(engineWindow.endInclusive)) {
+        return uiText(R.string.fertile_window)
+    }
+    val cycleProgress = cycleDay.toFloat() / cycleLength.toFloat()
+    return when {
+        cycleProgress < 0.15f -> uiText(R.string.early_cycle)
+        cycleProgress < 0.40f -> uiText(R.string.mid_cycle)
+        cycleProgress < 0.85f -> uiText(R.string.late_cycle)
+        else -> uiText(R.string.approaching_next_period)
+    }
+}
+
 internal fun buildHomeCyclePhaseLabel(
     currentCycle: CycleRecord?,
     prediction: PredictionSnapshot?,
     cycleLength: Int,
+    today: LocalDate = LocalDate.now(),
 ): UiText = if (currentCycle != null) {
     uiText(R.string.period_days)
 } else {
-    buildCyclePhaseLabel(prediction?.cycleDay, cycleLength)
+    buildCyclePhaseLabel(prediction?.cycleDay, cycleLength, prediction, today)
 }
 
 internal fun defaultEditorState(

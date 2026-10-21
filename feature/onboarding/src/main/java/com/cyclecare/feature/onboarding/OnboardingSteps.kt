@@ -129,7 +129,7 @@ internal fun OnboardingBaselineStep(
         OnboardingInputBlock(
             icon = Icons.Rounded.CalendarMonth,
             title = stringResource(R.string.last_period_start),
-            description = stringResource(R.string.this_helps_predict_your_next_cycle_accurately),
+            description = stringResource(R.string.this_sets_your_starting_point_for_cycle_estimates),
         ) {
             DateSelectionField(
                 label = uiState.lastPeriodStartLabel,

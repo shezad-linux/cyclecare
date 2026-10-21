@@ -5,6 +5,7 @@ import com.cyclecare.core.model.CycleRecord
 import com.cyclecare.core.model.CycleSource
 import com.cyclecare.core.model.DateRange
 import com.cyclecare.core.domain.CycleRecordValidator
+import com.cyclecare.core.model.InsightSnapshot
 import com.cyclecare.core.model.PredictionSnapshot
 import com.cyclecare.core.model.TrackingGoal
 import com.cyclecare.core.model.UserProfile
@@ -18,13 +19,152 @@ import org.junit.Test
 
 class HomePresentationTest {
     @Test
+    fun fertileWindow_isFramedAsAnEstimate() {
+        val range = DateRange(
+            start = LocalDate.of(2026, 3, 21),
+            endInclusive = LocalDate.of(2026, 3, 26),
+        )
+
+        // Spec 11 §5: a fertile window always reads as an estimate.
+        assertThat(formatFertileWindow(range, supportsRange = true)).isEqualTo(
+            uiText(R.string.estimated_fertile_days, "Mar 21", "Mar 26"),
+        )
+    }
+
+    @Test
+    fun fertileWindow_isAbsentWhenTheEngineProducedNone() {
+        // The snapshot always carries a range: when the engine declined,
+        // the mapper fills the field in with a presentation fallback.
+        // Showing that would put a fertile range on the screen that the
+        // engine never generated.
+        val range = DateRange(
+            start = LocalDate.of(2026, 3, 19),
+            endInclusive = LocalDate.of(2026, 3, 24),
+        )
+
+        assertThat(formatFertileWindow(range, supportsRange = false)).isEqualTo(
+            uiText(R.string.not_enough_history_for_fertile_days),
+        )
+        assertThat(formatFertileWindow(null, supportsRange = false)).isEqualTo(
+            uiText(R.string.not_enough_history_for_fertile_days),
+        )
+    }
+
+    @Test
+    fun averageCycleLength_isTheCanonicalObservedAverage() {
+        // Insights renders `insights.averageCycleLength`. Today used to
+        // render the onboarding baseline, so the two screens could
+        // disagree about the user's cycle on the same day.
+        val insights = InsightSnapshot(
+            averageCycleLength = 31,
+            averagePeriodLength = 5,
+            irregularCycles = false,
+            recentCycleLengths = listOf(30, 31, 32),
+            recentPeriodLengths = listOf(5),
+            minCycleLength = 30,
+            maxCycleLength = 32,
+            cycleWindowLabel = "Based on 3 logged cycles.",
+            hasEnoughCycleData = true,
+            moodCounts = emptyMap(),
+            energyCounts = emptyMap(),
+            painCounts = emptyMap(),
+            dischargeCounts = emptyMap(),
+            phaseHighlights = emptyList(),
+            hasEnoughSymptomData = false,
+            narrativeSummary = "Recent history shows 30 to 32 day cycles.",
+        )
+        val profile = UserProfile(
+            ageBand = AgeBand.Twenties,
+            averageCycleLength = 28,
+            periodLength = 5,
+            lastPeriodStart = LocalDate.of(2026, 3, 11),
+            trackingGoal = TrackingGoal.PeriodPrep,
+            remindersEnabled = true,
+            privacyModeEnabled = true,
+        )
+
+        assertThat(resolveAverageCycleLength(insights, profile)).isEqualTo(31)
+    }
+
+    @Test
+    fun averageCycleLength_fallsBackToTheProfileThenToTwentyEight() {
+        val profile = UserProfile(
+            ageBand = AgeBand.Twenties,
+            averageCycleLength = 28,
+            periodLength = 5,
+            lastPeriodStart = LocalDate.of(2026, 3, 11),
+            trackingGoal = TrackingGoal.PeriodPrep,
+            remindersEnabled = true,
+            privacyModeEnabled = true,
+        )
+
+        assertThat(resolveAverageCycleLength(insights = null, profile = profile)).isEqualTo(28)
+        assertThat(resolveAverageCycleLength(insights = null, profile = null)).isEqualTo(28)
+    }
+
+    @Test
+    fun cyclePhaseLabel_takesTheFertileWindowFromTheEngine() {
+        // The engine derives the window from the ovulation estimate and
+        // the dispersion. A fraction of the cycle cannot reproduce it,
+        // so the screen reads the engine's own window.
+        val today = LocalDate.of(2026, 3, 16)
+        val prediction = PredictionSnapshot(
+            generatedAt = today,
+            cycleDay = 6,
+            nextPeriodDate = today.plusDays(22),
+            ovulationDate = today.plusDays(9),
+            fertileWindow = DateRange(today.minusDays(1), today.plusDays(3)),
+            confidenceLabel = "Moderate range",
+            daysUntilNextPeriod = 22,
+            nextPeriodWindow = DateRange(today.plusDays(20), today.plusDays(24)),
+        )
+
+        assertThat(
+            buildCyclePhaseLabel(
+                cycleDay = 6,
+                cycleLength = 28,
+                prediction = prediction,
+                today = today,
+            ),
+        ).isEqualTo(uiText(R.string.fertile_window))
+    }
+
+    @Test
+    fun cyclePhaseLabel_doesNotClaimAFertileWindowTheEngineNeverProduced() {
+        // Cycle day 14 of 28 is inside the old 0.40-0.60 band, so this
+        // used to read "Fertile window". The engine declined to produce
+        // a window here, so the screen must not invent one.
+        val today = LocalDate.of(2026, 3, 16)
+        val prediction = PredictionSnapshot(
+            generatedAt = today,
+            cycleDay = 14,
+            nextPeriodDate = today.plusDays(14),
+            ovulationDate = today.plusDays(1),
+            fertileWindow = DateRange(today.minusDays(4), today.plusDays(1)),
+            confidenceLabel = "Baseline estimate",
+            daysUntilNextPeriod = 14,
+        )
+
+        assertThat(
+            buildCyclePhaseLabel(
+                cycleDay = 14,
+                cycleLength = 28,
+                prediction = prediction,
+                today = today,
+            ),
+        ).isNotEqualTo(uiText(R.string.fertile_window))
+    }
+
+    @Test
     fun fertileWindow_usesNaturalDashboardDateFormatting() {
         val range = DateRange(
             start = LocalDate.of(2026, 3, 21),
             endInclusive = LocalDate.of(2026, 3, 26),
         )
 
-        assertThat(formatFertileWindow(range)).isEqualTo(uiText(R.string.date_range, "Mar 21", "Mar 26"))
+        assertThat(formatFertileWindow(range, supportsRange = true)).isEqualTo(
+            uiText(R.string.estimated_fertile_days, "Mar 21", "Mar 26"),
+        )
     }
 
     @Test

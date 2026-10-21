@@ -18,6 +18,7 @@ import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -78,7 +79,6 @@ import com.cyclecare.feature.privacy.SecureAuthPreference
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.util.UUID
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -810,7 +810,7 @@ private class TestAppEnvironment(
                 cycleRepository = FakeCycleRepository(emptyList()),
                 symptomRepository = FakeSymptomRepository(emptyList()),
                 predictionRepository = FakePredictionRepository(null),
-                insightRepository = FakeInsightRepository(snapshot = FakeInsightRepository.emptySnapshot()),
+                insightRepository = FakeInsightRepository(lowData = true),
                 reminderRepository = FakeReminderRepository(emptyList()),
                 reminderChannelSettingsRepository = FakeReminderChannelSettingsRepository(),
                 reminderEventsRepository = FakeReminderEventsRepository(),
@@ -825,6 +825,47 @@ private class TestAppEnvironment(
                 scheduler = FakeReminderScheduler(),
             )
         }
+
+        /**
+         * A save that is in flight and cannot complete, so the screen stays
+         * in its saving state for as long as the test needs it to.
+         */
+        fun saving(): TestAppEnvironment = populated(
+            symptomRepository = FakeSymptomRepository(
+                initial = listOf(
+                    SymptomLog(
+                        id = "symptom-1",
+                        date = LocalDate.of(2026, 3, 16),
+                        mood = Mood.Stable,
+                        painLevel = PainLevel.Light,
+                        energyLevel = EnergyLevel.Steady,
+                        dischargeType = DischargeType.Dry,
+                    ),
+                ),
+                hangOnSave = true,
+            ),
+        )
+
+        /** A save that has just completed, so the screen shows its saved state. */
+        fun saved(): TestAppEnvironment = populated()
+
+        /** The input is invalid, so the screen shows its validation message. */
+        fun validationError(): TestAppEnvironment = populated()
+
+        /** An export that is written and never finishes, so the screen shows its working state. */
+        fun exportWorking(): TestAppEnvironment = populated(
+            exportRepository = FakeExportRepository(ExportBehaviour.Hangs),
+        )
+
+        /** An export that has just been written, so the screen shows its saved state. */
+        fun exportSucceeded(): TestAppEnvironment = populated(
+            exportRepository = FakeExportRepository(ExportBehaviour.Succeeds),
+        )
+
+        /** An export that cannot be written, so the screen shows its failure state. */
+        fun exportFailed(): TestAppEnvironment = populated(
+            exportRepository = FakeExportRepository(ExportBehaviour.Fails),
+        )
 
         /** Notifications are not permitted. */
         fun permissionDenied(): TestAppEnvironment {
@@ -847,46 +888,21 @@ private class TestAppEnvironment(
             return environment
         }
 
-        /**
-         * A populated environment whose local writes wait on a shared gate.
-         *
-         * The gate is held open so a screen-level test can open a save and
-         * observe the real "Saving..." state, then complete the gate to
-         * observe the real success state. The screen is never handed a
-         * synthetic state: the ViewModel, the editor and the repository are
-         * all the production ones.
-         */
-        fun gatedSave(gateCompleted: Boolean = false): TestAppEnvironment {
-            val environment = populated()
-            val gate = CompletableDeferred<Unit>()
-            if (gateCompleted) gate.complete(Unit)
-            environment.cycleRepository.writeGate = gate
-            environment.symptomRepository.writeGate = gate
-            return environment
-        }
-
-        /** The export screen with a report write held mid-flight. */
-        fun exportWorking(): TestAppEnvironment = exportEnvironment(gateCompleted = false)
-
-        /** The export screen with a report write that succeeds at once. */
-        fun exportSucceeds(): TestAppEnvironment = exportEnvironment(gateCompleted = true)
-
-        /** The export screen with a report write that fails. */
-        fun exportFails(): TestAppEnvironment {
-            val environment = exportEnvironment(gateCompleted = true)
-            environment.exportRepository.failReports = true
-            return environment
-        }
-
-        private fun exportEnvironment(gateCompleted: Boolean): TestAppEnvironment {
-            val environment = populated()
-            val gate = CompletableDeferred<Unit>()
-            if (gateCompleted) gate.complete(Unit)
-            environment.exportRepository.writeGate = gate
-            return environment
-        }
-
-        fun populated(): TestAppEnvironment {
+        fun populated(
+            symptomRepository: FakeSymptomRepository = FakeSymptomRepository(
+                listOf(
+                    SymptomLog(
+                        id = "symptom-1",
+                        date = LocalDate.of(2026, 3, 16),
+                        mood = Mood.Stable,
+                        painLevel = PainLevel.Light,
+                        energyLevel = EnergyLevel.Steady,
+                        dischargeType = DischargeType.Dry,
+                    ),
+                ),
+            ),
+            exportRepository: FakeExportRepository = FakeExportRepository(),
+        ): TestAppEnvironment {
             val profile = UserProfile(
                 ageBand = AgeBand.Twenties,
                 averageCycleLength = 28,
@@ -904,16 +920,6 @@ private class TestAppEnvironment(
                     cycleLength = 28,
                     source = CycleSource.User,
                     notes = "Initial cycle",
-                ),
-            )
-            val symptoms = listOf(
-                SymptomLog(
-                    id = "symptom-1",
-                    date = LocalDate.of(2026, 3, 16),
-                    mood = Mood.Stable,
-                    painLevel = PainLevel.Light,
-                    energyLevel = EnergyLevel.Steady,
-                    dischargeType = DischargeType.Dry,
                 ),
             )
             val prediction = PredictionSnapshot(
@@ -941,7 +947,7 @@ private class TestAppEnvironment(
             return TestAppEnvironment(
                 profileRepository = FakeProfileRepository(profile),
                 cycleRepository = FakeCycleRepository(cycles),
-                symptomRepository = FakeSymptomRepository(symptoms),
+                symptomRepository = symptomRepository,
                 predictionRepository = FakePredictionRepository(prediction),
                 insightRepository = FakeInsightRepository(),
                 reminderRepository = FakeReminderRepository(reminders),
@@ -954,7 +960,7 @@ private class TestAppEnvironment(
                         appLockEnabled = false,
                     ),
                 ),
-                exportRepository = FakeExportRepository(),
+                exportRepository = exportRepository,
                 scheduler = FakeReminderScheduler(),
                 secureAuthController = FakeSecureAuthController(),
             )
@@ -993,18 +999,10 @@ private class FakeCycleRepository(
     private val state = MutableStateFlow(initial)
     val current: List<CycleRecord> get() = state.value
 
-    /**
-     * When set, a write waits here. This is how a save is held open without
-     * changing the screen's own state model: the screen is on its real
-     * `isSaving` path, the repository simply has not answered yet.
-     */
-    var writeGate: CompletableDeferred<Unit>? = null
-
     override fun observeCycles(): Flow<List<CycleRecord>> =
         if (emitImmediately) state.asStateFlow() else emptyFlow()
 
     override suspend fun upsertCycle(record: CycleRecord) {
-        writeGate?.await()
         state.update { current ->
             current.filterNot { it.id == record.id } + record
         }
@@ -1022,12 +1020,14 @@ private class FakeCycleRepository(
 private class FakeSymptomRepository(
     initial: List<SymptomLog>,
     val emitImmediately: Boolean = true,
+    /**
+     * When true a save never completes, so the screen stays in its
+     * saving state for as long as the test needs it to.
+     */
+    private val hangOnSave: Boolean = false,
 ) : SymptomRepository {
     private val state = MutableStateFlow(initial)
     val current: List<SymptomLog> get() = state.value
-
-    /** See [FakeCycleRepository.writeGate]. */
-    var writeGate: CompletableDeferred<Unit>? = null
 
     override fun observeSymptoms(): Flow<List<SymptomLog>> =
         if (emitImmediately) state.asStateFlow() else emptyFlow()
@@ -1036,7 +1036,9 @@ private class FakeSymptomRepository(
         state.asStateFlow().map { logs -> logs.firstOrNull { it.date == date } }
 
     override suspend fun upsertSymptom(log: SymptomLog) {
-        writeGate?.await()
+        if (hangOnSave) {
+            kotlinx.coroutines.awaitCancellation()
+        }
         state.update { current ->
             current.filterNot { it.id == log.id } + log
         }
@@ -1064,84 +1066,88 @@ private class FakePredictionRepository(
 private class FakeInsightRepository(
     /** When false the flow never emits, so the screen stays in its loading state. */
     val emitImmediately: Boolean = true,
-    snapshot: InsightSnapshot = populatedInsightSnapshot(),
+    /**
+     * When true the snapshot carries no cycle or symptom history, which
+     * is the empty state the Insights screens have to render.
+     */
+    private val lowData: Boolean = false,
 ) : InsightRepository {
-    private val state = MutableStateFlow(snapshot)
+    private val state = MutableStateFlow(
+        if (lowData) lowDataInsightSnapshot() else InsightSnapshot(
+            averageCycleLength = 28,
+            averagePeriodLength = 5,
+            irregularCycles = false,
+            recentCycleLengths = listOf(27, 28, 28, 29, 28, 29),
+            recentPeriodLengths = listOf(5, 5, 4, 5, 5, 5),
+            minCycleLength = 27,
+            maxCycleLength = 29,
+            cycleWindowLabel = "Based on 6 logged cycles from Oct 2025 to Mar 2026.",
+            hasEnoughCycleData = true,
+            moodCounts = mapOf(
+                com.cyclecare.core.model.Mood.Stable to 6,
+                com.cyclecare.core.model.Mood.Low to 2,
+                com.cyclecare.core.model.Mood.Happy to 1,
+                com.cyclecare.core.model.Mood.Irritable to 1,
+                com.cyclecare.core.model.Mood.Anxious to 0,
+            ),
+            energyCounts = mapOf(
+                com.cyclecare.core.model.EnergyLevel.Low to 2,
+                com.cyclecare.core.model.EnergyLevel.Steady to 5,
+                com.cyclecare.core.model.EnergyLevel.High to 1,
+            ),
+            painCounts = mapOf(
+                com.cyclecare.core.model.PainLevel.None to 2,
+                com.cyclecare.core.model.PainLevel.Light to 2,
+                com.cyclecare.core.model.PainLevel.Moderate to 4,
+                com.cyclecare.core.model.PainLevel.Strong to 1,
+            ),
+            dischargeCounts = mapOf(
+                com.cyclecare.core.model.DischargeType.None to 1,
+                com.cyclecare.core.model.DischargeType.Dry to 1,
+                com.cyclecare.core.model.DischargeType.Creamy to 2,
+                com.cyclecare.core.model.DischargeType.Sticky to 1,
+                com.cyclecare.core.model.DischargeType.EggWhite to 3,
+            ),
+            phaseHighlights = listOf(
+                com.cyclecare.core.model.InsightPhaseHighlight(
+                    phase = com.cyclecare.core.model.InsightPhase.Period,
+                    title = "Period phase pattern",
+                    description = "Logged 5 entries during period days. Moderate pain and low energy show up most often.",
+                ),
+            ),
+            hasEnoughSymptomData = true,
+            narrativeSummary = "Recent history shows 27 to 29 day cycles across 6 logged cycles.",
+        ),
+    )
 
     override fun observeInsights(): Flow<InsightSnapshot> =
         if (emitImmediately) state.asStateFlow() else emptyFlow()
-
-    companion object {
-        /**
-         * The sparse-history snapshot. The insights screens gate their
-         * content on `hasEnoughCycleData` / `hasEnoughSymptomData`, so this
-         * is what produces their designed empty and locked states.
-         */
-        fun emptySnapshot(): InsightSnapshot = InsightSnapshot(
-            averageCycleLength = 0,
-            averagePeriodLength = 0,
-            irregularCycles = false,
-            recentCycleLengths = emptyList(),
-            recentPeriodLengths = emptyList(),
-            minCycleLength = 0,
-            maxCycleLength = 0,
-            cycleWindowLabel = "No logged cycles yet.",
-            hasEnoughCycleData = false,
-            moodCounts = emptyMap(),
-            energyCounts = emptyMap(),
-            painCounts = emptyMap(),
-            dischargeCounts = emptyMap(),
-            phaseHighlights = emptyList(),
-            hasEnoughSymptomData = false,
-            narrativeSummary = "Log a few days to see patterns.",
-        )
-    }
 }
 
-private fun populatedInsightSnapshot(): InsightSnapshot = InsightSnapshot(
+/**
+ * The empty insights snapshot.
+ *
+ * One logged cycle is not two, so there is no cycle interval to average
+ * and no symptom history to group. The screens have to say so rather
+ * than show a chart of nothing.
+ */
+private fun lowDataInsightSnapshot() = InsightSnapshot(
     averageCycleLength = 28,
     averagePeriodLength = 5,
     irregularCycles = false,
-    recentCycleLengths = listOf(27, 28, 28, 29, 28, 29),
-    recentPeriodLengths = listOf(5, 5, 4, 5, 5, 5),
-    minCycleLength = 27,
-    maxCycleLength = 29,
-    cycleWindowLabel = "Based on 6 logged cycles from Oct 2025 to Mar 2026.",
-    hasEnoughCycleData = true,
-    moodCounts = mapOf(
-        com.cyclecare.core.model.Mood.Stable to 6,
-        com.cyclecare.core.model.Mood.Low to 2,
-        com.cyclecare.core.model.Mood.Happy to 1,
-        com.cyclecare.core.model.Mood.Irritable to 1,
-        com.cyclecare.core.model.Mood.Anxious to 0,
-    ),
-    energyCounts = mapOf(
-        com.cyclecare.core.model.EnergyLevel.Low to 2,
-        com.cyclecare.core.model.EnergyLevel.Steady to 5,
-        com.cyclecare.core.model.EnergyLevel.High to 1,
-    ),
-    painCounts = mapOf(
-        com.cyclecare.core.model.PainLevel.None to 2,
-        com.cyclecare.core.model.PainLevel.Light to 2,
-        com.cyclecare.core.model.PainLevel.Moderate to 4,
-        com.cyclecare.core.model.PainLevel.Strong to 1,
-    ),
-    dischargeCounts = mapOf(
-        com.cyclecare.core.model.DischargeType.None to 1,
-        com.cyclecare.core.model.DischargeType.Dry to 1,
-        com.cyclecare.core.model.DischargeType.Creamy to 2,
-        com.cyclecare.core.model.DischargeType.Sticky to 1,
-        com.cyclecare.core.model.DischargeType.EggWhite to 3,
-    ),
-    phaseHighlights = listOf(
-        com.cyclecare.core.model.InsightPhaseHighlight(
-            phase = com.cyclecare.core.model.InsightPhase.Period,
-            title = "Period phase pattern",
-            description = "Logged 5 entries during period days. Moderate pain and low energy show up most often.",
-        ),
-    ),
-    hasEnoughSymptomData = true,
-    narrativeSummary = "Recent history shows 27 to 29 day cycles across 6 logged cycles.",
+    recentCycleLengths = emptyList(),
+    recentPeriodLengths = emptyList(),
+    minCycleLength = 28,
+    maxCycleLength = 28,
+    cycleWindowLabel = "Log two full cycles to unlock cycle trend charts.",
+    hasEnoughCycleData = false,
+    moodCounts = emptyMap(),
+    energyCounts = emptyMap(),
+    painCounts = emptyMap(),
+    dischargeCounts = emptyMap(),
+    phaseHighlights = emptyList(),
+    hasEnoughSymptomData = false,
+    narrativeSummary = "",
 )
 
 private class FakeReminderRepository(
@@ -1160,6 +1166,12 @@ private class FakeReminderRepository(
         }
     }
 
+    /**
+     * Silences or un-silences every rule of one type.
+     *
+     * Spec 13 §9 silences a type rather than a single rule, so the fake
+     * has to do the same or a test of auto-disable would not see it.
+     */
     override suspend fun setRuleTypeEnabled(type: ReminderType, enabled: Boolean) {
         state.update { current ->
             current.map { rule ->
@@ -1249,16 +1261,30 @@ private class FakeReminderEventsRepository : ReminderEventsRepository {
             .filter { it.deliveredAt.toInstant().toEpochMilli() >= sinceEpochMillis }
             .maxOfOrNull { it.deliveredAt.toInstant().toEpochMilli() }
 
+    /**
+     * Inserts an event only when its id is not already there.
+     *
+     * Spec 13 §17.6: retrying a delivery must not produce a duplicate
+     * notification, so the repository has to refuse a second event with
+     * the same id rather than replacing it.
+     */
     override suspend fun insertIfAbsent(event: ReminderEvent): Boolean {
-        val exists = state.value.any { it.id == event.id }
-        if (!exists) recordEvent(event)
-        return !exists
+        var inserted = false
+        state.update { current ->
+            if (current.any { it.id == event.id }) {
+                current
+            } else {
+                inserted = true
+                listOf(event) + current
+            }
+        }
+        return inserted
     }
 
     override suspend fun countDeliveredBetween(fromEpochMillis: Long, toEpochMillis: Long): Int =
-        state.value.count {
-            val millis = it.deliveredAt.toInstant().toEpochMilli()
-            millis >= fromEpochMillis && millis < toEpochMillis
+        state.value.count { event ->
+            val at = event.deliveredAt.toInstant().toEpochMilli()
+            at >= fromEpochMillis && at <= toEpochMillis
         }
 
     override suspend fun countDeliveredForType(type: ReminderType): Int =
@@ -1413,23 +1439,33 @@ private class FakeSecureAuthController(
     }
 }
 
-private class FakeExportRepository : ExportRepository {
-    /** When set, a report write waits here. See [FakeCycleRepository.writeGate]. */
-    var writeGate: CompletableDeferred<Unit>? = null
+/**
+ * What the export repository does when the screen asks for a report.
+ */
+private enum class ExportBehaviour {
+    /** The report is written and the screen shows its saved state. */
+    Succeeds,
 
-    /** When true a report write throws, which is the export screen's failure state. */
-    var failReports: Boolean = false
+    /** The report cannot be written and the screen shows its failure state. */
+    Fails,
 
-    override suspend fun createReport(format: ExportFormat): ExportArtifact {
-        writeGate?.await()
-        if (failReports) error("export failed")
-        return ExportArtifact(
+    /** The write never completes, so the screen stays in its working state. */
+    Hangs,
+}
+
+private class FakeExportRepository(
+    private val behaviour: ExportBehaviour = ExportBehaviour.Succeeds,
+) : ExportRepository {
+    override suspend fun createReport(format: ExportFormat): ExportArtifact = when (behaviour) {
+        ExportBehaviour.Succeeds -> ExportArtifact(
             format = format,
             displayName = "test.${format.name.lowercase()}",
             absolutePath = "/tmp/test",
             mimeType = "text/plain",
             generatedAt = LocalDate.now(),
         )
+        ExportBehaviour.Fails -> throw IllegalStateException("the report could not be written")
+        ExportBehaviour.Hangs -> kotlinx.coroutines.awaitCancellation()
     }
 
     override suspend fun createEncryptedBackup(passphrase: CharArray): ExportArtifact =
@@ -1574,77 +1610,14 @@ internal enum class ScreenState {
     /** A notification channel has been switched off. */
     CHANNEL_DISABLED,
 
-    /** An export report write is in flight. */
+    /** An export is in flight and has not finished. */
     EXPORT_WORKING,
 
-    /** An export report write has completed. */
-    EXPORT_SUCCESS,
+    /** An export has just been written. */
+    EXPORT_SUCCEEDED,
 
-    /** An export report write has failed. */
-    EXPORT_FAILURE,
-}
-
-/**
- * The pieces of a state a screen-level test needs.
- *
- * A state produced by a write the test has to hold open and then release
- * exposes that write's gate, because the gate lives on the fake repository.
- * The gates are null when the state does not involve a held write.
- */
-internal class ScreenStateEnvironment(
-    val container: AppContainer,
-    val secureAuthController: SecureAuthController,
-    val cycleWriteGate: CompletableDeferred<Unit>? = null,
-    val symptomWriteGate: CompletableDeferred<Unit>? = null,
-    val exportWriteGate: CompletableDeferred<Unit>? = null,
-)
-
-/**
- * The environment for a state, as the app composable consumes it plus the
- * write gates a test may have to release.
- *
- * The state is produced by the fake repositories, so the screen under test
- * goes through its real ViewModel and its real state model. Nothing is
- * faked at the composable, and there is no production backdoor.
- */
-internal fun stateEnvironmentFull(state: ScreenState): ScreenStateEnvironment {
-    fun gates(environment: TestAppEnvironment): ScreenStateEnvironment =
-        ScreenStateEnvironment(
-            container = environment.container,
-            secureAuthController = environment.secureAuthController,
-            cycleWriteGate = environment.cycleRepository.writeGate,
-            symptomWriteGate = environment.symptomRepository.writeGate,
-            exportWriteGate = environment.exportRepository.writeGate,
-        )
-
-    return when (state) {
-        // The repositories never emit, so the screen stays in its initial
-        // local loading state.
-        ScreenState.LOADING -> gates(TestAppEnvironment.loading())
-
-        ScreenState.CONTENT -> gates(TestAppEnvironment.populated())
-
-        ScreenState.EMPTY -> gates(TestAppEnvironment.noHistory())
-
-        // The write is held on a gate that the test has not released.
-        ScreenState.SAVING -> gates(TestAppEnvironment.gatedSave(gateCompleted = false))
-
-        // The write's gate is already open, so saving runs to completion.
-        ScreenState.SAVED -> gates(TestAppEnvironment.gatedSave(gateCompleted = true))
-
-        // The editor is populated and valid; the test supplies invalid input.
-        ScreenState.VALIDATION_ERROR -> gates(TestAppEnvironment.populated())
-
-        ScreenState.PERMISSION_DENIED -> gates(TestAppEnvironment.permissionDenied())
-
-        ScreenState.CHANNEL_DISABLED -> gates(TestAppEnvironment.channelDisabled())
-
-        ScreenState.EXPORT_WORKING -> gates(TestAppEnvironment.exportWorking())
-
-        ScreenState.EXPORT_SUCCESS -> gates(TestAppEnvironment.exportSucceeds())
-
-        ScreenState.EXPORT_FAILURE -> gates(TestAppEnvironment.exportFails())
-    }
+    /** An export could not be written. */
+    EXPORT_FAILED,
 }
 
 /**
@@ -1657,6 +1630,56 @@ internal fun stateEnvironmentFull(state: ScreenState): ScreenStateEnvironment {
 internal fun stateEnvironment(
     state: ScreenState,
 ): Pair<AppContainer, SecureAuthController> {
-    val environment = stateEnvironmentFull(state)
+    val environment = when (state) {
+        // The repositories never emit, so the screen stays in its initial
+        // local loading state.
+        ScreenState.LOADING -> TestAppEnvironment.loading()
+
+        ScreenState.CONTENT -> TestAppEnvironment.populated()
+
+        ScreenState.EMPTY -> TestAppEnvironment.noHistory()
+
+        ScreenState.SAVING -> TestAppEnvironment.saving()
+
+        ScreenState.SAVED -> TestAppEnvironment.saved()
+
+        ScreenState.VALIDATION_ERROR -> TestAppEnvironment.validationError()
+
+        ScreenState.PERMISSION_DENIED -> TestAppEnvironment.permissionDenied()
+
+        ScreenState.CHANNEL_DISABLED -> TestAppEnvironment.channelDisabled()
+
+        ScreenState.EXPORT_WORKING -> TestAppEnvironment.exportWorking()
+
+        ScreenState.EXPORT_SUCCEEDED -> TestAppEnvironment.exportSucceeded()
+
+        ScreenState.EXPORT_FAILED -> TestAppEnvironment.exportFailed()
+    }
     return environment.container to environment.secureAuthController
+}
+
+/**
+ * Clicks a bottom navigation tab and waits for the navigation to land.
+ *
+ * The interstitial gate reads persisted state before the navigation
+ * happens, so the tab does not change inside the click handler: it
+ * changes when the read returns, on a background thread, and the
+ * navigation is then posted to the main thread. A test that clicks a
+ * tab and immediately asserts on the screen it expects is racing that,
+ * and loses sometimes.
+ *
+ * The tab announces its selected state, so waiting for the selection to
+ * change is the signal that the destination is on screen.
+ */
+internal fun <A : androidx.activity.ComponentActivity> AndroidComposeTestRule<*, A>.openTabAndAwait(
+    route: String,
+) {
+    onNodeWithTag(navTag(route)).performClick()
+    waitUntil(10_000) {
+        onAllNodes(
+            hasTestTag(navTag(route)) and
+                SemanticsMatcher.expectValue(SemanticsProperties.Selected, true),
+        ).fetchSemanticsNodes().isNotEmpty()
+    }
+    waitForIdle()
 }

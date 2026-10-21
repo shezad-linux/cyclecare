@@ -22,13 +22,13 @@
     <string name="preferences_subtitle">Choose the support you want active when your dashboard opens.</string>
     <string name="private_cycle_tracking">Private cycle tracking</string>
     <string name="private_tracking_subtitle">Set your baseline once and keep everything on-device by default.</string>
-    <string name="saving">Saving...</string>
+    <string name="saving">Saving…</string>
     <string name="smart_reminders">Smart reminders</string>
     <string name="smart_reminders_description">Get period prep, daily check-ins, and conception-aware fertile-window or ovulation reminders. Late-period reminders can be enabled later in Settings.</string>
     <string name="start_tracking_my_cycle">Start tracking my cycle</string>
     <string name="step_x_of_2">Step %1$d of 2</string>
     <string name="tap_to_choose_a_date">Tap to choose a date</string>
-    <string name="this_helps_predict_your_next_cycle_accurately">This helps predict your next cycle accurately.</string>
+    <string name="this_sets_your_starting_point_for_cycle_estimates">This sets your starting point for cycle estimates. Dates can vary as you log more.</string>
     <string name="typical_cycle_length">Typical cycle length</string>
     <string name="typical_period_length">Typical period length</string>
     <string name="used_to_tailor_cycle_predictions_and_insights">Used to tailor cycle predictions and insights.</string>

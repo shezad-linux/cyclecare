@@ -517,7 +517,9 @@ internal fun EditCycleSheet(
                 OutlinedTextField(
                     value = editor.notes,
                     onValueChange = onNotesChanged,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(HomeTags.EDITOR_NOTES),
                     minLines = 3,
                     label = { Text(stringResource(R.string.notes_label)) },
                 )

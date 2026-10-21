@@ -59,6 +59,17 @@ data class LoggingUiState(
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
     val streakLabel: UiText = pluralUiText(R.plurals.streak_days, 0, 0),
+    /**
+     * Days until the engine's fertile window starts, or null when the
+     * engine has not produced a window.
+     *
+     * This used to be a hardcoded cycle day 12, which is a third
+     * derivation of the fertile window that had nothing to do with the
+     * engine's. The engine derives the window from the ovulation estimate
+     * and the dispersion of the observed history, so the countdown is
+     * read from the engine's own window.
+     */
+    val fertileWindowStartsInDays: Int? = null,
     val cycleScore: Int = 80,
     val hasYesterdayEntry: Boolean = false,
 )
@@ -160,22 +171,58 @@ enum class CyclePhase {
     APPROACHING_PERIOD,
 }
 
+/**
+ * Which part of the cycle the user is in.
+ *
+ * The fertile window is the engine's, read from the prediction rather
+ * than recomputed from a fraction of the cycle. The engine derives it
+ * from the ovulation estimate and the dispersion of the observed
+ * history, so a fixed fraction cannot reproduce it, and the Log screen
+ * and the Today screen used to disagree about which days it covered.
+ *
+ * The window is only used when the engine produced one: `supportsRange`
+ * is false when the engine declined, and the range carried in the
+ * snapshot is then a presentation fallback rather than an estimate.
+ */
 private fun resolveCyclePhase(
     cycleDay: Int?,
     cycleLength: Int,
     heroMode: PeriodHeroMode,
+    prediction: PredictionSnapshot?,
+    today: LocalDate,
 ): CyclePhase? {
     if (heroMode == PeriodHeroMode.Active) return CyclePhase.PERIOD_DAYS
     if (cycleDay == null) return null
+    val engineWindow = prediction
+        ?.takeIf { it.supportsRange }
+        ?.fertileWindow
+    if (engineWindow != null && !today.isBefore(engineWindow.start) && !today.isAfter(engineWindow.endInclusive)) {
+        return CyclePhase.FERTILE_WINDOW
+    }
     val cycleProgress = cycleDay.toFloat() / cycleLength.toFloat()
     return when {
         cycleProgress < 0.15f -> CyclePhase.EARLY
         cycleProgress < 0.40f -> CyclePhase.MID
-        cycleProgress < 0.60f -> CyclePhase.FERTILE_WINDOW
         cycleProgress < 0.85f -> CyclePhase.LATE
         else -> CyclePhase.APPROACHING_PERIOD
     }
 }
+
+/**
+ * Days until the engine's fertile window opens, or null.
+ *
+ * Null when the engine produced no window, or when the window has
+ * already started, because "starts in zero days" is not a countdown.
+ */
+private fun daysUntilFertileWindow(
+    prediction: PredictionSnapshot?,
+    today: LocalDate,
+): Int? = prediction
+    ?.takeIf { it.supportsRange }
+    ?.fertileWindow
+    ?.start
+    ?.let { start -> java.time.temporal.ChronoUnit.DAYS.between(today, start).toInt() }
+    ?.takeIf { it > 0 }
 
 internal fun CyclePhase.displayKey(): UiText = when (this) {
     CyclePhase.PERIOD_DAYS -> uiText(R.string.cycle_phase_period_days)
@@ -359,8 +406,9 @@ internal fun buildLoggingUiState(
     return LoggingUiState(
         dateLabel = buildLogDateLabel(today),
         cycleProgressLabel = buildCycleProgressLabel(profile, prediction),
-        cyclePhase = resolveCyclePhase(cycleDay, cycleLength, heroMode),
+        cyclePhase = resolveCyclePhase(cycleDay, cycleLength, heroMode, prediction, today),
         cycleDay = cycleDay,
+        fertileWindowStartsInDays = daysUntilFertileWindow(prediction, today),
         heroMode = heroMode,
         heroProgress = buildCycleProgressRatio(profile, prediction),
         existingEntryId = editor.existingEntryId,
@@ -432,23 +480,14 @@ internal fun buildSmartLoggingInsight(
     uiState: LoggingUiState,
     // Defaults read the structured values off the state, never the
     // formatted label, so existing call sites stay correct.
-    cycleDay: Int? = uiState.cycleDay,
     cyclePhase: CyclePhase? = uiState.cyclePhase,
+    fertileWindowStartsInDays: Int? = uiState.fertileWindowStartsInDays,
 ): UiText {
-    // The cycle day used to be parsed back out of the formatted
-    // "Day N / M" label. Reordering or translating that label would make
-    // toIntOrNull() return null and silently disable the countdown, so
-    // it is now carried as data.
-    val daysUntilFertile = cycleDay?.let { day ->
-        val fertileStart = 12
-        if (day < fertileStart) fertileStart - day else null
-    }
-
     return when {
         uiState.heroMode == PeriodHeroMode.Active -> uiText(R.string.hero_insight_active_period)
         cyclePhase == CyclePhase.FERTILE_WINDOW -> uiText(R.string.hero_insight_fertile_window)
-        cyclePhase == CyclePhase.EARLY && daysUntilFertile != null ->
-            pluralUiText(R.plurals.fertile_window_starts_in_days, daysUntilFertile, daysUntilFertile)
+        cyclePhase == CyclePhase.EARLY && fertileWindowStartsInDays != null ->
+            pluralUiText(R.plurals.fertile_window_starts_in_days, fertileWindowStartsInDays, fertileWindowStartsInDays)
         cyclePhase == CyclePhase.LATE -> uiText(R.string.hero_insight_late_cycle)
         cyclePhase == CyclePhase.MID -> uiText(R.string.hero_insight_mid_cycle)
         cyclePhase == CyclePhase.APPROACHING_PERIOD -> uiText(R.string.hero_insight_approaching_period)

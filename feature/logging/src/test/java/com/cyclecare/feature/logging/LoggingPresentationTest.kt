@@ -14,6 +14,7 @@ import com.cyclecare.core.model.TrackingGoal
 import com.cyclecare.core.model.UserProfile
 import com.cyclecare.core.designsystem.PeriodHeroMode
 import com.cyclecare.core.designsystem.text.uiText
+import com.cyclecare.core.designsystem.text.pluralUiText
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
 import java.util.Locale
@@ -179,4 +180,113 @@ class LoggingPresentationTest {
             ),
         ).isNull()
     }
+
+    @Test
+    fun `the fertile window phase comes from the engine window`() {
+        // The engine derives the window from the ovulation estimate and
+        // the dispersion of the observed history. A fixed fraction of the
+        // cycle cannot reproduce it, and the Log screen and the Today
+        // screen used to disagree about which days it covered.
+        val prediction = predictionWith(
+            cycleDay = 6,
+            fertileWindow = DateRange(today.minusDays(1), today.plusDays(3)),
+            supportsRange = true,
+        )
+
+        val uiState = buildLoggingUiState(
+            today = today,
+            profile = profile(),
+            prediction = prediction,
+            todayEntry = null,
+            editor = buildEditorState(entry = null, hydrationKey = "new:$today"),
+            saveMessage = null,
+            isSaving = false,
+        )
+
+        assertThat(uiState.cyclePhase).isEqualTo(CyclePhase.FERTILE_WINDOW)
+        assertThat(buildSmartLoggingInsight(uiState)).isEqualTo(uiText(R.string.hero_insight_fertile_window))
+    }
+
+    @Test
+    fun `no fertile window is claimed when the engine produced none`() {
+        // The snapshot always carries a range: the mapper fills it in
+        // when the engine declined. Showing that would put a fertile
+        // window on the screen that the engine never generated.
+        val prediction = predictionWith(
+            cycleDay = 14,
+            fertileWindow = DateRange(today.minusDays(4), today.plusDays(1)),
+            supportsRange = false,
+        )
+
+        val uiState = buildLoggingUiState(
+            today = today,
+            profile = profile(),
+            prediction = prediction,
+            todayEntry = null,
+            editor = buildEditorState(entry = null, hydrationKey = "new:$today"),
+            saveMessage = null,
+            isSaving = false,
+        )
+
+        assertThat(uiState.cyclePhase).isNotEqualTo(CyclePhase.FERTILE_WINDOW)
+        assertThat(uiState.fertileWindowStartsInDays).isNull()
+    }
+
+    @Test
+    fun `the fertile window countdown comes from the engine window`() {
+        // The countdown used to be a hardcoded cycle day 12, which was a
+        // third derivation of the fertile window and had nothing to do
+        // with the engine's.
+        val prediction = predictionWith(
+            cycleDay = 4,
+            fertileWindow = DateRange(today.plusDays(4), today.plusDays(9)),
+            supportsRange = true,
+        )
+
+        // A short period length, so the hero is in the predicted mode at
+        // cycle day 4 rather than the active-period one.
+        val uiState = buildLoggingUiState(
+            today = today,
+            profile = profile(periodLength = 3),
+            prediction = prediction,
+            todayEntry = null,
+            editor = buildEditorState(entry = null, hydrationKey = "new:$today"),
+            saveMessage = null,
+            isSaving = false,
+        )
+
+        assertThat(uiState.fertileWindowStartsInDays).isEqualTo(4)
+        assertThat(buildSmartLoggingInsight(uiState)).isEqualTo(
+            pluralUiText(R.plurals.fertile_window_starts_in_days, 4, 4),
+        )
+    }
+
+    private fun profile(periodLength: Int = 5) = UserProfile(
+        ageBand = AgeBand.Twenties,
+        averageCycleLength = 28,
+        periodLength = periodLength,
+        lastPeriodStart = today.minusDays(5),
+        trackingGoal = TrackingGoal.SymptomAwareness,
+        remindersEnabled = true,
+        privacyModeEnabled = true,
+    )
+
+    private fun predictionWith(
+        cycleDay: Int,
+        fertileWindow: DateRange,
+        supportsRange: Boolean,
+    ) = PredictionSnapshot(
+        generatedAt = today,
+        cycleDay = cycleDay,
+        nextPeriodDate = today.plusDays((28 - cycleDay).toLong()),
+        ovulationDate = today.plusDays((14 - cycleDay).toLong()),
+        fertileWindow = fertileWindow,
+        confidenceLabel = if (supportsRange) "Moderate range" else "Baseline estimate",
+        daysUntilNextPeriod = 28 - cycleDay,
+        nextPeriodWindow = if (supportsRange) {
+            DateRange(today.plusDays((26 - cycleDay).toLong()), today.plusDays((30 - cycleDay).toLong()))
+        } else {
+            null
+        },
+    )
 }

@@ -9,7 +9,7 @@
     <string name="ovulation_estimate">Ovulation estimate</string>
     <string name="save_changes">Save changes</string>
     <string name="save_cycle">Save cycle</string>
-    <string name="saving">Saving...</string>
+    <string name="saving">Saving…</string>
     <string name="start_a_new_period_today_or_expand_the_details_if_you_need_t">Start a new period today or expand the details if you need to correct dates before saving.</string>
     <string name="update_the_cycle_entry_covering_today_changes_stay_local_and">Update the cycle entry covering today. Changes stay local and refresh the timeline immediately.</string>
     <string name="use_your_saved_baseline_and_period_length_for_a_quick_local_">Use your saved baseline and period length for a quick local entry.</string>
@@ -17,6 +17,14 @@
     <string name="prediction_unavailable">Prediction unavailable</string>
     <string name="from_your_setup">From your setup</string>
     <string name="fertile_window_unavailable">Fertile window unavailable</string>
+    <!--
+      The fertile window is an estimate, and the framing says so on every
+      surface that shows one. Spec 11 §5 requires "Estimated fertile days:
+      ... This is not a contraceptive method." for a fertile window, always.
+    -->
+    <string name="estimated_fertile_days">Estimated fertile days: %1$s – %2$s</string>
+    <string name="not_enough_history_for_fertile_days">Not enough history yet to estimate fertile days.</string>
+    <string name="not_a_contraceptive_method">This is not a contraceptive method.</string>
     <string name="unavailable">Unavailable</string>
     <string name="based_on_your_history">Based on your history</string>
     <string name="empty_label"></string>

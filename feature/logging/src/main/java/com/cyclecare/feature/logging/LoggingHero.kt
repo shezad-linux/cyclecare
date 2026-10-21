@@ -62,7 +62,6 @@ internal fun LoggingHeroCard(
             if (uiState.cyclePhase != null) {
                 val smartInsight = buildSmartLoggingInsight(
                     uiState,
-                    uiState.cycleDay,
                     uiState.cyclePhase,
                 )
                 Text(

@@ -27,6 +27,14 @@ class CalendarEstimateFramingTest {
             start = LocalDate.of(2026, 3, 19),
             endInclusive = LocalDate.of(2026, 3, 24),
         ),
+        // The calendar gates the fertile marking on `supportsRange`,
+        // which is derived from the next-period window. Without one the
+        // engine declined to estimate a range, and the calendar must not
+        // mark fertile days it never estimated.
+        nextPeriodWindow = DateRange(
+            start = LocalDate.of(2026, 4, 6),
+            endInclusive = LocalDate.of(2026, 4, 10),
+        ),
         confidenceLabel = "Narrow range",
         daysUntilNextPeriod = 23,
     )

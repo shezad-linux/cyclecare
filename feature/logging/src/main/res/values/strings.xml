@@ -52,9 +52,9 @@
     <string name="hero_insight_approaching_period">Period expected soon. Note any symptoms you notice.</string>
     <string name="hero_insight_default">Logging symptoms helps improve your predictions over time.</string>
     <string name="hero_insight_existing_entry">Your entry for today is saved. Update anytime.</string>
-    <string name="hero_insight_fertile_window">You\'re in your fertile window. Logging symptoms helps track patterns.</string>
+    <string name="hero_insight_fertile_window">You may be in your estimated fertile window. Logging symptoms helps track patterns.</string>
     <string name="hero_insight_late_cycle">Period expected soon. Logging symptoms helps track regularity.</string>
-    <string name="hero_insight_mid_cycle">Mid cycle phase. Fertile window approaching in a few days.</string>
+    <string name="hero_insight_mid_cycle">Mid cycle phase. Logging symptoms helps track patterns.</string>
     <string name="mood_anxious">Anxious</string>
     <string name="mood_happy">Happy</string>
     <string name="mood_irritable">Irritable</string>

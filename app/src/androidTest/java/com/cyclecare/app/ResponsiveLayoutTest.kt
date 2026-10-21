@@ -143,7 +143,7 @@ class ResponsiveLayoutTest {
         widths.forEach { widthDp ->
             listOf(false, true).forEach { landscape ->
                 renderTabs(widthDp, landscape)
-                composeRule.onNodeWithTag(navTag("calendar")).performClick()
+                composeRule.openTabAndAwait("calendar")
                 composeRule.waitForIdle()
                 composeRule.onNodeWithTag("calendar_scroll").assertIsDisplayed()
                 // On very short viewports the next-month control may not fit;

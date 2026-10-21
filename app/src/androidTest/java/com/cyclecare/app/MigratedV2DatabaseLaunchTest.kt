@@ -96,7 +96,7 @@ class MigratedV2DatabaseLaunchTest {
         // The migrated cycle record is rendered with the identifier it
         // had in the old schema, which is what a migration that lost or
         // renamed rows could not do.
-        composeRule.onNodeWithTag(navTag("calendar")).performClick()
+        composeRule.openTabAndAwait("calendar")
         composeRule.waitForIdle()
         composeRule.onNodeWithTag("calendar_scroll")
             .performScrollToNode(hasTestTag("calendar_history_migrated-cycle-1"))
@@ -108,7 +108,7 @@ class MigratedV2DatabaseLaunchTest {
         // activity is destroyed trips a lifecycle assertion inside
         // Navigation. Leaving the app on its start destination keeps
         // the teardown ordinary.
-        composeRule.onNodeWithTag(navTag("home")).performClick()
+        composeRule.openTabAndAwait("home")
         composeRule.waitForIdle()
     }
 

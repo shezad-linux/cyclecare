@@ -95,7 +95,7 @@ class FontScaleAccessibilityTest {
     @Test
     fun calendarRendersAt200PercentFontScale() {
         renderHome(2.0f)
-        composeRule.onNodeWithTag(navTag("calendar")).performClick()
+        composeRule.openTabAndAwait("calendar")
         composeRule.waitForIdle()
         composeRule.onNodeWithTag("calendar_scroll").assertIsDisplayed()
         // At 200% the header card and the legend chips fill the first
@@ -110,7 +110,7 @@ class FontScaleAccessibilityTest {
     @Test
     fun logRendersAt200PercentFontScale() {
         renderHome(2.0f)
-        composeRule.onNodeWithTag(navTag("log")).performClick()
+        composeRule.openTabAndAwait("log")
         composeRule.waitForIdle()
         composeRule.onNodeWithTag("logging_list").assertIsDisplayed()
         composeRule.onNodeWithText("Save today's entry").assertIsDisplayed()
@@ -120,7 +120,7 @@ class FontScaleAccessibilityTest {
     @Test
     fun insightsRendersAt200PercentFontScale() {
         renderHome(2.0f)
-        composeRule.onNodeWithTag(navTag("insights")).performClick()
+        composeRule.openTabAndAwait("insights")
         composeRule.waitForIdle()
         composeRule.onNodeWithTag("insights_overview").assertIsDisplayed()
         assertNoHorizontalOverflow()

@@ -62,6 +62,12 @@ class HomeEstimateFramingTest {
         // The engine declines to emit a window when the history is too
         // thin. The screen must say so rather than draw a window of its
         // own.
-        assertThat(formatFertileWindow(null)).isEqualTo(uiText(R.string.fertile_window_unavailable))
+        // The helper takes the flag as well as the window, because a
+        // window the engine never produced must not be drawn even when
+        // one is present on the snapshot.
+        assertThat(formatFertileWindow(null, supportsRange = false))
+            .isEqualTo(uiText(R.string.not_enough_history_for_fertile_days))
+        assertThat(formatFertileWindow(null, supportsRange = true))
+            .isEqualTo(uiText(R.string.not_enough_history_for_fertile_days))
     }
 }

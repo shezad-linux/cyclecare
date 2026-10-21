@@ -58,10 +58,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -104,6 +107,25 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 internal const val IsoDateFormatHint = "YYYY-MM-DD"
+
+/**
+ * Mirrors a directional glyph when the layout is right to left.
+ *
+ * The material icon set's chevrons are not auto-mirrored, and the month
+ * navigation is directional: in right to left the previous-month control
+ * is the right-hand one, so a chevron that still points left would send
+ * the user the wrong way. The material set's auto-mirrored icons do not
+ * include the chevrons, so the glyph is flipped here.
+ */
+@Composable
+private fun Modifier.mirroredInRightToLeft(): Modifier {
+    val layoutDirection = LocalLayoutDirection.current
+    return if (layoutDirection == LayoutDirection.Rtl) {
+        this.scale(scaleX = -1f, scaleY = 1f)
+    } else {
+        this
+    }
+}
 
 @Composable
 internal fun CalendarScreen(
@@ -170,7 +192,11 @@ internal fun CalendarScreen(
                         onClick = onPreviousMonth,
                         modifier = Modifier.testTag(CalendarTags.PREVIOUS_MONTH),
                     ) {
-                        Icon(Icons.Rounded.ChevronLeft, contentDescription = stringResource(R.string.previous_month))
+                        Icon(
+                        Icons.Rounded.ChevronLeft,
+                        contentDescription = stringResource(R.string.previous_month),
+                        modifier = Modifier.mirroredInRightToLeft(),
+                    )
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
@@ -191,7 +217,11 @@ internal fun CalendarScreen(
                         onClick = onNextMonth,
                         modifier = Modifier.testTag(CalendarTags.NEXT_MONTH),
                     ) {
-                        Icon(Icons.Rounded.ChevronRight, contentDescription = stringResource(R.string.next_month))
+                        Icon(
+                            Icons.Rounded.ChevronRight,
+                            contentDescription = stringResource(R.string.next_month),
+                            modifier = Modifier.mirroredInRightToLeft(),
+                        )
                     }
                 }
 

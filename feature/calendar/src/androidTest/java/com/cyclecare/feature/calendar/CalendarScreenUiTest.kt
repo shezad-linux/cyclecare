@@ -187,6 +187,16 @@ class CalendarScreenUiTest {
             ),
             confidenceLabel = "Baseline estimate",
             daysUntilNextPeriod = 23,
+            // The calendar marks fertile days from the engine's own
+            // window, and the engine only produces one when it supports
+            // a range. `supportsRange` is `nextPeriodWindow != null`, so
+            // the fixture has to carry a range for the fertile marker to
+            // exist at all.
+            nextPeriodWindow = DateRange(
+                start = LocalDate.of(2026, 4, 6),
+                endInclusive = LocalDate.of(2026, 4, 10),
+            ),
+            nextPeriodHalfWidthDays = 2,
         )
 
         composeRule.setContent {
@@ -274,6 +284,16 @@ class CalendarScreenUiTest {
             ),
             confidenceLabel = "Baseline estimate",
             daysUntilNextPeriod = 23,
+            // The calendar marks fertile days from the engine's own
+            // window, and the engine only produces one when it supports
+            // a range. `supportsRange` is `nextPeriodWindow != null`, so
+            // the fixture has to carry a range for the fertile marker to
+            // exist at all.
+            nextPeriodWindow = DateRange(
+                start = LocalDate.of(2026, 4, 6),
+                endInclusive = LocalDate.of(2026, 4, 10),
+            ),
+            nextPeriodHalfWidthDays = 2,
         )
         val month = YearMonth.of(2026, 3)
         return CalendarUiState(

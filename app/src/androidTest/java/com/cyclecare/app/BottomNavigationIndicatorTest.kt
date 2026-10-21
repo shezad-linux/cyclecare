@@ -149,7 +149,7 @@ class BottomNavigationIndicatorTest {
         renderApp()
 
         val before = indicatorAreaColour("home")
-        composeRule.onNodeWithTag(navTag("insights")).performClick()
+        composeRule.openTabAndAwait("insights")
         composeRule.waitForIdle()
 
         // The tab that was selected is no longer painting an indicator. It

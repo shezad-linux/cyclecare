@@ -165,6 +165,14 @@ internal fun FertilityTeaserCard(
             ) {
                 Text(stringResource(R.string.view_fertility_details))
             }
+            // Spec 11 §5: a fertile window is always framed as an
+            // estimate and always says it is not a contraceptive method.
+            // A bare range with no framing reads as a fact.
+            Text(
+                text = stringResource(R.string.not_a_contraceptive_method),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
