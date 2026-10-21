@@ -56,6 +56,22 @@ jobs:
           done
           echo "  OK: no signing secret or Firebase config is tracked."
 
+      - name: Accessibility coverage guard
+        run: ./scripts/guard-accessibility-coverage.sh
+
+      - name: Privacy manifest and store-disclosure review
+        run: ./scripts/guard-privacy-manifest.sh
+
+      # P9-02. The advisory feed is supplied as a repository variable so the
+      # scan runs against the team's chosen source. With no feed configured the
+      # script exits non-zero by design: a review that did not scan must not be
+      # reported as a review that found nothing. The repository variable must be
+      # set before this step will pass; see the note in the script.
+      - name: Dependency vulnerability review
+        env:
+          CYCLECARE_ADVISORY_FEED: ${{ vars.CYCLECARE_ADVISORY_FEED }}
+        run: ./scripts/guard-dependency-vulnerabilities.sh
+
   # ─────────────────────────────────────────────────────────────────
   # Build and unit tests.
   #
