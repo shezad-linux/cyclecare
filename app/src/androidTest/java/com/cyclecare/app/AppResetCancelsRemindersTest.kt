@@ -94,6 +94,33 @@ class AppResetCancelsRemindersTest {
 
         alarmFacade = AndroidReminderAlarmFacade(context)
         armTheReminder()
+        ensureNotificationsArePostable()
+    }
+
+    /**
+     * Every test starts with notifications postable.
+     *
+     * A reset clears the app's own record that the user was asked about
+     * notifications, which is exactly the kind of state a previous test
+     * in this class leaves behind. Without re-establishing the permission
+     * here, the notification test's control depends on whether an earlier
+     * test had already performed a reset, and the class passes or fails
+     * by run order. Granting and waiting for the runtime permission makes
+     * each test independent without weakening what it asserts.
+     */
+    private fun ensureNotificationsArePostable() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            runCatching {
+                uiAutomation.executeShellCommand(
+                    "pm grant ${context.packageName} android.permission.POST_NOTIFICATIONS",
+                ).close()
+            }
+        }
+        val deadline = System.currentTimeMillis() + 5_000
+        while (System.currentTimeMillis() < deadline) {
+            if (NotificationManagerCompat.from(context).areNotificationsEnabled()) return
+            Thread.sleep(100)
+        }
     }
 
     @After
@@ -106,14 +133,24 @@ class AppResetCancelsRemindersTest {
 
     @Test
     fun resetAllLocalData_cancelsTheArmedReminderAlarm() {
+        // The alarm queue is read through `dumpsys alarm`, which needs the
+        // DUMP permission. If the queue cannot be read at all the test
+        // says so and steps aside rather than asserting an observation
+        // it could not make; the deterministic JVM suite
+        // (AppResetReminderCancellationTest) covers the cancellation
+        // hook independently.
+        assumeTrue("the alarm queue is not readable on this image", alarmQueueIsReadable())
+
         // The control: the alarm really is in the platform's queue, so
-        // its absence afterwards means the reset took it out.
-        val before = pendingAlarmLinesForThisReminder()
+        // its absence afterwards means the reset took it out rather
+        // than that the arming never happened.
+        val before = pendingAlarmBlocksForThisReminder().orEmpty()
         assertThat(before).isNotEmpty()
+        android.util.Log.i(TAG, "armed alarm block: ${before.firstOrNull()?.joinToString(" | ")}")
 
         runReset()
 
-        val after = pendingAlarmLinesForThisReminder()
+        val after = pendingAlarmBlocksForThisReminder().orEmpty()
         assertThat(after).isEmpty()
     }
 
@@ -128,10 +165,9 @@ class AppResetCancelsRemindersTest {
 
     @Test
     fun resetAllLocalData_takesDownTheReminderNotificationsItOwns() {
-        assumeTrue(
-            "the test needs the app to be allowed to post notifications",
-            notificationsCanBePosted(),
-        )
+        // setUp has already re-established the permission, so this is a
+        // statement about the precondition rather than a skip.
+        assertThat(notificationsCanBePosted()).isTrue()
 
         val manager = NotificationManagerCompat.from(context)
         manager.createNotificationChannel(
@@ -212,26 +248,62 @@ class AppResetCancelsRemindersTest {
      * The pending alarms in the platform's queue that belong to this
      * reminder.
      *
-     * The platform keeps the queue and `dumpsys` is the only way to
-     * read it: there is no API that says "is this alarm still
-     * scheduled". The line for an alarm carries the request code it was
-     * addressed by, which is derived from the rule id, so the request
-     * code identifies this reminder's alarm and nothing else.
+     * `dumpsys alarm` is the only way to read the queue: there is no API
+     * that says "is this alarm still scheduled". Its format on the API 36
+     * image is a count header followed by one indented block per alarm:
+     *
+     * ```
+     *   42 pending alarms:
+     *     RTC_WAKEUP #7: Alarm{2ffa557 type 2 origWhen 101391604 … com.cyclecare.tracker}
+     *       tag=*walarm*:com.cyclecare.tracker
+     *       type=RTC_WAKEUP origWhen=… flags=0x0
+     *       operation=PendingIntent{… com.cyclecare.tracker/com.cyclecare.app.ReminderAlarmReceiver broadcastIntent}
+     * ```
+     *
+     * Two things follow, and both matter. The package appears on the
+     * **alarm's own header line**, not on the "pending alarms" count
+     * header, so filtering a single line for both the phrase and the
+     * package can never match. And the request code is **not printed at
+     * all** — the number in the PendingIntent braces is the user id —
+     * so a request-code filter cannot identify an alarm either. The
+     * stable discriminator is the receiver class the alarm is addressed
+     * to, on the `operation=` line, together with the package on the
+     * header.
+     *
+     * The dump needs the `DUMP` permission, which a test shell has but
+     * which is not guaranteed on every image. When it cannot be read the
+     * caller skips rather than asserts, because an unreadable dump says
+     * nothing about the alarm. A dump that *is* readable and does not
+     * contain the alarm is a real failure, and the control in the test
+     * is what distinguishes the two.
      */
-    private fun pendingAlarmLinesForThisReminder(): List<String> {
-        val requestCode = uniqueName.hashCode()
-        val codePattern = Regex("(?<![0-9-])$requestCode(?![0-9])")
-        val lines = shell("dumpsys alarm")
-            .lineSequence()
-            .filter { line ->
-                val lower = line.lowercase()
-                lower.contains("pending alarm") && line.contains(context.packageName)
+    private fun pendingAlarmBlocksForThisReminder(): List<List<String>>? {
+        val dump = runCatching { shell("dumpsys alarm") }.getOrNull() ?: return null
+        val blocks = mutableListOf<List<String>>()
+        var current = mutableListOf<String>()
+        for (line in dump.lineSequence()) {
+            if (ALARM_HEADER.containsMatchIn(line)) {
+                if (current.isNotEmpty()) blocks += current
+                current = mutableListOf(line)
+            } else if (current.isNotEmpty()) {
+                current += line
             }
-            .filter { line -> codePattern.containsMatchIn(line) || line.contains(RECEIVER_NAME) }
-            .toList()
-        android.util.Log.i(TAG, "pending alarms for $ruleId: $lines")
-        return lines
+        }
+        if (current.isNotEmpty()) blocks += current
+        return blocks
+            .filter { header -> header.first().contains(context.packageName) }
+            .filter { block -> block.any { it.contains(RECEIVER_NAME) } }
     }
+
+    /**
+     * True when the alarm queue can be read at all.
+     *
+     * A `dumpsys alarm` that returns nothing is not evidence that the
+     * alarm is gone; it is evidence that this test cannot observe the
+     * queue, and the test says so rather than passing.
+     */
+    private fun alarmQueueIsReadable(): Boolean =
+        runCatching { shell("dumpsys alarm") }.getOrNull()?.contains("pending alarm") == true
 
     private fun activeNotificationIds(): List<Int> =
         NotificationManagerCompat.from(context).activeNotifications.map { it.id }
@@ -259,5 +331,15 @@ class AppResetCancelsRemindersTest {
         const val RECEIVER_NAME = "ReminderAlarmReceiver"
         const val TEST_CHANNEL_ID = "cyclecare-reset-test-channel"
         const val TEN_MINUTES_MILLIS = 10 * 60 * 1000L
+
+        /**
+         * The header of one alarm block in `dumpsys alarm`.
+         *
+         * Every block starts with a type and an index, then `Alarm{…}`,
+         * then the package the alarm belongs to. The count header above
+         * them reads "N pending alarms:" and names no package, so it is
+         * deliberately not matched here.
+         */
+        val ALARM_HEADER = Regex("^\\s+(ELAPSED|RTC|RTC_WAKEUP)[^\\n]*#\\d+: Alarm\\{")
     }
 }
