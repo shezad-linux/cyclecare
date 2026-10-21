@@ -23,10 +23,10 @@ submitted, and no claim is made about its state.
 
 | | |
 |---|---|
-| **Audit date** | 2026-10-21 |
-| **Commit** | `7605ba1cb86601eaaed9108e41499b412be73dee` |
-| **Unit tests** | 437, 0 failures |
-| **Instrumented tests** | 251, 0 failures, 2 skipped (the opt-in Doze tests) |
+| **Audit date** | 2026-10-21 (production-readiness pass) |
+| **Unit tests** | 505, 0 failures |
+| **Instrumented tests** | 268, **7 failures**, 2 skipped — open regressions, see *Blockers* |
+| **Signed AAB** | Built and validated locally; see *Release artifact* |
 | **Release build** | `assembleRelease` and `:app:lintRelease` clean |
 | **Guards** | Ad-targeting, typography and contrast all pass |
 
@@ -41,8 +41,45 @@ submitted, and no claim is made about its state.
 | CI with secret scanning and the ad-targeting guard | `.github/workflows/ci.yml`: gitleaks, the signing-secret check, `guard-no-ad-targeting.sh`, `guard-typography-roles.sh` |
 | The ad-targeting guard | `scripts/guard-no-ad-targeting.sh`, passing |
 | Privacy policy corrected against the verified implementation | `docs/privacy-policy.html`, corrected in the commit that fixed the three false claims |
-| Unit and instrumented test suites | 437 unit and 251 instrumented, both green on the API 36 emulator |
+| Unit test suite | 505 unit tests green |
+| Instrumented suite | **7 failures** — two calendar, one responsive-layout, two privacy PIN, one app-lock cooldown, one reset-alarm test. All deterministic; see *Blockers*. |
 | Encryption for local export and import | `core/security`, with a passphrase-derived key, AAD binding and a fail-closed import |
+| Prediction gates | All thirteen `12` §6 gates have named tests and pass; version bumped to 2.1.0 with `12` §7 golden fixtures |
+| Migration data integrity | `02` §9.10 independently re-verified; snapshot/verification and divergence surfacing confirmed; new integrity tests |
+| Reproducible signed bundle | `bundleRelease` produces a signed AAB; `.github/workflows/release.yml` reproduces it from a tag with a protected `release` environment |
+| Notification-log privacy | The derived period date is out of the delivery log, replaced by a lead-time bucket and a lateness class; source-scanning guard test |
+
+## Release artifact
+
+| | |
+|---|---|
+| **Artifact** | `app/build/outputs/bundle/release/app-release.aab` (9,858,039 bytes) |
+| **SHA-256** | `68fa180d47cd4a70abb7c5ee4116dc4c3113b9ae02e6709990ad328353f4d1dd` |
+| **Signature** | `jarsigner`: jar verified, signer `CN=CycleCare Upload` |
+| **Validation** | bundletool validate passed; `scripts/validate-aab.sh` green |
+| **Version** | `versionCode` 7, `versionName` 1.0 |
+| **Reproducibility** | Four independent builds produced byte-identical bundles |
+
+The CI path that produces this from a tag is implemented and the local
+signing path was reproduced, but **the workflow has never been executed in
+GitHub Actions** and the protected `release` environment and its four
+secrets do not yet exist. See *Owner actions*.
+
+## Blockers to release
+
+These are open. None is claimed closed.
+
+| Blocker | Why it blocks |
+|---|---|
+| 7 instrumented test failures | The instrumented suite is the release gate; it is red. |
+| Physical-device Doze | `13` §17's exit criterion is *recorded, not assumed*. Emulator evidence does not satisfy it. |
+| Release workflow never executed | The AAB is reproducible locally, but the CI path is unproven and its secrets are unconfigured. |
+| Play Console declarations, store listing, support channel | External, unsubmitted, unowned by the repository. |
+| Device matrix | Not executed. |
+| Visual sign-off of the palette | The palette is approved as a direction, not for release. |
+| Manual TalkBack pass | Automated semantics coverage is not a human screen-reader pass. |
+
+
 
 ## External: Play Console, not done
 
