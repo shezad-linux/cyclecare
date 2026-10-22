@@ -56,15 +56,30 @@ class TalkBackSemanticsTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private fun renderApp() {
-        composeRule.activityRule.scenario.onActivity { activity ->
-            val (container, authController) = populatedScreenshotEnvironment()
-            activity.setContent {
-                CycleCareTheme {
-                    CycleCareApp(
-                        container = container,
-                        secureAuthController = authController,
-                    )
-                }
+        // The content is set through the rule, not through
+        // `scenario.onActivity { activity.setContent { … } }`.
+        //
+        // Calling `setContent` on the activity directly attaches a
+        // composition without the rule's own registration, so the
+        // framework has no record of that Compose root. When another
+        // class in the same process had already composed, reading the
+        // snapshot state of this one from the instrumentation thread
+        // intermittently raised *"Detected multithreaded access to
+        // SnapshotStateObserver"* — and the fault moved between tests in
+        // this class from run to run, which is what a shared-root
+        // problem looks like rather than a problem with any one test.
+        //
+        // `composeRule.setContent` is the supported path: the rule owns
+        // the composition, the idling resource and the lifecycle
+        // together. `feature/calendar`'s screen tests already use it and
+        // have never shown the symptom.
+        val (container, authController) = populatedScreenshotEnvironment()
+        composeRule.setContent {
+            CycleCareTheme {
+                CycleCareApp(
+                    container = container,
+                    secureAuthController = authController,
+                )
             }
         }
         composeRule.waitForIdle()

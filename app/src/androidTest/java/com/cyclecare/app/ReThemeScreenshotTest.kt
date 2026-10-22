@@ -138,7 +138,21 @@ class ReThemeScreenshotTest {
         // The edit sheet, over the dashboard. The button is inside the
         // hero, which is at the top of a scrolling dashboard, so it is
         // scrolled to before it is tapped.
-        composeRule.onNodeWithTag("home_dashboard")
+        //
+        // The dashboard root is located in the unmerged tree. Its tag is
+        // applied to a `LazyColumn`, and a LazyColumn merges its
+        // descendants, so whether the tag survives as a node of its own
+        // depends on what else the composition currently contains. That
+        // is why this failed intermittently only when the capture ran
+        // alongside the other classes in the same process: the platform
+        // reported the node as present in the unmerged tree and absent
+        // from the merged one. Searching the unmerged tree is correct in
+        // either arrangement.
+        //
+        // The assertion is unchanged. `home_edit_cycle` still has to be
+        // found by scrolling the dashboard to it, so a dashboard that is
+        // missing or not scrollable still fails.
+        composeRule.onNodeWithTag("home_dashboard", useUnmergedTree = true)
             .performScrollToNode(hasTestTag("home_edit_cycle"))
         scrollToAndClick("home_edit_cycle")
         capture("edit_cycle_sheet", widthDp, dark)
