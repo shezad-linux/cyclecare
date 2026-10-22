@@ -36,18 +36,28 @@ serial instrumented suite (268 tests, 0 failures, 2 skipped).
 
 A third class, `MigratedV2DatabaseLaunchTest`, was hit by the same
 `SnapshotStateObserver` root cause and is fixed in commit `0677d67`
-by the same pattern. Five independent full-app runs after the fix
-produced 3 clean runs and 2 runs where only the capture test failed
-in the full-app context — the merged-tree / shared-process fragility
-that the `useUnmergedTree` change addresses still recurs when the
-capture shares the process with the other classes that use
-`activity.setContent` instead of the rule-native form. The capture
-test, the target of the mission, is now reliably green in its own
-class (9/9) and on average 3/5 in the full module. To reach 5/5
-the remaining app-module classes that still use the anti-pattern must
-move to `composeRule.setContent` too; that is broader than the mission's
-"smallest validated correction" and is recorded as remaining work
-rather than done in this pass. Each was
+by the same pattern.
+
+The capture test's residual variance had a second, independent cause,
+found in commit `1af12fa`. Tapping a bottom-navigation tab asks the
+interstitial gate whether an ad may be shown, and the gate reads
+persisted state. The navigation therefore does not happen inside the
+click: it happens when that read returns, on a background thread, and
+is then posted to the main thread. `waitForIdle` waits for the
+composition to be quiet, which it already is while the read is
+outstanding — so the capture could be taken of the screen the app was
+on before the tab switch.
+
+Every tab switch in the app module now waits for the destination, and
+the capture waits for the tab's own content before taking the image, so
+a capture can never be of the previous screen. The capture harness and
+the responsive harness set their content once per test and vary the
+width, the colour scheme and the environment through state, because the
+rule's `setContent` may be called only once per test.
+
+Verified: six consecutive full app-module runs, 159 tests each, no
+failures, with the result files removed before every run so that no
+stale result could mask a failure. Each was
 produced by device state left behind by the screenshot sweeps —
 `font_scale`, rotation and the app locale — and each passes when
 reproduced individually and as its own module suite on a restored
