@@ -32,7 +32,22 @@ The two intermittencies that survived the previous pass —
 — are closed in commit `09a1156`. Both fixes are test-infrastructure
 changes; no production code changed. They are validated by repeated
 runs of the affected class, the full app module, and the complete
-serial instrumented suite (268 tests, 0 failures, 2 skipped). Each was
+serial instrumented suite (268 tests, 0 failures, 2 skipped).
+
+A third class, `MigratedV2DatabaseLaunchTest`, was hit by the same
+`SnapshotStateObserver` root cause and is fixed in commit `0677d67`
+by the same pattern. Five independent full-app runs after the fix
+produced 3 clean runs and 2 runs where only the capture test failed
+in the full-app context — the merged-tree / shared-process fragility
+that the `useUnmergedTree` change addresses still recurs when the
+capture shares the process with the other classes that use
+`activity.setContent` instead of the rule-native form. The capture
+test, the target of the mission, is now reliably green in its own
+class (9/9) and on average 3/5 in the full module. To reach 5/5
+the remaining app-module classes that still use the anti-pattern must
+move to `composeRule.setContent` too; that is broader than the mission's
+"smallest validated correction" and is recorded as remaining work
+rather than done in this pass. Each was
 produced by device state left behind by the screenshot sweeps —
 `font_scale`, rotation and the app locale — and each passes when
 reproduced individually and as its own module suite on a restored
