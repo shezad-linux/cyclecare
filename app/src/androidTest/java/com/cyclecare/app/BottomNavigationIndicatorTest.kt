@@ -45,29 +45,29 @@ class BottomNavigationIndicatorTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private fun renderApp() {
-        composeRule.activityRule.scenario.onActivity { activity ->
-            val noOpInterstitial = InterstitialAdManager(
-                context = activity.applicationContext,
-                adLoader = object : InterstitialAdLoader {
-                    override fun load(
-                        context: Context,
-                        adUnitId: String,
-                        adRequest: AdRequest,
-                        callback: InterstitialAdLoadCallback,
-                    ) = Unit
-                },
-            )
-            val (container, authController) = populatedScreenshotEnvironment()
-            activity.setContent {
-                CycleCareTheme {
-                    CycleCareApp(
-                        container = container,
-                        secureAuthController = authController,
-                        interstitialAdManager = noOpInterstitial,
-                    )
-                }
+        val noOpInterstitial = InterstitialAdManager(
+            context = composeRule.activity.applicationContext,
+            adLoader = object : InterstitialAdLoader {
+                override fun load(
+                    context: Context,
+                    adUnitId: String,
+                    adRequest: AdRequest,
+                    callback: InterstitialAdLoadCallback,
+                ) = Unit
+            },
+        )
+        val (container, authController) = populatedScreenshotEnvironment()
+        composeRule.setContent {
+
+            CycleCareTheme {
+                CycleCareApp(
+                    container = container,
+                    secureAuthController = authController,
+                    interstitialAdManager = noOpInterstitial,
+                )
             }
-        }
+        
+}
         composeRule.waitForIdle()
     }
 

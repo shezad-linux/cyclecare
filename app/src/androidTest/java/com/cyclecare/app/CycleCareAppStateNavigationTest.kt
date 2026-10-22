@@ -191,7 +191,10 @@ class CycleCareAppStateNavigationTest {
             "log" to { composeRule.onNodeWithText("Log today").assertIsDisplayed() },
             "insights" to { composeRule.onNodeWithTag("insights_overview").assertIsDisplayed() },
         ).forEach { (route, assertScreenVisible) ->
-            composeRule.onNodeWithTag(navTag(route)).performClick()
+            // The tab switch waits for the destination, because the
+            // navigation goes through the interstitial gate, which reads
+            // persisted state before the navigation happens.
+            composeRule.openTabAndAwait(route)
             assertScreenVisible()
             pressBackUnconditionally()
             assertTodayDashboardVisible()
@@ -324,16 +327,16 @@ class CycleCareAppStateNavigationTest {
         val env = TestAppEnvironment.populated()
 
         renderApp(env)
-        composeRule.onNodeWithTag(navTag("calendar")).performClick()
+        composeRule.openTabAndAwait("calendar")
         navigateCalendarTo("March 2026")
         composeRule.onNodeWithTag("calendar_day_2026-03-23").performScrollTo().performClick()
         assertCalendarSelectionIsMarch23()
 
-        composeRule.onNodeWithTag(navTag("home")).performClick()
-        composeRule.onNodeWithTag(navTag("calendar")).performClick()
+        composeRule.openTabAndAwait("home")
+        composeRule.openTabAndAwait("calendar")
         assertCalendarSelectionIsMarch23()
 
-        composeRule.onNodeWithTag(navTag("calendar")).performClick()
+        composeRule.openTabAndAwait("calendar")
         assertCalendarSelectionIsMarch23()
 
         composeRule.activityRule.scenario.recreate()
@@ -615,7 +618,7 @@ class CycleCareAppStateNavigationTest {
         val env = TestAppEnvironment.populated()
 
         renderApp(env)
-        composeRule.onNodeWithTag(navTag("log")).performClick()
+        composeRule.openTabAndAwait("log")
         // The mood chips sit inside the logging LazyColumn and are not
         // composed until scrolled into range.
         composeRule.onNodeWithTag("logging_list")

@@ -93,27 +93,29 @@ class RtlLayoutTest {
         if (layoutDirection == LayoutDirection.Rtl) {
             configuration.setLayoutDirection(java.util.Locale("ar"))
         }
-        composeRule.activityRule.scenario.onActivity { activity ->
-            val (container, authController) = populatedScreenshotEnvironment()
-            val content: @androidx.compose.runtime.Composable () -> Unit = {
-                com.cyclecare.core.designsystem.CycleCareTheme {
-                    CycleCareApp(
-                        container = container,
-                        secureAuthController = authController,
-                    )
-                }
+        val (container, authController) = populatedScreenshotEnvironment()
+        val content: @androidx.compose.runtime.Composable () -> Unit = {
+            com.cyclecare.core.designsystem.CycleCareTheme {
+                CycleCareApp(
+                    container = container,
+                    secureAuthController = authController,
+                )
             }
+        }
+        // The content is attached through the rule, so the rule owns
+        // the composition and its snapshot state. The rule's own
+        // `setContent` can only be called once per test, so the
+        // direction selects the body rather than the call.
+        composeRule.setContent {
             if (layoutDirection == LayoutDirection.Rtl) {
-                activity.setContent {
-                    CompositionLocalProvider(
-                        LocalConfiguration provides configuration,
-                        LocalLayoutDirection provides LayoutDirection.Rtl,
-                    ) {
-                        content()
-                    }
+                CompositionLocalProvider(
+                    LocalConfiguration provides configuration,
+                    LocalLayoutDirection provides LayoutDirection.Rtl,
+                ) {
+                    content()
                 }
             } else {
-                activity.setContent { content() }
+                content()
             }
         }
         composeRule.waitForIdle()

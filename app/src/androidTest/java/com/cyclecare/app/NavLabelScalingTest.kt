@@ -44,34 +44,34 @@ class NavLabelScalingTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private fun renderApp(fontScale: Float) {
-        composeRule.activityRule.scenario.onActivity { activity ->
-            val noOpInterstitial = InterstitialAdManager(
-                context = activity.applicationContext,
-                adLoader = object : InterstitialAdLoader {
-                    override fun load(
-                        context: Context,
-                        adUnitId: String,
-                        adRequest: AdRequest,
-                        callback: InterstitialAdLoadCallback,
-                    ) = Unit
-                },
-            )
-            val (container, authController) = populatedScreenshotEnvironment()
-            activity.setContent {
-                val density = LocalDensity.current
-                CompositionLocalProvider(
-                    LocalDensity provides Density(density.density, fontScale),
-                ) {
-                    CycleCareTheme {
-                        CycleCareApp(
-                            container = container,
-                            secureAuthController = authController,
-                            interstitialAdManager = noOpInterstitial,
-                        )
-                    }
+        val noOpInterstitial = InterstitialAdManager(
+            context = composeRule.activity.applicationContext,
+            adLoader = object : InterstitialAdLoader {
+                override fun load(
+                    context: Context,
+                    adUnitId: String,
+                    adRequest: AdRequest,
+                    callback: InterstitialAdLoadCallback,
+                ) = Unit
+            },
+        )
+        val (container, authController) = populatedScreenshotEnvironment()
+        composeRule.setContent {
+
+            val density = LocalDensity.current
+            CompositionLocalProvider(
+                LocalDensity provides Density(density.density, fontScale),
+            ) {
+                CycleCareTheme {
+                    CycleCareApp(
+                        container = container,
+                        secureAuthController = authController,
+                        interstitialAdManager = noOpInterstitial,
+                    )
                 }
             }
-        }
+        
+}
         composeRule.waitForIdle()
     }
 

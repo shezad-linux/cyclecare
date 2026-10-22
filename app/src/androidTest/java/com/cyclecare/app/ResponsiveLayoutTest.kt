@@ -6,7 +6,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
@@ -49,22 +52,49 @@ class ResponsiveLayoutTest {
 
     private val widths = listOf(320, 360, 600, 840)
 
-    private fun render(widthDp: Int, landscape: Boolean, content: @Composable () -> Unit) {
-        // Landscape uses a short-but-renderable viewport so content can lay
-        // out while still being vertically constrained (a real landscape
-        // viewport is wide and short).
-        val heightDp = if (landscape) max(400, (widthDp * 0.6).toInt()) else Int.MAX_VALUE
-        composeRule.activityRule.scenario.onActivity { activity ->
-            activity.setContent {
+    /**
+     * What the layout is rendered at.
+     *
+     * The composition is installed once per test and these are the
+     * parts that change between widths.
+     */
+    private class RenderTarget {
+        var widthDp by mutableStateOf(320)
+        var landscape by mutableStateOf(false)
+        var content by mutableStateOf<(@Composable () -> Unit)?>(null)
+    }
+
+    private val target = RenderTarget()
+
+    /** Whether the composition has been installed for this test. */
+    private var contentInstalled = false
+
+    /**
+     * Installs the composition for a test.
+     *
+     * The rule's `setContent` may be called only once per test, and it
+     * has to be called through the rule: attaching the composition to
+     * the activity directly leaves the rule without a record of it.
+     *
+     * The width and the orientation are therefore changed through state
+     * afterwards, and the loop over the widths varies the state rather
+     * than rebuilding the composition.
+     */
+    private fun installContent(content: @Composable () -> Unit) {
+        target.content = content
+        composeRule.setContent {
+            val current = target.content
+            if (current != null) {
                 com.cyclecare.core.designsystem.CycleCareTheme {
                     androidx.compose.foundation.layout.Box(
-                        modifier = if (landscape) {
-                            Modifier.width(widthDp.dp).height(heightDp.dp).testTag("responsive_root")
+                        modifier = if (target.landscape) {
+                            Modifier.width(target.widthDp.dp).height(heightDp(target.widthDp).dp)
+                                .testTag("responsive_root")
                         } else {
-                            Modifier.width(widthDp.dp).fillMaxHeight().testTag("responsive_root")
+                            Modifier.width(target.widthDp.dp).fillMaxHeight().testTag("responsive_root")
                         },
                     ) {
-                        content()
+                        current()
                     }
                 }
             }
@@ -72,14 +102,39 @@ class ResponsiveLayoutTest {
         composeRule.waitForIdle()
     }
 
+    /**
+     * The height the layout is rendered at.
+     *
+     * Landscape uses a short-but-renderable viewport so content can lay
+     * out while still being vertically constrained (a real landscape
+     * viewport is wide and short).
+     */
+    private fun heightDp(widthDp: Int): Int =
+        if (target.landscape) max(400, (widthDp * 0.6).toInt()) else Int.MAX_VALUE
+
+    /**
+     * Points the installed composition at a width and an orientation.
+     */
+    private fun render(widthDp: Int, landscape: Boolean, content: @Composable () -> Unit) {
+        target.widthDp = widthDp
+        target.landscape = landscape
+        target.content = content
+        composeRule.waitForIdle()
+    }
+
     private fun renderTabs(widthDp: Int, landscape: Boolean) {
-        render(widthDp, landscape) {
+        val content: @Composable () -> Unit = {
             val (container, authController) = remember { populatedScreenshotEnvironment() }
             com.cyclecare.app.CycleCareApp(
                 container = container,
                 secureAuthController = authController,
             )
         }
+        if (!contentInstalled) {
+            contentInstalled = true
+            installContent(content)
+        }
+        render(widthDp, landscape, content)
     }
 
     private fun assertNoHorizontalOverflow(widthDp: Int, landscape: Boolean) {

@@ -83,16 +83,16 @@ class FirstRunNudgeTest {
         // The dialog has to be dismissible, and it has to point at
         // Settings rather than being a badge.
         val repository = FakeFirstRunNudgeRepository(shown = false)
-        composeRule.activityRule.scenario.onActivity { activity ->
-            activity.setContent {
-                CycleCareTheme {
-                    FirstRunNudge(
-                        repository = repository,
-                        onOpenSettings = {},
-                    )
-                }
+        composeRule.setContent {
+
+            CycleCareTheme {
+                FirstRunNudge(
+                    repository = repository,
+                    onOpenSettings = {},
+                )
             }
-        }
+        
+}
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Open Settings").assertIsDisplayed()
@@ -102,16 +102,16 @@ class FirstRunNudgeTest {
     @Test
     fun dismissingTheNudgeHidesIt() {
         val repository = FakeFirstRunNudgeRepository(shown = false)
-        composeRule.activityRule.scenario.onActivity { activity ->
-            activity.setContent {
-                CycleCareTheme {
-                    FirstRunNudge(
-                        repository = repository,
-                        onOpenSettings = {},
-                    )
-                }
+        composeRule.setContent {
+
+            CycleCareTheme {
+                FirstRunNudge(
+                    repository = repository,
+                    onOpenSettings = {},
+                )
             }
-        }
+        
+}
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Not now").performClick()

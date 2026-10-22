@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -62,32 +65,62 @@ class ReThemeScreenshotTest {
 
     private val widths = listOf(320, 360, 600, 840)
 
-    private fun render(widthDp: Int, dark: Boolean, content: @Composable () -> Unit) {
-        composeRule.activityRule.scenario.onActivity { activity ->
-            val noOpInterstitial = InterstitialAdManager(
-                context = activity.applicationContext,
-                adLoader = object : InterstitialAdLoader {
-                    override fun load(
-                        context: android.content.Context,
-                        adUnitId: String,
-                        adRequest: AdRequest,
-                        callback: InterstitialAdLoadCallback,
-                    ) = Unit
-                },
-            )
-            activity.setContent {
-                CycleCareTheme(darkTheme = dark) {
+    /**
+     * What the capture renders.
+     *
+     * The composition is installed once per test and these are the
+     * parts that change between captures.
+     */
+    private class RenderTarget {
+        var widthDp by mutableStateOf(320)
+        var dark by mutableStateOf(false)
+        var content by mutableStateOf<(@Composable () -> Unit)?>(null)
+    }
+
+    private val target = RenderTarget()
+
+    /**
+     * Installs the composition for a test.
+     *
+     * The rule's `setContent` may be called only once per test, and it
+     * has to be called through the rule: attaching the composition to
+     * the activity directly leaves the rule without a record of it, and
+     * a class that does that in a shared process intermittently leaves
+     * the framework reading snapshot state across threads.
+     *
+     * So the content is installed once and the width, the colour scheme
+     * and the environment are changed through state afterwards. The
+     * capture loop then varies the state rather than rebuilding the
+     * composition, which is also why a capture can no longer be
+     * preceded by a stale one.
+     */
+    private fun installContent(content: @Composable () -> Unit) {
+        target.content = content
+        composeRule.setContent {
+            val current = target.content
+            if (current != null) {
+                CycleCareTheme(darkTheme = target.dark) {
                     Box(
                         modifier = Modifier
-                            .width(widthDp.dp)
+                            .width(target.widthDp.dp)
                             .fillMaxHeight()
                             .testTag(CAPTURE_TAG),
                     ) {
-                        content()
+                        current()
                     }
                 }
             }
         }
+        composeRule.waitForIdle()
+    }
+
+    /**
+     * Points the installed composition at a width and a colour scheme.
+     */
+    private fun render(widthDp: Int, dark: Boolean, content: @Composable () -> Unit) {
+        target.widthDp = widthDp
+        target.dark = dark
+        target.content = content
         composeRule.waitForIdle()
     }
 
@@ -101,9 +134,28 @@ class ReThemeScreenshotTest {
      * Invoking the click semantics navigates without the touch input, so
      * the review images show the resting state.
      */
+    /**
+     * Switches tab and waits for the destination to be on screen.
+     *
+     * The wait matters. Tapping a tab asks the interstitial gate whether
+     * an ad may be shown, and the gate reads persisted state, so the
+     * navigation does not happen inside the click: it happens when that
+     * read returns, on a background thread, and it is then posted to
+     * the main thread. `waitForIdle` waits for the composition to be
+     * quiet, which it already is while the read is outstanding, so
+     * without this the capture can be taken of the screen the app was
+     * on before the tab switch.
+     */
     private fun switchTab(route: String) {
         composeRule.onNodeWithTag(navTag(route)).performSemanticsAction(SemanticsActions.OnClick) {
             it()
+        }
+        composeRule.waitForIdle()
+        val destination = TAB_CONTENT_TAG[route] ?: return
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithTag(destination)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
         composeRule.waitForIdle()
     }
@@ -245,9 +297,17 @@ class ReThemeScreenshotTest {
      */
     @Test
     fun captureOnboarding() = runBlocking {
+        val environment = emptyScreenshotEnvironment()
+        installContent {
+            val (container, authController) = environment
+            CycleCareApp(container = container, secureAuthController = authController)
+        }
         widths.forEach { widthDp ->
             listOf(false, true).forEach { dark ->
-                renderWith(widthDp, dark, emptyScreenshotEnvironment())
+                render(widthDp, dark) {
+                    val (container, authController) = environment
+                    CycleCareApp(container = container, secureAuthController = authController)
+                }
                 capture("onboarding", widthDp, dark)
             }
         }
@@ -255,9 +315,17 @@ class ReThemeScreenshotTest {
 
     @Test
     fun captureAppLock() = runBlocking {
+        val environment = appLockScreenshotEnvironment()
+        installContent {
+            val (container, authController) = environment
+            CycleCareApp(container = container, secureAuthController = authController)
+        }
         widths.forEach { widthDp ->
             listOf(false, true).forEach { dark ->
-                renderWith(widthDp, dark, appLockScreenshotEnvironment())
+                render(widthDp, dark) {
+                    val (container, authController) = environment
+                    CycleCareApp(container = container, secureAuthController = authController)
+                }
                 capture("app_lock", widthDp, dark)
             }
         }
@@ -265,9 +333,17 @@ class ReThemeScreenshotTest {
 
     @Test
     fun captureNotificationGate() = runBlocking {
+        val environment = notificationGateScreenshotEnvironment()
+        installContent {
+            val (container, authController) = environment
+            CycleCareApp(container = container, secureAuthController = authController)
+        }
         widths.forEach { widthDp ->
             listOf(false, true).forEach { dark ->
-                renderWith(widthDp, dark, notificationGateScreenshotEnvironment())
+                render(widthDp, dark) {
+                    val (container, authController) = environment
+                    CycleCareApp(container = container, secureAuthController = authController)
+                }
                 capture("notification_gate", widthDp, dark)
             }
         }
@@ -282,7 +358,15 @@ class ReThemeScreenshotTest {
         // fails, so the privacy screen is captured in a single pass rather
         // than across every width. The other screens have no navigation in
         // the loop and are captured at all four widths.
-        renderWith(360, false, populatedScreenshotEnvironment())
+        val environment = populatedScreenshotEnvironment()
+        installContent {
+            val (container, authController) = environment
+            CycleCareApp(container = container, secureAuthController = authController)
+        }
+        render(360, false) {
+            val (container, authController) = environment
+            CycleCareApp(container = container, secureAuthController = authController)
+        }
         composeRule.waitUntil(10_000) {
             composeRule.onAllNodesWithTag("app_bar_settings")
                 .fetchSemanticsNodes()
@@ -297,23 +381,15 @@ class ReThemeScreenshotTest {
         capture("privacy", 360, false)
     }
 
-    private suspend fun renderWith(
-        widthDp: Int,
-        dark: Boolean,
-        environment: Pair<AppContainer, SecureAuthController>,
-    ) {
-        val (container, authController) = environment
-        render(widthDp, dark) {
-            CycleCareApp(
-                container = container,
-                secureAuthController = authController,
-            )
-        }
-    }
-
     @Test
     fun captureAllTopLevelScreensAtEveryWidthAndScheme() {
         val routes = listOf("home", "calendar", "log", "insights")
+        // The composition is installed once for the whole test. The
+        // capture loop varies the width and the colour scheme through
+        // the state the composition reads, so each capture is a fresh
+        // render of the same composition rather than a new one stacked
+        // on the last.
+        installContent(screenContent())
         widths.forEach { widthDp ->
             listOf(false, true).forEach { dark ->
                 // setContent replaces the composition but the activity retains
@@ -340,5 +416,18 @@ class ReThemeScreenshotTest {
 
     private companion object {
         const val CAPTURE_TAG = "screenshot_capture_root"
+
+        /**
+         * The content each tab is known by.
+         *
+         * The capture waits for the tab's own content before taking the
+         * image, so a capture can never be of the previous screen.
+         */
+        val TAB_CONTENT_TAG = mapOf(
+            "home" to "home_dashboard",
+            "calendar" to "calendar_scroll",
+            "log" to "logging_list",
+            "insights" to "insights_overview",
+        )
     }
 }

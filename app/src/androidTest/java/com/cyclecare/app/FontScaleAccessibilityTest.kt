@@ -45,18 +45,18 @@ class FontScaleAccessibilityTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private fun renderApp(fontScale: Float, content: @androidx.compose.runtime.Composable () -> Unit) {
-        composeRule.activityRule.scenario.onActivity { activity ->
-            val (container, authController) = populatedScreenshotEnvironment()
-            activity.setContent {
-                CompositionLocalProvider(
-                    LocalDensity provides Density(LocalDensity.current.density, fontScale),
-                ) {
-                    com.cyclecare.core.designsystem.CycleCareTheme {
-                        content()
-                    }
+        val (container, authController) = populatedScreenshotEnvironment()
+        composeRule.setContent {
+
+            CompositionLocalProvider(
+                LocalDensity provides Density(LocalDensity.current.density, fontScale),
+            ) {
+                com.cyclecare.core.designsystem.CycleCareTheme {
+                    content()
                 }
             }
-        }
+        
+}
         composeRule.waitForIdle()
     }
 

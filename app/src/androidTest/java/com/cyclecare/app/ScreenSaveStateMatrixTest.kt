@@ -53,16 +53,16 @@ class ScreenSaveStateMatrixTest {
 
     private fun render(state: ScreenState) {
         val (container, authController) = stateEnvironment(state)
-        composeRule.activityRule.scenario.onActivity { activity ->
-            activity.setContent {
-                CycleCareTheme {
-                    CycleCareApp(
-                        container = container,
-                        secureAuthController = authController,
-                    )
-                }
+        composeRule.setContent {
+
+            CycleCareTheme {
+                CycleCareApp(
+                    container = container,
+                    secureAuthController = authController,
+                )
             }
-        }
+        
+}
         composeRule.waitForIdle()
     }
 

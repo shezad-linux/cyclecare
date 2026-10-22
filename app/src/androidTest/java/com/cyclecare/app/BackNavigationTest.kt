@@ -66,14 +66,12 @@ class BackNavigationTest {
     fun theNotificationGateDoesNotTrapBack() {
         // The gate is shown on its own, outside the nav host, so it is
         // rendered directly here.
-        composeRule.activityRule.scenario.onActivity { activity ->
-            activity.setContent {
-                CycleCareTheme {
-                    NotificationPermissionRequiredGate(
-                        actionLabel = "Allow notifications",
-                        onResolveNotificationAccess = {},
-                    )
-                }
+        composeRule.setContent {
+            CycleCareTheme {
+                NotificationPermissionRequiredGate(
+                    actionLabel = "Allow notifications",
+                    onResolveNotificationAccess = {},
+                )
             }
         }
         composeRule.waitForIdle()
@@ -85,14 +83,12 @@ class BackNavigationTest {
 
     @Test
     fun theGateIsShownAndOffersAnAction() {
-        composeRule.activityRule.scenario.onActivity { activity ->
-            activity.setContent {
-                CycleCareTheme {
-                    NotificationPermissionRequiredGate(
-                        actionLabel = "Allow notifications",
-                        onResolveNotificationAccess = {},
-                    )
-                }
+        composeRule.setContent {
+            CycleCareTheme {
+                NotificationPermissionRequiredGate(
+                    actionLabel = "Allow notifications",
+                    onResolveNotificationAccess = {},
+                )
             }
         }
         composeRule.waitForIdle()
