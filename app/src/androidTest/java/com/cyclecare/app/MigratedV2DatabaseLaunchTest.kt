@@ -161,11 +161,17 @@ class MigratedV2DatabaseLaunchTest {
         val privacyRepository = MigratedLaunchPrivacyRepository()
         val insightRepository = LocalInsightRepository(cycleRepository, symptomRepository, InsightEngine())
 
-        composeRule.activityRule.scenario.onActivity { activity ->
-            // The container is built on the main thread, because the
-            // real visibility observer registers a lifecycle observer
-            // and LifecycleRegistry refuses to do that anywhere else.
-            val container = AppContainer(
+        // The container is built on the main thread, because the real
+        // visibility observer registers a lifecycle observer and
+        // LifecycleRegistry refuses to do that anywhere else. The
+        // composition itself is then attached through the rule, so the
+        // rule owns the ComposeView and its snapshot state — otherwise
+        // another class in the same process can read this one from the
+        // instrumentation thread and trip *"Detected multithreaded access
+        // to SnapshotStateObserver"*.
+        val containerHolder = arrayOfNulls<AppContainer>(1)
+        composeRule.activityRule.scenario.onActivity {
+            containerHolder[0] = AppContainer(
                 profileRepository = profileRepository,
                 cycleRepository = cycleRepository,
                 symptomRepository = symptomRepository,
@@ -201,11 +207,10 @@ class MigratedV2DatabaseLaunchTest {
                 migrationDivergenceRepository = RoomMigrationDivergenceRepository(migrated),
                 appLogger = logger,
             )
-
-            activity.setContent {
-                CycleCareTheme {
-                    CycleCareApp(container = container)
-                }
+        }
+        composeRule.setContent {
+            CycleCareTheme {
+                CycleCareApp(container = containerHolder[0]!!)
             }
         }
         composeRule.waitForIdle()
