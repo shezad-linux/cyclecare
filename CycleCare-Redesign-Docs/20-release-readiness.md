@@ -25,7 +25,7 @@ submitted, and no claim is made about its state.
 |---|---|
 | **Audit date** | 2026-10-21 (production-readiness pass) |
 | **Unit tests** | 505, 0 failures |
-| **Instrumented tests** | 268, **7 failures**, 2 skipped — open regressions, see *Blockers* |
+| **Instrumented tests** | 268, 0 failures, 2 skipped — the seven intermittencies are closed |
 | **Signed AAB** | Built and validated locally; see *Release artifact* |
 | **Release build** | `assembleRelease` and `:app:lintRelease` clean |
 | **Guards** | Ad-targeting, typography and contrast all pass |
