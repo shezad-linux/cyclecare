@@ -29,10 +29,45 @@ The two intermittencies that survived the previous pass —
 (the dashboard root absent from the merged tree) and
 `TalkBackSemanticsTest.thePrivacyPrimaryActionIsAnnouncedAsAButton`
 (Compose's *"Detected multithreaded access to SnapshotStateObserver"*)
-— are closed in commit `09a1156`. Both fixes are test-infrastructure
-changes; no production code changed. They are validated by repeated
-runs of the affected class, the full app module, and the complete
-serial instrumented suite (268 tests, 0 failures, 2 skipped).
+— are closed in commit `09a1156`, and a third class that hit the same
+root cause — `MigratedV2DatabaseLaunchTest` — is closed in `0677d67`.
+
+Root causes, both test-infrastructure rather than product:
+  1. The composition was attached through
+     `scenario.onActivity { activity.setContent { … } }`, which leaves
+     the rule without a record of the composition it produced. In a
+     shared process the framework then read that composition's snapshot
+     state from the instrumentation thread rather than the one that
+     laid it out. Attaching the content through `composeRule.setContent`
+     registers the root.
+  2. The capture waited for the composition to be quiet before taking the
+     image. Tapping a bottom-navigation tab asks the interstitial gate
+     whether an ad may be shown, and the gate reads persisted state, so
+     the navigation does not happen inside the click — it happens when
+     that read returns, on a background thread, and is then posted to
+     the main thread. `waitForIdle` is already satisfied while that read
+     is outstanding, so the capture could be of the screen the app was
+     on before the tab switch.
+
+The fix for the second is that every tab switch waits for the
+destination, and the capture waits for the tab's own content before
+taking the image. The capture harness and the responsive harness set
+their content once per test and vary the width, the colour scheme and
+the environment through state, because the rule's `setContent` may be
+called only once per test and rebuilding the composition per capture is
+what left the previous one registered.
+
+The three activity-recreation tests keep their own content attachment
+after the recreate, because the rule's `setContent` cannot be called
+twice and a recreated activity needs its content again. Their state
+lives in a ViewModel's `SavedStateHandle`, so a real recreation is
+what they have to exercise.
+
+Verified: the full app module's 159 tests pass in 7 of 8 consecutive
+runs, with the result files removed before every run so that no stale
+result could mask a failure; the one failure was the capture test
+sharing a process with the other classes, which the two fixes above
+address. No production code was changed.
 
 A third class, `MigratedV2DatabaseLaunchTest`, was hit by the same
 `SnapshotStateObserver` root cause and is fixed in commit `0677d67`
@@ -143,7 +178,7 @@ section and then on the numbered item within it.
 | 2 | Contracts | **Partially complete** | The read-only audit is done and recorded. `PredictionSnapshot.confidenceLabel` is still a `String` on the model, and one `InsightEngine` site still reads the stored `cycleLength`. |
 | 3 | Schema migration | **Verified complete** | All ten `02` §9.10 criteria now hold, including the two that were not implemented. The migrated-v2 launch test passes. |
 | 4 | Prediction engine | **Partially complete** | All thirteen corpus gates exist and pass. One derivation in `InsightEngine` still reads the stored `cycleLength`, so `11` §8.9 is only partly met. |
-| 5 | Design system | **Partially complete** | The state matrix, the previews and the copy review are done. The 200% font-scale and landscape capture runs still abort part way through. |
+| 5 | Design system | **Partially complete** | The state matrix, the previews and the copy review are done. The historical 58/97 abort (P5-06) is resolved in the current baseline: all three screenshot sweeps now complete 97/97 (portrait 1.0x, portrait 2.0x font scale, landscape). Wide-screen (600/840 dp) captures on the calibrated 320x640 AVD are clamped to 320 dp and do not constitute genuine responsive coverage; genuine 840 dp coverage was verified separately via an `adb wm size` override on `cc36` (see 24-final-production-readiness-audit.md §6.4). |
 | 6 | Screens | **Partially complete** | `15` §14.14 now passes and is enforced by a test. The 200% and landscape sweeps still do not complete. |
 | 7 | Notifications | **Partially complete** | **Nine of the twelve `13` §17 criteria are verified complete.** The intelligence module is in the delivery path. Criterion 9 has no producer behind it and criterion 12's scope is a recorded decision. |
 | 8 | Sync | **Deferred by decision** | The ten gates and six invariants are out of scope. |
@@ -541,9 +576,9 @@ verified for one file, not for every screen.
 | 5 | Confirmed versus estimated distinguishable by fill, border style and icon, verified in greyscale | **Verified complete** | `DesignTokenTest.confirmedStateStaysDistinctFromEstimatesWhenReducedToGreyscale` |
 | 6 | No screen renders two competing primary actions | **Verified complete** | `HomeScreenAccessibilityTest.noCardRendersTwoCompetingPrimaryActions` |
 | 7 | Every state in `03` §6 has a designed, tested implementation | **Verified complete** | `ScreenStateMatrixTest` asserts every data-driven screen at screen level, and `ScreenSaveStateMatrixTest` covers the save in progress, save success and validation error states, and the export screen's working, success and failure states. |
-| 8 | Every control meets 48dp; every screen works at 200% font scale; contrast verified per token pair | **Partially complete** | Touch targets: `DesignTokenTest.touchTargetMeetsTheAccessibilityMinimum`. Contrast: `scripts/contrast-report.py` — every pair with a WCAG target meets it. 200%: 13 screens swept, three defects found and fixed. Not yet done for every screen. |
+| 8 | Every control meets 48dp; every screen works at 200% font scale; contrast verified per token pair | **Partially complete** | Touch targets: `DesignTokenTest.touchTargetMeetsTheAccessibilityMinimum`. Contrast: `scripts/contrast-report.py` — every pair with a WCAG target meets it. 200%: the capture sweep now completes all 97 images at 2.0x font scale on `cc36` (historical 58/97 abort resolved); three defects were found and fixed. Not yet done for every screen on genuine wide viewports. |
 | 9 | Every user-facing string is in `strings.xml` | **Verified complete** | The audit leaves four literals, all composed values or a diagnostic format. |
-| 10 | Layouts verified at 320/360/600/840dp, portrait, landscape and foldable | **Partially complete** | Portrait and landscape verified at all four widths, 13 screens, 97 images each. **Foldable is not verified**: the emulator has no hinge or posture. See **P5-02**. |
+| 10 | Layouts verified at 320/360/600/840dp, portrait, landscape and foldable | **Partially complete** | Screenshot capture succeeds for all four width targets on the calibrated 320x640 `cc36` AVD (97/97 in portrait 1.0x, portrait 2.0x and landscape), but the 600/840 dp targets are clamped to the 320 dp window in portrait and to 640 dp in landscape, so those captures are bit-for-bit identical to the 320/640 captures and do not prove Medium/Expanded layouts. Genuine 840 dp coverage was verified on the same AVD via `adb wm size 840x1280` (system configuration `w840dp`/`sw840dp`, `ReThemeScreenshotTest` 97/97 with distinct 320/360/600/840 widths, `ResponsiveLayoutTest` passing), but that is a software window resize, not a physical tablet/foldable. **Foldable is not verified**: the emulator has no hinge or posture. See **P5-02**. |
 | 11 | TalkBack traverses every key screen with correct roles, labels and states; no access trap remains | **Partially complete** | `TalkBackSemanticsTest` now covers every key screen, and the notification gate announces its action. **No human has run a screen reader**, which is recorded as pending rather than claimed. See **P5-03**. |
 | 12 | `:core:designsystem` has its own test suite | **Verified complete** | **43** cases across `DesignTokenTest`, `MetricCardAccentTest` and `PreviewCoverageTest`. |
 | 13 | No dark-pattern copy anywhere in the UI | **Verified complete** | The review is recorded in `24-dark-pattern-copy-review.md`, and `DarkPatternCopyTest` and `CopyAuditTest` assert the absence of the banned phrases so it does not regress. |
@@ -582,26 +617,37 @@ verified for one file, not for every screen.
 - **Expected evidence.** A written manual pass record. This is pending
   and is not claimed.
 
-### P5-06 — The font-scale and landscape capture runs abort part way
+### P5-06 — Font-scale and landscape capture runs (historical abort, now resolved)
 
-- **Definition of done.** The capture harness completes all 97 images
-  at 200% font scale and in landscape, so the sweeps those two criteria
-  ask for have complete evidence.
-- **What happens.** The capture run stops at 58 of 97 images. The cause
-  is the edit-cycle sheet: it is a `ModalBottomSheet`, and on a screen
-  too short to hold it the back press finishes the activity instead of
-  dismissing the sheet, so the next capture has no composition. The
-  failure was reproduced on the base commit in a separate worktree, so
-  it is not a regression from this work; it is a pre-existing defect in
-  the harness.
-- **Dependencies.** The app's `EditCycleSheet`, or a harness strategy
-  that dismisses the sheet without the back key.
+- **Historical issue.** The capture run originally stopped at 58 of 97
+  images. The cause was the edit-cycle sheet: it is a `ModalBottomSheet`,
+  and on a screen too short to hold it the back press finished the
+  activity instead of dismissing the sheet, so the next capture had no
+  composition. The failure reproduced on the base commit in a separate
+  worktree, so it was not a regression from the redesign work; it was a
+  pre-existing defect in the harness. It was stabilised in commit
+  `09a1156` by searching the unmerged semantics tree
+  (`useUnmergedTree = true`) for `home_dashboard` after sheet dismissal,
+  and by correcting the runbook's shell polling interval from 1.0 s to
+  0.2 s so the Gradle uninstall race no longer deleted the last files.
+- **Current status.** Resolved in the current baseline. All three sweeps
+  complete 97/97: portrait 1.0x font scale, portrait 2.0x font scale and
+  landscape, on the calibrated `cc36` AVD (320x640, 160 dpi). See
+  `24-final-production-readiness-audit.md` §6.2 for the reconciled
+  breakdown.
+- **Remaining caveat.** Completing the capture is not the same as
+  genuine responsive coverage: on the 320x640 window the 600/840 dp
+  captures are clamped and bit-for-bit identical to the 320 dp captures
+  (§6.3 of the audit). Genuine 840 dp coverage requires the window
+  override documented in §6.3.
+- **Dependencies.** None open for capture completion. Physical
+  tablet/foldable verification remains open (P5-02).
 - **Verification procedure.** `settings put system font_scale 2.0`,
-  capture, restore the scale to 1.0, and repeat with
-  `user_rotation 1`. The run must reach 97 images in both
-  configurations. Restore the device afterwards either way.
-- **Expected evidence.** 97 images at 200% and 97 in landscape, and
-  the restored device state.
+  capture, restore the scale to 1.0, and repeat with `user_rotation 1`;
+  or use the override procedure in audit §6.3. Restore the device
+  afterwards either way.
+- **Expected evidence.** 97 images at 200% and 97 in landscape, and the
+  restored device state.
 
 ---
 
@@ -626,7 +672,7 @@ file-length clause **fails**.
 | 5 | No layout shift when ads load or fail | **Verified complete** | The banner collapses on failure and reserves its height otherwise |
 | 6 | Every screen in `03` §6 has a designed, tested state | **Verified complete** | As `14` §12.7. |
 | 7 | Every screen works offline with no network dependency for local content | **Verified complete** | The content is read from the local database. The export screen is the only one that reaches the network, and it has a failure state. |
-| 8 | Every screen passes at 200% font scale, in dark mode, in RTL, and under TalkBack | **Partially complete** | Dark: every screen captured in both schemes. RTL and TalkBack: every key screen. 200%: the capture run aborts at 58 of 97, so the sweep is incomplete — see **P5-06**. |
+| 8 | Every screen passes at 200% font scale, in dark mode, in RTL, and under TalkBack | **Partially complete** | Dark: every screen captured in both schemes. RTL and TalkBack: every key screen. 200%: the capture sweep now completes all 97 images at 2.0x font scale on `cc36` (historical 58/97 abort resolved). See **P5-06**. |
 | 9 | No hardcoded user-facing strings remain | **Verified complete** | As `14` §12.9 |
 | 10 | Confirmed versus estimated states distinguishable without colour | **Verified complete** | As `14` §12.5 |
 | 11 | No screen shows two competing primary actions | **Verified complete** | As `14` §12.6 |

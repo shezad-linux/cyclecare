@@ -121,6 +121,11 @@ class MigratedV2DatabaseLaunchTest {
         composeRule.onNodeWithTag("settings_list")
             .performScrollToNode(hasTestTag("settings_open_migration_record"))
         composeRule.onNodeWithTag("settings_open_migration_record").performClick()
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodes(hasTestTag("migration_notes_list"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
         composeRule.waitForIdle()
 
         // The record of what the migration did is reachable from

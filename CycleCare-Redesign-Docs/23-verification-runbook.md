@@ -55,15 +55,15 @@ Always pass `ANDROID_SERIAL=emulator-5556`.
 
 | Check | Command | Expected |
 |---|---|---|
-| Unit tests | `./gradlew test` | 437 tests, 0 failures, 0 skipped |
-| Instrumented tests | `ANDROID_SERIAL=emulator-5556 ./gradlew connectedDebugAndroidTest` | 251 tests, 0 failures, 2 skipped |
+| Unit tests | `./gradlew test` | 505 tests, 0 failures, 0 skipped |
+| Instrumented tests | `ANDROID_SERIAL=emulator-5556 ./gradlew connectedDebugAndroidTest` | 268 tests, 0 failures, 2 skipped |
 | Ad-targeting guard | `./scripts/guard-no-ad-targeting.sh` | `OK: no ad-targeting API found.` |
 | Typography guard | `./scripts/guard-typography-roles.sh` | `All 15 typography roles are defined and referenced.` |
 | Contrast | `python3 scripts/contrast-report.py` | `All pairs with a WCAG target meet it.` |
 | Release build | `./gradlew assembleRelease` | `BUILD SUCCESSFUL` |
 | Release lint | `./gradlew :app:lintRelease` | no errors |
 | Corpus gates | `./gradlew :core:domain:test` | All 13 gates have named tests and pass |
-| Migration tests | `ANDROID_SERIAL=emulator-5556 ./gradlew :core:database:connectedDebugAndroidTest` | 25 tests, 0 failures |
+| Migration tests | `ANDROID_SERIAL=emulator-5556 ./gradlew :core:database:connectedDebugAndroidTest` | 34 tests, 0 failures |
 | Screenshots | see §5 | 97 images |
 | Doze (opt-in) | see §7 | 2 tests, on a real device only for sign-off |
 
@@ -77,25 +77,25 @@ Always pass `ANDROID_SERIAL=emulator-5556`.
 ./gradlew test
 ```
 
-During the audit this reported **437 tests, 0 failures, 0 errors, 0
+During the audit this reported **505 tests, 0 failures, 0 errors, 0
 skipped**, spread as:
 
 | Module | Tests |
 |---|---|
-| `app` | 65 |
-| `core/data` | 4 |
+| `app` | 75 |
+| `core/data` | 25 |
 | `core/designsystem` | 43 |
-| `core/domain` | 177 |
+| `core/domain` | 203 |
 | `core/security` | 25 |
-| `feature/calendar` | 24 |
+| `feature/calendar` | 28 |
 | `feature/export` | 13 |
-| `feature/home` | 24 |
+| `feature/home` | 31 |
 | `feature/insights` | 4 |
 | `feature/logging` | 26 |
 | `feature/onboarding` | 7 |
 | `feature/privacy` | 18 |
 | `feature/settings` | 7 |
-| **Total** | **437** |
+| **Total** | **505** |
 
 To read the results as XML:
 
@@ -126,20 +126,20 @@ Run a single class or method with `--tests`:
 ANDROID_SERIAL=emulator-5556 ./gradlew connectedDebugAndroidTest
 ```
 
-This took **5m 6s** and reported **251 tests, 0 failures, 2 skipped**:
+This took **5m 6s** and reported **268 tests, 0 failures, 2 skipped**:
 
 | Module | Tests |
 |---|---|
-| `app` | 156 (2 skipped) |
-| `core/data` | 31 |
-| `core/database` | 25 |
+| `app` | 159 (2 skipped) |
+| `core/data` | 36 |
+| `core/database` | 34 |
 | `feature/calendar` | 6 |
 | `feature/home` | 12 |
 | `feature/insights` | 2 |
 | `feature/logging` | 2 |
 | `feature/onboarding` | 7 |
 | `feature/privacy` | 10 |
-| **Total** | **251** |
+| **Total** | **268** |
 
 The suite is order-independent. It was not always: the interstitial
 gate reads persisted state, so a tab navigation happens when the read
@@ -209,7 +209,7 @@ An empty line means the gate has no test.
 ANDROID_SERIAL=emulator-5556 ./gradlew :core:database:connectedDebugAndroidTest
 ```
 
-20 tests, 0 failures. These cover `02` §9.8 and §9.10 items 1, 2, 5, 7
+34 tests, 0 failures. These cover `02` §9.8 and §9.10 items 1, 2, 5, 7
 and 8. The items that have no test are listed under **P3-02**, **P3-03**
 and **P3-05**.
 
@@ -350,13 +350,18 @@ Then capture with the procedure in §5.1, and afterwards **restore it**:
 adb -s emulator-5556 shell settings put system font_scale 1.0
 ```
 
-The capture currently **aborts at 58 of 97 images**. The cause is the
-edit-cycle sheet: it is a `ModalBottomSheet`, and on a screen too short
-to hold it the back press finishes the activity instead of dismissing
-the sheet, so the next capture has no composition. The failure
-reproduces on the base commit in a separate worktree, so it is a
-pre-existing harness defect and not a regression from this work. See
-the ledger's **P5-06**.
+Historical note: an earlier version of this sweep aborted at 58 of 97
+images. The cause was the edit-cycle sheet: it is a `ModalBottomSheet`,
+and on a screen too short to hold it the back press finished the
+activity instead of dismissing the sheet, so the next capture had no
+composition. The failure reproduced on the base commit in a separate
+worktree, so it was a pre-existing harness defect and not a regression
+from this work. It was stabilised in commit `09a1156` (unmerged
+semantics-tree lookup plus corrected polling interval).
+
+Current status: the sweep completes **97 of 97 images** at 2.0x font
+scale on the calibrated `cc36` AVD (320x640, 160 dpi). The 58/97
+abort is historical only. See the ledger's **P5-06** (now resolved).
 
 `NavLabelScalingTest` covers the in-app check at 1.5× by overriding
 `LocalDensity` inside the test, which needs no device state change:
@@ -392,8 +397,9 @@ adb -s emulator-5556 shell settings put system user_rotation 1
 ```
 
 Capture, then restore with `user_rotation 0` and `accelerometer_rotation 1`
-as in §9. This aborts at the same 58 of 97 images, for the same reason
-as the font-scale sweep.
+as in §9. Historically this aborted at the same 58 of 97 images for the
+same reason as the font-scale sweep; in the current baseline it
+completes 97 of 97 images on the calibrated `cc36` AVD.
 
 ### 6.4 Touch targets and the 320dp case
 
@@ -403,6 +409,44 @@ covers the 48dp minimum.
 
 **Do not set `wm size` to 1000x1800.** That combination breaks the
 touch-target assertions and the results are meaningless.
+
+### 6.5 Genuine wide-width (600/840 dp) verification on `cc36`
+
+The calibrated AVD is 320x640 at 160 dpi, so a `Modifier.width(600.dp)`
+or `Modifier.width(840.dp)` inside it is clamped to 320 dp. That is
+why the portrait captures above are bit-for-bit identical across widths
+and do not prove Medium/Expanded layouts. To exercise a genuine
+840 dp window on the same AVD without creating another AVD:
+
+```bash
+adb -s emulator-5556 shell wm size 840x1280
+adb -s emulator-5556 shell wm density 160
+```
+
+Verify the effective width and resulting WindowSizeClass before claiming
+coverage:
+
+```bash
+adb -s emulator-5556 shell wm size          # Override size: 840x1280
+adb -s emulator-5556 shell dumpsys window displays | grep -i "w840dp\|sw840dp"
+```
+
+Under that override the system configuration reports `w840dp`/`sw840dp`
+(Expanded WindowSizeClass) and the activity window bounds are 840x1280,
+so `ReThemeScreenshotTest` produces 97 captures whose 320/360/600/840
+widths are distinct (verified: 97 captures, widths 320/360/600/840 at
+1280 px height; SHA-256 distinct across widths) and `ResponsiveLayoutTest`
+passes.
+
+Limitations of this evidence: the underlying physical display remains
+320x640; the override is a software window resize; touch-target and
+font-scale assertions were not re-run under the override; foldable
+posture is still unverified. Restore the device afterwards:
+
+```bash
+adb -s emulator-5556 shell wm size reset
+adb -s emulator-5556 shell wm density reset
+```
 
 ---
 
@@ -532,6 +576,6 @@ recorded so that nobody reads them as findings.
 | The privacy screen is captured once, at 360dp in light | Rendering, navigating and rendering again in one test leaves the previous composition registered and the next one fails — `ComposeRootRegistry.withRegistry`. |
 | `ReminderDozeDeliveryTest` forces device-wide idle | It is opt-in. Left enabled, it breaks 28 other instrumented tests. |
 | `PreviewCoverageTest` reads one source file | It asserts the widths and schemes against `ScreenDebugPreviews.kt` only, not against every screen. See **P5-05**. |
-| The 200% and landscape capture runs abort at 58 of 97 | The edit-cycle sheet does not take the back key on a screen too short to hold it, so the activity finishes and the next capture has no composition. Pre-existing; see **P5-06**. |
+| The 200% and landscape capture runs (historical) aborted at 58 of 97 | Historical: the edit-cycle sheet did not take the back key on a screen too short to hold it, so the activity finished and the next capture had no composition. Resolved in the current baseline (commit `09a1156`); all three sweeps now complete 97/97. See **P5-06**. |
 | A tab navigation is not synchronous | The interstitial gate reads persisted state, so the navigation happens when the read returns, on a background thread, and is then posted to the main thread. A test that clicks a tab and asserts immediately races it; use `openTabAndAwait`. |
 | The macrobenchmark module has no baseline | `06` §4 budgets cannot be set until measurements exist. See **P9-05**. |

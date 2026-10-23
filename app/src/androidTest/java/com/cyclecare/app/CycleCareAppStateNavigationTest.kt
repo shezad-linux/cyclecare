@@ -326,7 +326,7 @@ class CycleCareAppStateNavigationTest {
     fun calendarSelection_survivesTabSwitchRepeatedTapAndRecreate() {
         val env = TestAppEnvironment.populated()
 
-        renderApp(env)
+        renderAppOnActivity(env)
         composeRule.openTabAndAwait("calendar")
         navigateCalendarTo("March 2026")
         composeRule.onNodeWithTag("calendar_day_2026-03-23").performScrollTo().performClick()
@@ -340,7 +340,7 @@ class CycleCareAppStateNavigationTest {
         assertCalendarSelectionIsMarch23()
 
         composeRule.activityRule.scenario.recreate()
-        renderApp(env)
+        renderAppOnActivity(env)
         assertCalendarSelectionIsMarch23()
     }
 
@@ -348,7 +348,7 @@ class CycleCareAppStateNavigationTest {
     fun onboardingDraft_survivesActivityRecreate() {
         val env = TestAppEnvironment.empty()
 
-        renderApp(env)
+        renderAppOnActivity(env)
         composeRule.onNodeWithTag("onboarding_age_Teen").performClick()
         composeRule.onNodeWithTag("onboarding_cycle_length_slider")
             .performSemanticsAction(SemanticsActions.SetProgress) { setProgress ->
@@ -356,7 +356,7 @@ class CycleCareAppStateNavigationTest {
             }
 
         composeRule.activityRule.scenario.recreate()
-        renderApp(env)
+        renderAppOnActivity(env)
 
         composeRule.onNodeWithTag("onboarding_age_Teen").assertIsSelected()
         composeRule.onNodeWithTag("onboarding_cycle_length_slider").performScrollTo()
@@ -617,7 +617,7 @@ class CycleCareAppStateNavigationTest {
     fun logDraft_survivesActivityRecreate() {
         val env = TestAppEnvironment.populated()
 
-        renderApp(env)
+        renderAppOnActivity(env)
         composeRule.openTabAndAwait("log")
         // The mood chips sit inside the logging LazyColumn and are not
         // composed until scrolled into range.
@@ -629,38 +629,81 @@ class CycleCareAppStateNavigationTest {
         composeRule.onNodeWithTag("logging_notes_field").performTextReplacement("Recovered after lunch")
 
         composeRule.activityRule.scenario.recreate()
-        renderApp(env)
+        renderAppOnActivity(env)
 
         composeRule.onNodeWithText("Recovered after lunch").assertIsDisplayed()
     }
 
+    /**
+     * Attaches the app to the rule's composition.
+     *
+     * The content is set through the rule rather than through
+     * `scenario.onActivity { activity.setContent { … } }`. Attaching it
+     * that way leaves the rule without a record of the composition, and
+     * in a process shared with other classes the framework then reads
+     * that composition's snapshot state from the instrumentation thread
+     * rather than the one that laid it out — *"Detected multithreaded
+     * access to SnapshotStateObserver"*.
+     */
     private fun renderApp(env: TestAppEnvironment) {
+        composeRule.setContent {
+            CycleCareTheme {
+                CycleCareApp(
+                    container = env.container,
+                    secureAuthController = env.secureAuthController,
+                    interstitialAdManager = noOpInterstitialAdManager(),
+                )
+            }
+        }
+        composeRule.waitForIdle()
+    }
+
+    /**
+     * Attaches the app to the activity, for the recreation tests.
+     *
+     * The rule's own `setContent` may be called only once per test, and
+     * a recreated activity needs the content attached again. The rule
+     * does not re-apply the content on a recreate, so the recreated
+     * activity is given it directly.
+     *
+     * The state these tests check lives in a ViewModel's
+     * `SavedStateHandle`, so a real recreation is what they have to
+     * exercise; a saved-state emulation would not reach it.
+     */
+    private fun renderAppOnActivity(env: TestAppEnvironment) {
         composeRule.activityRule.scenario.onActivity { activity ->
-            val noOpInterstitialAdManager = InterstitialAdManager(
-                context = activity.applicationContext,
-                adLoader = object : InterstitialAdLoader {
-                    override fun load(
-                        context: Context,
-                        adUnitId: String,
-                        adRequest: AdRequest,
-                        callback: InterstitialAdLoadCallback,
-                    ) {
-                        // No-op for tests: prevents real network ad loading and AdActivity launch
-                    }
-                },
-            )
             activity.setContent {
                 CycleCareTheme {
                     CycleCareApp(
                         container = env.container,
                         secureAuthController = env.secureAuthController,
-                        interstitialAdManager = noOpInterstitialAdManager,
+                        interstitialAdManager = noOpInterstitialAdManager(),
                     )
                 }
             }
         }
         composeRule.waitForIdle()
     }
+
+    /**
+     * An interstitial manager that never loads anything.
+     *
+     * A real banner would inject a third-party creative into the test
+     * and could launch an ad activity.
+     */
+    private fun noOpInterstitialAdManager(): InterstitialAdManager = InterstitialAdManager(
+        context = composeRule.activity.applicationContext,
+        adLoader = object : InterstitialAdLoader {
+            override fun load(
+                context: Context,
+                adUnitId: String,
+                adRequest: AdRequest,
+                callback: InterstitialAdLoadCallback,
+            ) {
+                // No-op for tests: prevents real network ad loading and AdActivity launch
+            }
+        },
+    )
 
     private fun openPrivacyFromSettings() {
         composeRule.onNodeWithTag(SETTINGS_ACTION_TAG).performClick()
