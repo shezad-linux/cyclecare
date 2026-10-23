@@ -169,6 +169,12 @@ class AppResetCancelsRemindersTest {
         // statement about the precondition rather than a skip.
         assertThat(notificationsCanBePosted()).isTrue()
 
+        // The notification channel is recreated here rather than in
+        // setUp, because `createNotificationChannel` is idempotent: a
+        // channel that already exists from a previous test in this
+        // class is silently re-used. Re-creating it per test keeps the
+        // notification posted below from being silently dropped as a
+        // duplicate of one a previous test posted.
         val manager = NotificationManagerCompat.from(context)
         manager.createNotificationChannel(
             NotificationChannel(
