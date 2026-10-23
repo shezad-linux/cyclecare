@@ -28,24 +28,25 @@ document is the "how to run it" half.
 | | |
 |---|---|
 | **AVD** | `cc36` — Android 16, API 36, 320x640 at 160dpi |
-| **Serial** | `emulator-5556` |
+| **Serial** | `emulator-5554` |
 | **JDK** | As configured by Gradle; CI pins the version in `.github/workflows/ci.yml` |
-| **Source of truth** | `ANDROID_SERIAL=emulator-5556` must be set for every `adb` and Gradle command below |
+| **Source of truth** | `ANDROID_SERIAL=emulator-5554` must be set for every `adb` and Gradle command below |
 
 **Do not create another AVD.** The `cc36` image is the one the whole
 verification set is calibrated against, and the numbers in
 `19-doze-verification.md` and `21-phase-5-6-acceptance-matrix.md` were
 taken on it.
 
-**API 37 is broken for this suite.** A `Pixel_9_Pro` AVD on API 37 is
-present at `emulator-5554` and it must not be used. Compose
-instrumentation fails there with:
+The `cc36` AVD is the only image the verification set is calibrated
+against. Any other AVD — including a Pixel_9_Pro on API 37 — must not
+be used: Compose instrumentation fails there with
 
 ```
 java.lang.NoSuchMethodException: android.hardware.input.InputManager.getInstance
 ```
 
-Always pass `ANDROID_SERIAL=emulator-5556`.
+Always pass `ANDROID_SERIAL=emulator-5554`, which is the serial the running
+`cc36` instance advertises.
 
 **Every command below is run from the repository root**, `/Users/shezad/period`.
 
@@ -56,14 +57,14 @@ Always pass `ANDROID_SERIAL=emulator-5556`.
 | Check | Command | Expected |
 |---|---|---|
 | Unit tests | `./gradlew test` | 505 tests, 0 failures, 0 skipped |
-| Instrumented tests | `ANDROID_SERIAL=emulator-5556 ./gradlew connectedDebugAndroidTest` | 268 tests, 0 failures, 2 skipped |
+| Instrumented tests | `ANDROID_SERIAL=emulator-5554 ./gradlew connectedDebugAndroidTest` | 268 tests, 0 failures, 2 skipped |
 | Ad-targeting guard | `./scripts/guard-no-ad-targeting.sh` | `OK: no ad-targeting API found.` |
 | Typography guard | `./scripts/guard-typography-roles.sh` | `All 15 typography roles are defined and referenced.` |
 | Contrast | `python3 scripts/contrast-report.py` | `All pairs with a WCAG target meet it.` |
 | Release build | `./gradlew assembleRelease` | `BUILD SUCCESSFUL` |
 | Release lint | `./gradlew :app:lintRelease` | no errors |
 | Corpus gates | `./gradlew :core:domain:test` | All 13 gates have named tests and pass |
-| Migration tests | `ANDROID_SERIAL=emulator-5556 ./gradlew :core:database:connectedDebugAndroidTest` | 34 tests, 0 failures |
+| Migration tests | `ANDROID_SERIAL=emulator-5554 ./gradlew :core:database:connectedDebugAndroidTest` | 34 tests, 0 failures |
 | Screenshots | see §5 | 97 images |
 | Doze (opt-in) | see §7 | 2 tests, on a real device only for sign-off |
 
@@ -123,7 +124,7 @@ Run a single class or method with `--tests`:
 ### 3.2 Instrumented tests
 
 ```bash
-ANDROID_SERIAL=emulator-5556 ./gradlew connectedDebugAndroidTest
+ANDROID_SERIAL=emulator-5554 ./gradlew connectedDebugAndroidTest
 ```
 
 This took **5m 6s** and reported **268 tests, 0 failures, 2 skipped**:
@@ -155,7 +156,7 @@ The two skipped are `ReminderDozeDeliveryTest`. See §7.
 Run one class:
 
 ```bash
-ANDROID_SERIAL=emulator-5556 ./gradlew :app:connectedDebugAndroidTest \
+ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.class=com.cyclecare.app.ScreenStateMatrixTest
 ```
 
@@ -206,7 +207,7 @@ An empty line means the gate has no test.
 ### 3.4 The migration tests
 
 ```bash
-ANDROID_SERIAL=emulator-5556 ./gradlew :core:database:connectedDebugAndroidTest
+ANDROID_SERIAL=emulator-5554 ./gradlew :core:database:connectedDebugAndroidTest
 ```
 
 34 tests, 0 failures. These cover `02` §9.8 and §9.10 items 1, 2, 5, 7
@@ -299,18 +300,18 @@ somewhere that survives the uninstall, while the run is in progress:
 ```bash
 rm -rf /tmp/shots && mkdir -p /tmp/shots
 
-ANDROID_SERIAL=emulator-5556 ./gradlew :app:connectedDebugAndroidTest \
+ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.class=com.cyclecare.app.ReThemeScreenshotTest \
   --console=plain > /tmp/shots/gradle.log 2>&1 &
 
 GRADLE_PID=$!
 while kill -0 $GRADLE_PID 2>/dev/null; do
-  adb -s emulator-5556 shell \
+  adb -s emulator-5554 shell \
     'mkdir -p /sdcard/Download/cc_shots && cp -f /sdcard/Android/data/com.cyclecare.tracker/files/screenshots/*.png /sdcard/Download/cc_shots/ 2>/dev/null' >/dev/null 2>&1
   sleep 1
 done
 
-adb -s emulator-5556 pull /sdcard/Download/cc_shots /tmp/shots/
+adb -s emulator-5554 pull /sdcard/Download/cc_shots /tmp/shots/
 ls /tmp/shots/cc_shots | wc -l    # 97
 ```
 
@@ -341,13 +342,13 @@ This uses the **real system setting**, not a density trick, so the
 platform's own layout behaviour is what gets exercised.
 
 ```bash
-adb -s emulator-5556 shell settings put system font_scale 2.0
+adb -s emulator-5554 shell settings put system font_scale 2.0
 ```
 
 Then capture with the procedure in §5.1, and afterwards **restore it**:
 
 ```bash
-adb -s emulator-5556 shell settings put system font_scale 1.0
+adb -s emulator-5554 shell settings put system font_scale 1.0
 ```
 
 Historical note: an earlier version of this sweep aborted at 58 of 97
@@ -367,7 +368,7 @@ abort is historical only. See the ledger's **P5-06** (now resolved).
 `LocalDensity` inside the test, which needs no device state change:
 
 ```bash
-ANDROID_SERIAL=emulator-5556 ./gradlew :app:connectedDebugAndroidTest \
+ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.class=com.cyclecare.app.NavLabelScalingTest
 ```
 
@@ -378,22 +379,22 @@ the layout direction and the tab order reverse, and restores the locale
 in its own teardown. It leaves no device state behind.
 
 ```bash
-ANDROID_SERIAL=emulator-5556 ./gradlew :app:connectedDebugAndroidTest \
+ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.class=com.cyclecare.app.RtlLayoutTest
 ```
 
 To set the device locale by hand for a manual look:
 
 ```bash
-adb -s emulator-5556 shell cmd locale set-app-locales com.cyclecare.tracker --locales ar
-adb -s emulator-5556 shell cmd locale set-app-locales com.cyclecare.tracker --locales ""
+adb -s emulator-5554 shell cmd locale set-app-locales com.cyclecare.tracker --locales ar
+adb -s emulator-5554 shell cmd locale set-app-locales com.cyclecare.tracker --locales ""
 ```
 
 ### 6.3 Landscape
 
 ```bash
-adb -s emulator-5556 shell settings put system accelerometer_rotation 0
-adb -s emulator-5556 shell settings put system user_rotation 1
+adb -s emulator-5554 shell settings put system accelerometer_rotation 0
+adb -s emulator-5554 shell settings put system user_rotation 1
 ```
 
 Capture, then restore with `user_rotation 0` and `accelerometer_rotation 1`
@@ -419,16 +420,16 @@ and do not prove Medium/Expanded layouts. To exercise a genuine
 840 dp window on the same AVD without creating another AVD:
 
 ```bash
-adb -s emulator-5556 shell wm size 840x1280
-adb -s emulator-5556 shell wm density 160
+adb -s emulator-5554 shell wm size 840x1280
+adb -s emulator-5554 shell wm density 160
 ```
 
 Verify the effective width and resulting WindowSizeClass before claiming
 coverage:
 
 ```bash
-adb -s emulator-5556 shell wm size          # Override size: 840x1280
-adb -s emulator-5556 shell dumpsys window displays | grep -i "w840dp\|sw840dp"
+adb -s emulator-5554 shell wm size          # Override size: 840x1280
+adb -s emulator-5554 shell dumpsys window displays | grep -i "w840dp\|sw840dp"
 ```
 
 Under that override the system configuration reports `w840dp`/`sw840dp`
@@ -444,8 +445,8 @@ font-scale assertions were not re-run under the override; foldable
 posture is still unverified. Restore the device afterwards:
 
 ```bash
-adb -s emulator-5556 shell wm size reset
-adb -s emulator-5556 shell wm density reset
+adb -s emulator-5554 shell wm size reset
+adb -s emulator-5554 shell wm density reset
 ```
 
 ---
@@ -459,7 +460,7 @@ forces the whole device into idle, and when it is left enabled in the
 default suite it breaks the other 28 instrumented tests.
 
 ```bash
-ANDROID_SERIAL=emulator-5556 ./gradlew :app:connectedDebugAndroidTest \
+ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.class=com.cyclecare.app.ReminderDozeDeliveryTest \
   -Pandroid.testInstrumentationRunnerArguments.runDozeTest=true
 ```
@@ -551,12 +552,12 @@ Any procedure that changes device state must put it back. After a
 session:
 
 ```bash
-adb -s emulator-5556 shell settings put system font_scale 1.0
-adb -s emulator-5556 shell settings put system accelerometer_rotation 1
-adb -s emulator-5556 shell settings put system user_rotation 0
-adb -s emulator-5556 shell wm size reset
-adb -s emulator-5556 shell wm density reset
-adb -s emulator-5556 shell cmd locale set-app-locales com.cyclecare.tracker --locales ""
+adb -s emulator-5554 shell settings put system font_scale 1.0
+adb -s emulator-5554 shell settings put system accelerometer_rotation 1
+adb -s emulator-5554 shell settings put system user_rotation 0
+adb -s emulator-5554 shell wm size reset
+adb -s emulator-5554 shell wm density reset
+adb -s emulator-5554 shell cmd locale set-app-locales com.cyclecare.tracker --locales ""
 ```
 
 `wm size reset` and `wm density reset` matter most. Setting a custom
