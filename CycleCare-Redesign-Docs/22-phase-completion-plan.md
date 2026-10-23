@@ -22,7 +22,9 @@ report.
 
 The seven instrumented failures reported after the integration were
 re-investigated one at a time. **Six were not defects.** All seven
-now pass deterministically.
+now pass deterministically. The instrumented suite is now 268 tests,
+0 failures, 2 skipped (the opt-in Doze tests) in a complete serial
+run on cc36 / API 36.
 
 The two intermittencies that survived the previous pass —
 `ReThemeScreenshotTest.captureAllTopLevelScreensAtEveryWidthAndScheme`
