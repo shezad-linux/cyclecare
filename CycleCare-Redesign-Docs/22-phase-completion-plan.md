@@ -107,13 +107,13 @@ ran — and is fixed in commit `a663945`. The fix is the same one: wait
 for the destination before asserting, and look the dashboard up in the
 unmerged tree.
 
+A fourth class, `MigratedV2DatabaseLaunchTest`, was hit by the same
+`SnapshotStateObserver` root cause and is fixed in commit `0677d67`
+by the same pattern.
+
 The two root causes are now both documented in the ledger's Phase 5
 and Phase 6 sections, and the app module's 159 tests are green in
 five consecutive full runs.
-
-A third class, `MigratedV2DatabaseLaunchTest`, was hit by the same
-`SnapshotStateObserver` root cause and is fixed in commit `0677d67`
-by the same pattern.
 
 The capture test's residual variance had a second, independent cause,
 found in commit `1af12fa`. Tapping a bottom-navigation tab asks the
