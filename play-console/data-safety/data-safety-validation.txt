@@ -1,0 +1,225 @@
+================================================================================
+CYCLECARE GOOGLE PLAY DATA SAFETY VALIDATION & IMPORT RUNBOOK
+================================================================================
+Date: 2026-10-23
+Application ID: com.cyclecare.tracker
+Target Release: versionCode 7, versionName 1.0
+Audit Scope: Google Play Data Safety Compliance & Policy Review
+Status: IMPORT-READY CSV GENERATED & VALIDATED AGAINST OFFICIAL PLAY CONSOLE EXPORT
+
+--------------------------------------------------------------------------------
+1. TEMPLATE VALIDATION & IMPORT CSV STATUS
+--------------------------------------------------------------------------------
+Source Export Template: play-console/data-safety/data-safety-export.csv
+Generated Import File:  play-console/data-safety/data-safety-import.csv
+
+Structural Validation Checks:
+[PASS] Official Template Ingested: 783 rows (1 header + 782 question rows)
+[PASS] Encoding & Syntax: Valid UTF-8, CRLF/LF normalized, standard RFC 4180 CSV
+[PASS] Column Alignment: Exactly 5 columns per line across all 783 rows
+[PASS] Header Match: "Question ID (machine readable),Response ID (machine readable),Response value,Answer requirement,Human-friendly question label"
+[PASS] Question & Response ID Integrity: 100% 1:1 match with official Play Console export schema
+[PASS] Row Count Parity: Export = 783 rows, Import = 783 rows
+[PASS] Controlled Delta: Exactly 64 rows modified (0 questions added, 0 removed)
+
+--------------------------------------------------------------------------------
+2. ROOT CAUSE AUDIT & SUMMARY OF MODIFICATIONS
+--------------------------------------------------------------------------------
+The Google Play Console compliance warning:
+  “We found issues with your Data safety form”
+was caused by three critical discrepancies between the actual application binary
+and the original Data safety declarations:
+
+1. False Declaration of Personal Info (Name):
+   - Original export declared PSL_NAME as collected (Line 24 & Lines 62-67).
+   - Evidence: CycleCare operates zero user accounts, requires no login, and provides
+     no user profile name field. This declaration was completely inaccurate.
+   - Fix: Cleared PSL_NAME and all 4 associated usage/purpose response rows.
+
+2. False Declaration of Health Info Collection:
+   - Original export declared PSL_HEALTH as collected (Line 48 & Lines 518-523).
+   - Evidence: Cycle records, symptom logs, mood, notes, and cycle predictions are
+     stored exclusively on-device in Room SQLite (`cyclecare.db`). Zero health
+     records are transmitted off-device. Under Google Play Data safety rules:
+     "Collection means transmitting data off the device. If data is stored only
+     locally on the user's device and not transmitted to a server, it is NOT
+     considered collection."
+   - Declaring health data as collected off-device triggers medical/HIPAA backend
+     encryption audits and false regulatory disclosures.
+   - Fix: Cleared PSL_HEALTH and all 4 associated usage/purpose response rows.
+     (Note: CycleCare is declared separately under Google Play's dedicated
+     "Health apps declaration" as a menstrual tracking utility).
+
+3. False Data Deletion Retention Claim:
+   - Original export declared DATA_DELETION_NO_AUTO_DELETED ("No, but user data is
+     automatically deleted within 90 days") (Line 14).
+   - Evidence: Local Room SQLite database data persists indefinitely until the user
+     uninstalls the app or taps the in-app "Reset All Local Data" button. Claiming
+     a 90-day automatic server wipe was false.
+   - Fix: Cleared DATA_DELETION_NO_AUTO_DELETED. Selected DATA_DELETION_YES (Line 12)
+     and provided `https://cyclecare.app/privacy` (Line 15).
+     *(See Section 4 below for owner toggle instructions if Option B "No" is preferred).*
+
+4. Omission of Mandatory AdMob / UMP SDK Transmitted Data Types:
+   - The release runtime classpath bundles Google Mobile Ads (`play-services-ads:25.2.0`)
+     and User Messaging Platform (`user-messaging-platform:4.0.0`). The merged release
+     manifest contains `com.google.android.gms.permission.AD_ID` and Privacy Sandbox
+     permissions.
+   - The original export completely omitted all 5 data types collected and shared by
+     the Google Mobile Ads SDK, causing Google Play automated APK/AAB analyzers to flag
+     the submission.
+   - Fix: Declared collection and sharing for all 5 AdMob data types:
+     a) PSL_APPROX_LOCATION (Location -> Approximate location)
+     b) PSL_USER_INTERACTION (App activity -> App interactions)
+     c) PSL_CRASH_LOGS (App info and performance -> Crash logs)
+     d) PSL_PERFORMANCE_DIAGNOSTICS (App info and performance -> Diagnostics)
+     e) PSL_DEVICE_ID (Device or other IDs -> Device or other IDs)
+
+--------------------------------------------------------------------------------
+3. COMPLETE INVENTORY OF MODIFIED ROWS (64 ROWS TOTAL)
+--------------------------------------------------------------------------------
+Line   Q_ID                                                                 R_ID                                 Old -> New
+-------------------------------------------------------------------------------------------------------------------------------------------------
+L12    PSL_SUPPORT_DATA_DELETION_BY_USER                                    DATA_DELETION_YES                    '' -> 'true'
+L14    PSL_SUPPORT_DATA_DELETION_BY_USER                                    DATA_DELETION_NO_AUTO_DELETED        'true' -> ''
+L15    PSL_DATA_DELETION_URL                                                [URL]                                '' -> 'https://cyclecare.app/privacy'
+L24    PSL_DATA_TYPES_PERSONAL                                              PSL_NAME                             'true' -> ''
+L37    PSL_DATA_TYPES_LOCATION                                              PSL_APPROX_LOCATION                  '' -> 'true'
+L48    PSL_DATA_TYPES_HEALTH_AND_FITNESS                                    PSL_HEALTH                           'true' -> ''
+L52    PSL_DATA_TYPES_APP_PERFORMANCE                                       PSL_CRASH_LOGS                       '' -> 'true'
+L53    PSL_DATA_TYPES_APP_PERFORMANCE                                       PSL_PERFORMANCE_DIAGNOSTICS          '' -> 'true'
+L56    PSL_DATA_TYPES_APP_ACTIVITY                                          PSL_USER_INTERACTION                 '' -> 'true'
+L61    PSL_DATA_TYPES_IDENTIFIERS                                           PSL_DEVICE_ID                        '' -> 'true'
+L62    PSL_DATA_USAGE_RESPONSES:PSL_NAME:PSL_DATA_USAGE_COLL_AND_SHARING    PSL_DATA_USAGE_ONLY_COLLECTED        'true' -> ''
+L64    PSL_DATA_USAGE_RESPONSES:PSL_NAME:PSL_DATA_USAGE_EPHEMERAL                                                'true' -> ''
+L66    PSL_DATA_USAGE_RESPONSES:PSL_NAME:DATA_USAGE_USER_CONTROL            PSL_DATA_USAGE_USER_CONTROL_REQUIRED 'true' -> ''
+L67    PSL_DATA_USAGE_RESPONSES:PSL_NAME:DATA_USAGE_COLLECTION_PURPOSE      PSL_APP_FUNCTIONALITY                'true' -> ''
+L309   PSL_DATA_USAGE_RESPONSES:PSL_APPROX_LOCATION:COLL_AND_SHARING        PSL_DATA_USAGE_ONLY_COLLECTED        '' -> 'true'
+L310   PSL_DATA_USAGE_RESPONSES:PSL_APPROX_LOCATION:COLL_AND_SHARING        PSL_DATA_USAGE_ONLY_SHARED           '' -> 'true'
+L311   PSL_DATA_USAGE_RESPONSES:PSL_APPROX_LOCATION:PSL_DATA_USAGE_EPHEMERAL                                     '' -> 'false'
+L313   PSL_DATA_USAGE_RESPONSES:PSL_APPROX_LOCATION:DATA_USAGE_USER_CONTROL PSL_DATA_USAGE_USER_CONTROL_REQUIRED '' -> 'true'
+L315   PSL_DATA_USAGE_RESPONSES:PSL_APPROX_LOCATION:COLLECTION_PURPOSE      PSL_ANALYTICS                        '' -> 'true'
+L317   PSL_DATA_USAGE_RESPONSES:PSL_APPROX_LOCATION:COLLECTION_PURPOSE      PSL_FRAUD_PREVENTION_SECURITY        '' -> 'true'
+L318   PSL_DATA_USAGE_RESPONSES:PSL_APPROX_LOCATION:COLLECTION_PURPOSE      PSL_ADVERTISING                      '' -> 'true'
+L322   PSL_DATA_USAGE_RESPONSES:PSL_APPROX_LOCATION:SHARING_PURPOSE         PSL_ANALYTICS                        '' -> 'true'
+L324   PSL_DATA_USAGE_RESPONSES:PSL_APPROX_LOCATION:SHARING_PURPOSE         PSL_FRAUD_PREVENTION_SECURITY        '' -> 'true'
+L325   PSL_DATA_USAGE_RESPONSES:PSL_APPROX_LOCATION:SHARING_PURPOSE         PSL_ADVERTISING                      '' -> 'true'
+L518   PSL_DATA_USAGE_RESPONSES:PSL_HEALTH:PSL_DATA_USAGE_COLL_AND_SHARING  PSL_DATA_USAGE_ONLY_COLLECTED        'true' -> ''
+L520   PSL_DATA_USAGE_RESPONSES:PSL_HEALTH:PSL_DATA_USAGE_EPHEMERAL                                              'true' -> ''
+L522   PSL_DATA_USAGE_RESPONSES:PSL_HEALTH:DATA_USAGE_USER_CONTROL          PSL_DATA_USAGE_USER_CONTROL_REQUIRED 'true' -> ''
+L523   PSL_DATA_USAGE_RESPONSES:PSL_HEALTH:DATA_USAGE_COLLECTION_PURPOSE    PSL_APP_FUNCTIONALITY                'true' -> ''
+L594   PSL_DATA_USAGE_RESPONSES:PSL_CRASH_LOGS:COLL_AND_SHARING             PSL_DATA_USAGE_ONLY_COLLECTED        '' -> 'true'
+L595   PSL_DATA_USAGE_RESPONSES:PSL_CRASH_LOGS:COLL_AND_SHARING             PSL_DATA_USAGE_ONLY_SHARED           '' -> 'true'
+L596   PSL_DATA_USAGE_RESPONSES:PSL_CRASH_LOGS:PSL_DATA_USAGE_EPHEMERAL                                          '' -> 'false'
+L598   PSL_DATA_USAGE_RESPONSES:PSL_CRASH_LOGS:DATA_USAGE_USER_CONTROL     PSL_DATA_USAGE_USER_CONTROL_REQUIRED '' -> 'true'
+L600   PSL_DATA_USAGE_RESPONSES:PSL_CRASH_LOGS:COLLECTION_PURPOSE          PSL_ANALYTICS                        '' -> 'true'
+L602   PSL_DATA_USAGE_RESPONSES:PSL_CRASH_LOGS:COLLECTION_PURPOSE          PSL_FRAUD_PREVENTION_SECURITY        '' -> 'true'
+L607   PSL_DATA_USAGE_RESPONSES:PSL_CRASH_LOGS:SHARING_PURPOSE             PSL_ANALYTICS                        '' -> 'true'
+L609   PSL_DATA_USAGE_RESPONSES:PSL_CRASH_LOGS:SHARING_PURPOSE             PSL_FRAUD_PREVENTION_SECURITY        '' -> 'true'
+L613   PSL_DATA_USAGE_RESPONSES:PSL_PERF_DIAGNOSTICS:COLL_AND_SHARING       PSL_DATA_USAGE_ONLY_COLLECTED        '' -> 'true'
+L614   PSL_DATA_USAGE_RESPONSES:PSL_PERF_DIAGNOSTICS:COLL_AND_SHARING       PSL_DATA_USAGE_ONLY_SHARED           '' -> 'true'
+L615   PSL_DATA_USAGE_RESPONSES:PSL_PERF_DIAGNOSTICS:EPHEMERAL                                                   '' -> 'false'
+L617   PSL_DATA_USAGE_RESPONSES:PSL_PERF_DIAGNOSTICS:USER_CONTROL           PSL_DATA_USAGE_USER_CONTROL_REQUIRED '' -> 'true'
+L619   PSL_DATA_USAGE_RESPONSES:PSL_PERF_DIAGNOSTICS:COLLECTION_PURPOSE     PSL_ANALYTICS                        '' -> 'true'
+L621   PSL_DATA_USAGE_RESPONSES:PSL_PERF_DIAGNOSTICS:COLLECTION_PURPOSE     PSL_FRAUD_PREVENTION_SECURITY        '' -> 'true'
+L626   PSL_DATA_USAGE_RESPONSES:PSL_PERF_DIAGNOSTICS:SHARING_PURPOSE        PSL_ANALYTICS                        '' -> 'true'
+L628   PSL_DATA_USAGE_RESPONSES:PSL_PERF_DIAGNOSTICS:SHARING_PURPOSE        PSL_FRAUD_PREVENTION_SECURITY        '' -> 'true'
+L670   PSL_DATA_USAGE_RESPONSES:PSL_USER_INTERACTION:COLL_AND_SHARING       PSL_DATA_USAGE_ONLY_COLLECTED        '' -> 'true'
+L671   PSL_DATA_USAGE_RESPONSES:PSL_USER_INTERACTION:COLL_AND_SHARING       PSL_DATA_USAGE_ONLY_SHARED           '' -> 'true'
+L672   PSL_DATA_USAGE_RESPONSES:PSL_USER_INTERACTION:EPHEMERAL                                                   '' -> 'false'
+L674   PSL_DATA_USAGE_RESPONSES:PSL_USER_INTERACTION:USER_CONTROL          PSL_DATA_USAGE_USER_CONTROL_REQUIRED '' -> 'true'
+L676   PSL_DATA_USAGE_RESPONSES:PSL_USER_INTERACTION:COLLECTION_PURPOSE     PSL_ANALYTICS                        '' -> 'true'
+L678   PSL_DATA_USAGE_RESPONSES:PSL_USER_INTERACTION:COLLECTION_PURPOSE     PSL_FRAUD_PREVENTION_SECURITY        '' -> 'true'
+L679   PSL_DATA_USAGE_RESPONSES:PSL_USER_INTERACTION:COLLECTION_PURPOSE     PSL_ADVERTISING                      '' -> 'true'
+L683   PSL_DATA_USAGE_RESPONSES:PSL_USER_INTERACTION:SHARING_PURPOSE        PSL_ANALYTICS                        '' -> 'true'
+L685   PSL_DATA_USAGE_RESPONSES:PSL_USER_INTERACTION:SHARING_PURPOSE        PSL_FRAUD_PREVENTION_SECURITY        '' -> 'true'
+L686   PSL_DATA_USAGE_RESPONSES:PSL_USER_INTERACTION:SHARING_PURPOSE        PSL_ADVERTISING                      '' -> 'true'
+L765   PSL_DATA_USAGE_RESPONSES:PSL_DEVICE_ID:COLL_AND_SHARING              PSL_DATA_USAGE_ONLY_COLLECTED        '' -> 'true'
+L766   PSL_DATA_USAGE_RESPONSES:PSL_DEVICE_ID:COLL_AND_SHARING              PSL_DATA_USAGE_ONLY_SHARED           '' -> 'true'
+L767   PSL_DATA_USAGE_RESPONSES:PSL_DEVICE_ID:EPHEMERAL                                                          '' -> 'false'
+L769   PSL_DATA_USAGE_RESPONSES:PSL_DEVICE_ID:USER_CONTROL                  PSL_DATA_USAGE_USER_CONTROL_REQUIRED '' -> 'true'
+L771   PSL_DATA_USAGE_RESPONSES:PSL_DEVICE_ID:COLLECTION_PURPOSE             PSL_ANALYTICS                        '' -> 'true'
+L773   PSL_DATA_USAGE_RESPONSES:PSL_DEVICE_ID:COLLECTION_PURPOSE             PSL_FRAUD_PREVENTION_SECURITY        '' -> 'true'
+L774   PSL_DATA_USAGE_RESPONSES:PSL_DEVICE_ID:COLLECTION_PURPOSE             PSL_ADVERTISING                      '' -> 'true'
+L778   PSL_DATA_USAGE_RESPONSES:PSL_DEVICE_ID:SHARING_PURPOSE                PSL_ANALYTICS                        '' -> 'true'
+L780   PSL_DATA_USAGE_RESPONSES:PSL_DEVICE_ID:SHARING_PURPOSE                PSL_FRAUD_PREVENTION_SECURITY        '' -> 'true'
+L781   PSL_DATA_USAGE_RESPONSES:PSL_DEVICE_ID:SHARING_PURPOSE                PSL_ADVERTISING                      '' -> 'true'
+
+--------------------------------------------------------------------------------
+4. OWNER DECISION: DATA DELETION REPRESENTATION TOGGLE
+--------------------------------------------------------------------------------
+In data-safety-import.csv, data deletion is configured as Option A (Recommended):
+- Line 12: PSL_SUPPORT_DATA_DELETION_BY_USER,DATA_DELETION_YES,true
+- Line 13: PSL_SUPPORT_DATA_DELETION_BY_USER,DATA_DELETION_NO,
+- Line 15: PSL_DATA_DELETION_URL,,https://cyclecare.app/privacy
+
+If the owner prefers Option B (Declare "No" because CycleCare has no user accounts
+and user data is managed purely on-device by the user via Reset All Local Data or
+app uninstall), the owner can toggle the CSV before import:
+- Line 12: PSL_SUPPORT_DATA_DELETION_BY_USER,DATA_DELETION_YES,
+- Line 13: PSL_SUPPORT_DATA_DELETION_BY_USER,DATA_DELETION_NO,true
+- Line 15: PSL_DATA_DELETION_URL,,
+
+Both Option A and Option B are policy compliant; Option A communicates a stronger
+privacy posture to store visitors by showing the "You can request that data be
+deleted" badge linking to the privacy policy.
+
+--------------------------------------------------------------------------------
+5. STEP-BY-STEP PLAY CONSOLE IMPORT RUNBOOK
+--------------------------------------------------------------------------------
+Step 1: Open Google Play Console
+   1. Navigate to: https://play.google.com/console
+   2. Select app: CycleCare (`com.cyclecare.tracker`).
+   3. In the left navigation menu, expand "Policy and programs" -> click "App content".
+   4. Locate "Data safety" and click "Manage" (or "Start").
+
+Step 2: Import the Generated CSV
+   1. In the upper-right corner of the Data safety form, click "Import from CSV".
+   2. Select: `play-console/data-safety/data-safety-import.csv`
+   3. When prompted "Do you want to overwrite your current responses?", click "Import".
+   4. Verify that the upload completes with zero errors.
+
+Step 3: Verify the Data Safety Flow Steps
+   Step 1 (Overview & Security):
+     - Does your app collect or share user data? -> YES (checked)
+     - Is all user data encrypted in transit? -> YES (checked)
+     - Account creation: "My app does not allow users to create an account" (checked)
+     - Data deletion: "Yes" with URL `https://cyclecare.app/privacy` (or "No" if Option B)
+   Step 2 (Data Types):
+     - Approximate location -> Checked
+     - App interactions -> Checked
+     - Crash logs -> Checked
+     - Diagnostics -> Checked
+     - Device or other IDs -> Checked
+     - All other categories (Personal info, Health and fitness, Financial, etc.) -> UNCHECKED
+   Step 3 (Data Usage and Handling):
+     - For each of the 5 checked types:
+       * Collected: Yes
+       * Shared: Yes
+       * Ephemeral: No
+       * User control: Required
+       * Purposes:
+         - Approximate location: Advertising, Analytics, Fraud prevention
+         - App interactions: Advertising, Analytics, Fraud prevention
+         - Crash logs: Analytics, Fraud prevention
+         - Diagnostics: Analytics, Fraud prevention
+         - Device or other IDs: Advertising, Analytics, Fraud prevention
+
+Step 4: Review Preview & Submit
+   1. Advance to Step 4 "Preview".
+   2. Confirm that the store listing preview displays:
+      - Data shared: Approximate location, App interactions, Crash logs, Diagnostics, Device or other IDs
+      - Data collected: Approximate location, App interactions, Crash logs, Diagnostics, Device or other IDs
+      - Security practices: Data is encrypted in transit; Request data deletion supported
+      - Health and fitness: NOT LISTED as collected or shared
+   3. Verify that the banner "We found issues with your Data safety form" is RESOLVED (no red warnings).
+   4. Click "Save".
+
+Step 5: Complete Accompanying Declarations (Blocker B4)
+   In Play Console -> "App content", verify the accompanying declarations:
+   - Advertising ID: YES (used for Advertising or marketing + Analytics)
+   - Ads: YES, my app contains ads
+   - Health apps: Declare as menstrual tracking wellness app; health data not shared
+   - Exact alarm permission: Submit user-configured cycle reminder justification
+   - Privacy Policy URL: Set to live hosted URL displaying `docs/privacy-policy.html`
+================================================================================

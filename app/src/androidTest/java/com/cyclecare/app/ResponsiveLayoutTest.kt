@@ -179,10 +179,9 @@ class ResponsiveLayoutTest {
             listOf(false, true).forEach { landscape ->
                 tabs.forEach { (route, contentTag) ->
                     renderTabs(widthDp, landscape)
-                    composeRule.onNodeWithTag(navTag(route)).performClick()
-                    composeRule.waitForIdle()
+                    composeRule.openTabAndAwait(route)
                     val displayed = runCatching {
-                        composeRule.onNodeWithTag(contentTag).assertIsDisplayed()
+                        composeRule.onNodeWithTag(contentTag, useUnmergedTree = true).assertIsDisplayed()
                         true
                     }.getOrDefault(false)
                     assert(displayed) {
