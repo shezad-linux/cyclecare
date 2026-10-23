@@ -91,6 +91,26 @@ that no stale result could mask a failure. The responsive suite had
 the same root cause as the capture test and is fixed the same way.
 No production code was changed.
 
+The two intermittencies that survived the previous pass —
+`ReThemeScreenshotTest.captureAllTopLevelScreensAtEveryWidthAndScheme`
+(the dashboard root absent from the merged tree) and
+`TalkBackSemanticsTest.thePrivacyPrimaryActionIsAnnouncedAsAButton`
+(Compose's *"Detected multithreaded access to SnapshotStateObserver"*)
+— are closed in commit `09a1156`. Both fixes are test-infrastructure
+changes; no production code changed. They are validated by repeated
+runs of the affected class, the full app module, and the complete
+serial instrumented suite (268 tests, 0 failures, 2 skipped).
+
+A third class, `ResponsiveLayoutTest`, had the same root cause as the
+capture test — a tab switch that had not yet landed when the assertion
+ran — and is fixed in commit `a663945`. The fix is the same one: wait
+for the destination before asserting, and look the dashboard up in the
+unmerged tree.
+
+The two root causes are now both documented in the ledger's Phase 5
+and Phase 6 sections, and the app module's 159 tests are green in
+five consecutive full runs.
+
 A third class, `MigratedV2DatabaseLaunchTest`, was hit by the same
 `SnapshotStateObserver` root cause and is fixed in commit `0677d67`
 by the same pattern.
