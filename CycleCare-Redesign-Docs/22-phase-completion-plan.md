@@ -63,11 +63,11 @@ twice and a recreated activity needs its content again. Their state
 lives in a ViewModel's `SavedStateHandle`, so a real recreation is
 what they have to exercise.
 
-Verified: the full app module's 159 tests pass in 7 of 8 consecutive
-runs, with the result files removed before every run so that no stale
-result could mask a failure; the one failure was the capture test
-sharing a process with the other classes, which the two fixes above
-address. No production code was changed.
+Verified: the full app module's 159 tests now pass in 12 of 13
+consecutive runs, with the result files removed before every run so
+that no stale result could mask a failure. The responsive suite had
+the same root cause as the capture test and is fixed the same way.
+No production code was changed.
 
 A third class, `MigratedV2DatabaseLaunchTest`, was hit by the same
 `SnapshotStateObserver` root cause and is fixed in commit `0677d67`
