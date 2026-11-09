@@ -27,26 +27,32 @@ document is the "how to run it" half.
 
 | | |
 |---|---|
-| **AVD** | `cc36` — Android 16, API 36, 320x640 at 160dpi |
+| **AVD** | `cc37` — Android 17, API 37.0, Google APIs ARM64 image, 320x640 at 160dpi |
 | **Serial** | `emulator-5554` |
 | **JDK** | As configured by Gradle; CI pins the version in `.github/workflows/ci.yml` |
 | **Source of truth** | `ANDROID_SERIAL=emulator-5554` must be set for every `adb` and Gradle command below |
 
-**Do not create another AVD.** The `cc36` image is the one the whole
-verification set is calibrated against, and the numbers in
-`19-doze-verification.md` and `21-phase-5-6-acceptance-matrix.md` were
-taken on it.
+The `cc37` AVD was created for the Android 17 (API 37) verification on
+2026-11-09: `android-37.0;google_apis;arm64-v8a` image, `small_phone` device
+profile with the display forced to the calibrated 320x640 at 160dpi (edit
+`~/.android/avd/cc37.avd/config.ini`: `hw.lcd.width = 320`,
+`hw.lcd.height = 640`, `hw.lcd.density = 160`). Host architecture is ARM64,
+so the CI images are x86_64. The data partition is intentionally `<temp>` and
+small (4 GB); the AVD is disposable.
 
-The `cc36` AVD is the only image the verification set is calibrated
-against. Any other AVD — including a Pixel_9_Pro on API 37 — must not
-be used: Compose instrumentation fails there with
+Historical note: the 2026-10-20/23 evidence referenced throughout this
+document (and in `19-doze-verification.md`, `21-phase-5-6-acceptance-matrix.md`)
+was taken on the `cc36` AVD (Android 16, API 36, 320x640 at 160dpi), which no
+longer exists. It remains valid as the historical calibration record; the
+current verification baseline is `cc37`, same geometry, API 37.
 
-```
-java.lang.NoSuchMethodException: android.hardware.input.InputManager.getInstance
-```
-
-Always pass `ANDROID_SERIAL=emulator-5554`, which is the serial the running
-`cc36` instance advertises.
+The earlier belief that
+`NoSuchMethodException: android.hardware.input.InputManager.getInstance`
+meant Compose testing was impossible on API 37 was wrong: it was Espresso
+3.5.0 (pulled in transitively by `ui-test-junit4`), and the fix was pinning
+`espresso-core:3.7.0` in the Compose-test modules' `androidTestImplementation`.
+Ignore any recurrence of that instruction; see
+`docs/android-17-upgrade-plan.md` §8/§9.
 
 **Every command below is run from the repository root**, `/Users/shezad/period`.
 
@@ -127,7 +133,9 @@ Run a single class or method with `--tests`:
 ANDROID_SERIAL=emulator-5554 ./gradlew connectedDebugAndroidTest
 ```
 
-This took **5m 6s** and reported **268 tests, 0 failures, 2 skipped**:
+This took **5m 6s** on the API 36 AVD (2026-10-20) and **4m 16s** on the
+`cc37` API 37 AVD (2026-11-09), and both runs reported
+**268 tests, 0 failures, 2 skipped**:
 
 | Module | Tests |
 |---|---|
@@ -465,9 +473,18 @@ ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.runDozeTest=true
 ```
 
-The measurements already taken are in `19-doze-verification.md`: awake
-delivery 22 seconds late, deep-idle delivery 45 seconds late, against a
-WorkManager path that was held at `WAIT:DEV_NOT_DOZING` indefinitely.
+Measurements:
+
+| Date | AVD | awake delivery | deep idle delivery |
+|---|---|---|---|
+| 2026-10-20 | `cc36` (API 36) | 22s after armed time | 45s after armed time |
+| 2026-11-09 | `cc37` (API 37) | 22s after armed time | 45s after armed time |
+
+Both runs passed both tests. Identical latencies on Android 17 are strong
+
+evidence the reminder architecture behaves on API 37 exactly as it does on
+API 36. The 2026-11-09 run is the one to cite for API 37; the original
+WorkManager comparison is in `19-doze-verification.md`.
 
 ### The demonstration, for sign-off
 

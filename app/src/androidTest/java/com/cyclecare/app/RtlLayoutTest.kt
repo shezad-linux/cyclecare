@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import java.time.LocalDate
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -282,8 +283,11 @@ class RtlLayoutTest {
         // The selected day is announced through its state description,
         // which is what a screen reader reads out, and it is the same
         // in either direction.
+        // The selected day defaults to today; this test was written against
+        // 2026-10-21, the day it was calibrated, which only worked while the
+        // current month contained that date.
         val selected = composeRule
-            .onAllNodes(hasTestTag("calendar_day_2026-10-21"))
+            .onAllNodes(hasTestTag("calendar_day_${LocalDate.now()}"))
             .fetchSemanticsNodes()
         assertThat(selected).isNotEmpty()
     }

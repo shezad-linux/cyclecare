@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.cyclecare.feature.insights"
-    compileSdk = 35
+    compileSdk = libs.versions.androidCompileSdk.get().toInt()
 
     defaultConfig {
         minSdk = 26
@@ -46,5 +46,10 @@ dependencies {
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    // ui-test-junit4 resolves ui-test-junit4-android, which depends on
+    // espresso-core 3.5.0. On Android 17 that fails every Compose UI test
+    // with NoSuchMethodException (InputManager.getInstance was removed),
+    // so pin the fixed release explicitly: direct dependencies win.
+    androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
 }

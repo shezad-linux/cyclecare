@@ -97,6 +97,14 @@ object ReminderChannels {
 
     fun channelId(settings: ReminderChannelSettings): String = physicalChannelId(settings)
 
+    // Sound previews are foreground-only: the caller is a tap on a visible
+    // settings control and playback ends with the resource, never in a
+    // Service. Android 17 restricts background audio APIs even for apps
+    // not targeting API 37 — playback or volume APIs called from an invalid
+    // lifecycle fail silently, and apps targeting API 37 additionally need
+    // a while-in-use foreground service (or EXACT_ALARM-class interaction
+    // with USAGE_ALARM) to do anything with audio in the background.
+    // Do not move playback into a service without meeting that bar.
     fun playPreview(
         context: Context,
         preset: ReminderSoundPreset,

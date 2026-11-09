@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.cyclecare.benchmark"
-    compileSdk = 35
+    compileSdk = libs.versions.androidCompileSdk.get().toInt()
     targetProjectPath = ":app"
     experimentalProperties["android.experimental.self-instrumenting"] = true
 

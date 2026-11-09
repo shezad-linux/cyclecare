@@ -95,7 +95,7 @@ val releaseSigningConfigured = listOf(
 
 android {
     namespace = "com.cyclecare.app"
-    compileSdk = 36
+    compileSdk = libs.versions.androidCompileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "com.cyclecare.tracker"

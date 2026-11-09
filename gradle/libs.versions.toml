@@ -21,6 +21,11 @@ truth = "1.4.4"
 benchmarkMacro = "1.3.3"
 uiautomator = "2.3.0"
 biometric = "1.1.0"
+# Single source of truth for compileSdk across all 14 Android modules.
+# Android 17 (API 37) upgrade: see docs/android-17-upgrade-plan.md. Modules
+# reference this as libs.versions.androidCompileSdk.get().toInt() instead of
+# duplicating the literal so the SDK cannot drift between modules again.
+androidCompileSdk = "37"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }

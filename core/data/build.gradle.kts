@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.cyclecare.core.data"
-    compileSdk = 35
+    compileSdk = libs.versions.androidCompileSdk.get().toInt()
 
     defaultConfig {
         minSdk = 26

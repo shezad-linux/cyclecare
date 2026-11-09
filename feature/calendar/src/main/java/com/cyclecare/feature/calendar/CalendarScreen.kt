@@ -198,7 +198,15 @@ internal fun CalendarScreen(
                         modifier = Modifier.mirroredInRightToLeft(),
                     )
                     }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // The two icon buttons are fixed-size, so the text column
+                    // has to take the space they leave. Without weight the
+                    // month label measures wider than the row at small widths
+                    // and the trailing button is clipped out of composition
+                    // entirely (zero bounds) — invisible and unreachable.
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
                         Text(
                             stringResource(R.string.cycle_calendar),
                             style = MaterialTheme.typography.labelLarge,

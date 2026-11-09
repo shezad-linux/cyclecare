@@ -2,7 +2,7 @@
 
 ## Build and stability
 - Fresh install succeeds on Android 12, 13, 14, and 15.
-- API 37 emulator automation is non-gating until the AndroidX test stack supports it; use Android 12-15 devices for launch sign-off.
+- API 37 is armed and passing on the `cc37` AVD (API 37.0, 320x640 at 160dpi): 268 instrumented tests, 0 failures, 2 Doze tests skipped (opt-in). CI runs the API 37 emulator lane as advisory until two consecutive green CI runs; use Android 12-15 devices for launch sign-off.
 - Offline first run stays usable with no network dependency.
 - App restart preserves local data and opens the expected surface.
 - Background to foreground and device rotation do not break the active screen.
