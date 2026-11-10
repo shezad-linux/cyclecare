@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -253,9 +252,11 @@ private fun PrivacyKeypadButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier
-            .height(56.dp)
-            .aspectRatio(1.18f),
+        // The call site supplies the width (weight(1f), so the three keys are
+        // always equal). Height fixes the tap target. aspectRatio here
+        // fought the weighted width and inflated the key into the whole
+        // card on wide screens.
+        modifier = modifier.height(56.dp),
         shape = RoundedCornerShape(18.dp),
     ) {
         Text(

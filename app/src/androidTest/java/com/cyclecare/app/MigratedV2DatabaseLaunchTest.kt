@@ -90,7 +90,14 @@ class MigratedV2DatabaseLaunchTest {
         renderAppOnMigratedDatabase()
 
         // The shell came up on the migrated database: the profile in it
-        // was read, so the app did not fall back to onboarding.
+        // was read, so the app did not fall back to onboarding. The read
+        // is asynchronous (Room's own executor), and until it lands the
+        // app deliberately renders its loading state rather than a
+        // destination — so wait for the dashboard instead of racing it.
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodes(hasTestTag("home_dashboard"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithTag("home_dashboard").assertIsDisplayed()
 
         // The migrated cycle record is rendered with the identifier it

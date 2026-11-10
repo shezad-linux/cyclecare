@@ -1,6 +1,11 @@
 package com.cyclecare.feature.calendar
 
 import com.cyclecare.core.domain.prediction.EstimateQuality
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -17,6 +22,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.platform.app.InstrumentationRegistry
 import com.cyclecare.core.designsystem.CycleCareTheme
 import com.cyclecare.core.domain.CycleRecordValidator
@@ -80,9 +86,15 @@ class CalendarScreenUiTest {
         composeRule.onNodeWithTag(CalendarTags.day(outsideDate)).assert(
             stateContains(localizedString(R.string.day_state_outside_month)),
         )
-        composeRule.onNodeWithTag(CalendarTags.day(outsideDate)).performClick()
+        composeRule.onNodeWithTag(CalendarTags.day(outsideDate)).performScrollTo().performClick()
 
-        composeRule.onNodeWithText(monthLabelText(targetMonth)).assertIsDisplayed()
+        // The label's text is the point of this test; its visibility
+        // depends on where the viewport happens to be scrolled (on wide
+        // windows the outside day sits near the fold). Scroll it into view
+        // first so the assertion is about the label, not the scroll.
+        composeRule.onNodeWithText(monthLabelText(targetMonth))
+            .performScrollTo()
+            .assertIsDisplayed()
         composeRule.onNodeWithTag(CalendarTags.day(outsideDate)).assert(
             stateContains(localizedString(R.string.day_state_selected)),
         )
@@ -244,7 +256,17 @@ class CalendarScreenUiTest {
         var state by mutableStateOf(initialState)
         composeRule.setContent {
             CycleCareTheme {
-                CalendarScreen(
+                // The app caps content at 840dp on wide windows
+                // (CenterConstrainedBox in the app shell); these tests render
+                // the screen without the shell, so the same cap is applied
+                // here to keep the test window realistic on tablets and
+                // foldables. Modifier order matters: widthIn outer.
+                Box(
+                    modifier = Modifier
+                        .widthIn(max = 840.dp)
+                        .fillMaxWidth(),
+                ) {
+                    CalendarScreen(
                     uiState = state,
                     onPreviousMonth = {},
                     onNextMonth = {},
@@ -262,6 +284,7 @@ class CalendarScreenUiTest {
                     onDismissDeleteConfirmation = {},
                     onDeleteCycle = {},
                 )
+                }
             }
         }
     }

@@ -1,5 +1,8 @@
 package com.cyclecare.feature.privacy
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -12,7 +15,9 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.cyclecare.core.domain.PrivacyRepository
 import com.cyclecare.core.model.ConsentState
@@ -61,6 +66,38 @@ class PrivacyScreenUiTest {
             composeRule.onNodeWithTag("${PrivacyUiTags.PIN_DOT_PREFIX}$index")
                 .assert(hasContentDescription("Digit ${index + 1}, empty"))
         }
+    }
+
+    @Test
+    fun keypadKeys_stayFixedHeightAndBelowTheTitleOnWideWindows() {
+        // Regression: on a wide window the keypad used to stretch each key
+        // into a slab that covered the card title. The keys must keep their
+        // fixed height and sit below the title at any width.
+        setContent(FakePrivacyRepository(), SecureAuthCapability.None, rootWidth = 1200.dp)
+
+        val titles = composeRule.onAllNodesWithText("Create a PIN").fetchSemanticsNodes()
+        val cardTitle = titles.maxByOrNull { it.boundsInRoot.top }!!
+
+        val firstRow = (1..3).map { digit ->
+            composeRule
+                .onNodeWithTag("${PrivacyUiTags.DIGIT_KEY_PREFIX}$digit")
+                .performScrollTo()
+                .fetchSemanticsNode()
+        }
+
+        val expectedHeightPx = with(composeRule.density) { 56.dp.toPx() }
+        firstRow.forEach { key ->
+            assertThat(key.boundsInRoot.height).isWithin(1f).of(expectedHeightPx)
+        }
+        // Equal weighted cells: the three keys in a row share the width.
+        firstRow.zipWithNext().forEach { (left, right) ->
+            assertThat(left.boundsInRoot.width)
+                .isWithin(1f)
+                .of(right.boundsInRoot.width)
+        }
+        // No overlap with the title above the keypad.
+        assertThat(cardTitle.boundsInRoot.bottom)
+            .isAtMost(firstRow.first().boundsInRoot.top)
     }
 
     @Test
@@ -200,13 +237,31 @@ class PrivacyScreenUiTest {
 
     // ── helpers ─────────────────────────────────────────────────────
 
-    private fun setContent(repository: PrivacyRepository, capability: SecureAuthCapability) {
+    private fun setContent(
+        repository: PrivacyRepository,
+        capability: SecureAuthCapability,
+        rootWidth: androidx.compose.ui.unit.Dp? = null,
+    ) {
         composeRule.setContent {
             androidx.compose.material3.MaterialTheme {
-                PrivacyRoute(
-                    factory = PrivacyViewModelFactory(repository),
-                    secureAuthController = FakeController(MutableStateFlow(capability)),
-                )
+                val route: @Composable () -> Unit = {
+                    PrivacyRoute(
+                        factory = PrivacyViewModelFactory(repository),
+                        secureAuthController = FakeController(MutableStateFlow(capability)),
+                    )
+                }
+                if (rootWidth == null) {
+                    route()
+                } else {
+                    // A wide-window simulation: the screen renders inside a
+                    // fixed-width box, the same way a tablet window would
+                    // constrain it.
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier.width(rootWidth),
+                    ) {
+                        route()
+                    }
+                }
             }
         }
     }

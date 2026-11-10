@@ -7,10 +7,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.ui.Alignment
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -161,8 +164,14 @@ internal fun AppLockGate(
             .testTag(AppLockTags.OVERLAY),
     ) {
         LazyColumn(
+            // The scrim stays full-bleed; the content column caps at the
+            // same width as every other screen so a tablet does not render
+            // a phone-width PIN form across 800+ dp.
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxHeight()
+                .widthIn(max = CenterConstrainedMaxWidth)
+                .fillMaxWidth()
+                .align(Alignment.Center)
                 .padding(CycleCareSpace.space16),
             verticalArrangement = Arrangement.spacedBy(CycleCareSpace.space16),
             contentPadding = PaddingValues(bottom = CycleCareSpace.space24),

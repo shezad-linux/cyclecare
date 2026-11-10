@@ -110,6 +110,50 @@ class CycleCareAppStateNavigationTest {
 
         renderApp(env)
 
+        // The profile load is asynchronous; the loading state renders no
+        // destination by design, so wait for onboarding to appear.
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodes(hasText("Private cycle tracking"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("Private cycle tracking").assertIsDisplayed()
+    }
+
+    @Test
+    fun loadingProfile_rendersNeitherOnboardingNorDashboard() {
+        // Regression for the onboarding flash: until the first profile
+        // emission lands, the app must not render onboarding (or the
+        // dashboard). The loading environment's flows never emit, so any
+        // destination rendered here is the wrong one.
+        val env = TestAppEnvironment.loading()
+
+        renderApp(env)
+        composeRule.waitForIdle()
+
+        assertTrue(
+            "onboarding must not render while the profile is loading",
+            composeRule.onAllNodes(hasText("Private cycle tracking"))
+                .fetchSemanticsNodes().isEmpty(),
+        )
+        assertTrue(
+            "dashboard must not render while the profile is loading",
+            composeRule.onAllNodes(hasTestTag(navTag("home")))
+                .fetchSemanticsNodes().isEmpty(),
+        )
+    }
+
+    @Test
+    fun absentProfile_showsOnboardingAfterLoading() {
+        // The other half of the same regression: once the first emission
+        // arrives and it is "no profile", onboarding is the destination.
+        val env = TestAppEnvironment.empty()
+
+        renderApp(env)
+
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodes(hasText("Private cycle tracking"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("Private cycle tracking").assertIsDisplayed()
     }
 
@@ -431,6 +475,10 @@ class CycleCareAppStateNavigationTest {
 
         renderApp(env)
 
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodes(hasText("Notifications are required for reminders"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("Notifications are required for reminders").assertIsDisplayed()
         assertTrue(composeRule.onAllNodes(hasText("Cycle progress")).fetchSemanticsNodes().isEmpty())
     }
@@ -481,6 +529,12 @@ class CycleCareAppStateNavigationTest {
         }
 
         renderApp(env)
+        // The lock overlay is composed only after the profile load
+        // lands; wait for it instead of racing the loading state.
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodes(hasTestTag(AppLockTags.OVERLAY))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithTag(AppLockTags.OVERLAY).assertIsDisplayed()
 
         repeat(4) { attempt ->
@@ -528,6 +582,12 @@ class CycleCareAppStateNavigationTest {
 
         renderApp(env)
 
+        // The lock overlay is composed only after the profile load
+        // lands; wait for it instead of racing the loading state.
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodes(hasTestTag(AppLockTags.OVERLAY))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithTag(AppLockTags.OVERLAY).assertIsDisplayed()
     }
 
@@ -542,6 +602,12 @@ class CycleCareAppStateNavigationTest {
 
         renderApp(env)
 
+        // The lock overlay is composed only after the profile load
+        // lands; wait for it instead of racing the loading state.
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodes(hasTestTag(AppLockTags.OVERLAY))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithTag(AppLockTags.OVERLAY).assertIsDisplayed()
         assertTrue(composeRule.onAllNodes(hasText("Recover access")).fetchSemanticsNodes().isEmpty())
         composeRule.onNodeWithTag(PrivacyUiTags.RESET_LOCAL_DATA).assertIsDisplayed()
@@ -631,6 +697,13 @@ class CycleCareAppStateNavigationTest {
         composeRule.activityRule.scenario.recreate()
         renderAppOnActivity(env)
 
+        // Recreation restores the draft through the ViewModel's
+        // SavedStateHandle, but on a loaded emulator the restore can take
+        // a few seconds; the default 5s window is not enough there.
+        composeRule.waitUntil(15_000) {
+            composeRule.onAllNodes(hasText("Recovered after lunch"))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("Recovered after lunch").assertIsDisplayed()
     }
 

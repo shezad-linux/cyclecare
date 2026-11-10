@@ -196,7 +196,7 @@ internal fun MainShell(
             }
         },
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        CenterConstrainedBox {
             AppNavHost(
                 navController = navController,
                 container = container,

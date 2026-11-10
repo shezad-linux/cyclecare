@@ -107,12 +107,33 @@ import com.cyclecare.feature.privacy.rememberPlatformSecureAuthController
 import com.cyclecare.feature.settings.SettingsRoute
 import com.cyclecare.feature.settings.SettingsViewModelFactory
 import java.time.LocalDate
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 internal object NotificationPermissionTags {
     const val REQUIRED_GATE = "notification_permission_required_gate"
     const val REQUIRED_ACTION = "notification_permission_required_action"
 }
+
+/**
+ * What a profile observation can be.
+ *
+ * The profile flow emits once, when the first read lands. Until then the
+ * app cannot know whether the destination is onboarding or the dashboard,
+ * so it has to say so out loud. Rendering onboarding in that gap is the
+ * "onboarding flash" the activity shows for a second on every cold start
+ * and every recreation; rendering the dashboard is the same defect in
+ * reverse. Loading paints the app background and nothing else until the
+ * first emission arrives.
+ */
+private sealed interface ProfileLoadState {
+    data object Loading : ProfileLoadState
+    data object Absent : ProfileLoadState
+    data class Present(val profile: com.cyclecare.core.model.UserProfile) : ProfileLoadState
+}
+
+private fun loadStateOf(profile: com.cyclecare.core.model.UserProfile?): ProfileLoadState =
+    if (profile == null) ProfileLoadState.Absent else ProfileLoadState.Present(profile)
 
 private fun NotificationPermissionStatus.recoveryLabel(context: Context): String? =
     when (recoveryAction) {
@@ -138,7 +159,10 @@ fun CycleCareApp(
             logger = container.appLogger,
         )
     }
-    val profile by container.profileRepository.observeProfile().collectAsStateWithLifecycle(initialValue = null)
+    val profileState by container.profileRepository.observeProfile()
+        .map(::loadStateOf)
+        .collectAsStateWithLifecycle(initialValue = ProfileLoadState.Loading)
+    val profile = (profileState as? ProfileLoadState.Present)?.profile
     val reminderRules by container.reminderRepository.observeRules().collectAsStateWithLifecycle(initialValue = emptyList())
     val consent by container.privacyRepository.observeConsent().collectAsStateWithLifecycle(
         initialValue = com.cyclecare.core.model.ConsentState(
@@ -249,13 +273,19 @@ fun CycleCareApp(
         }
     }
 
-    if (profile == null) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing),
-        ) {
-            OnboardingRoute(
+    when {
+        profileState is ProfileLoadState.Loading -> {
+            // Nothing on screen until the first profile emission — no
+            // onboarding, no dashboard, no gate. This is what removes the
+            // onboarding flash on cold start and on recreation.
+            CenterConstrainedBox { }
+        }
+        profileState is ProfileLoadState.Absent -> {
+            CenterConstrainedBox {
+                Box(
+                    modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
+                ) {
+                    OnboardingRoute(
                 factory = OnboardingViewModelFactory(
                     profileRepository = container.profileRepository,
                     cycleRepository = container.cycleRepository,
@@ -270,14 +300,19 @@ fun CycleCareApp(
                 },
             )
         }
-    } else if (notificationAccessRequired) {
-        NotificationPermissionRequiredGate(
-            actionLabel = notificationPermissionStatus.recoveryLabel(context)
-                ?: context.getString(R.string.allow_notifications),
-            onResolveNotificationAccess = resolveNotificationAccess,
-        )
-    } else {
-        MainShell(
+            }
+        }
+        notificationAccessRequired -> {
+            CenterConstrainedBox {
+                NotificationPermissionRequiredGate(
+                    actionLabel = notificationPermissionStatus.recoveryLabel(context)
+                        ?: context.getString(R.string.allow_notifications),
+                    onResolveNotificationAccess = resolveNotificationAccess,
+                )
+            }
+        }
+        else -> {
+            MainShell(
             container = container,
             notificationsCanPost = notificationPermissionStatus.canPostNotifications,
             notificationRecoveryActionLabel = notificationPermissionStatus.recoveryLabel(context),
@@ -292,6 +327,7 @@ fun CycleCareApp(
             onPrivacyNavigationHandled = { pendingPrivacyNavigation = false },
             onResolveNotificationAccess = resolveNotificationAccess,
         )
+        }
     }
 
     if (profile != null && shouldShowLock && !notificationAccessRequired) {
