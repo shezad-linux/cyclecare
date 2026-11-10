@@ -292,7 +292,8 @@ Play pre-launch report on a physical/tablet track before rollout.
 
 - Versioning: implement the owner decision (Q1). If targeting 37 is part of
   2.0: bump the working-tree `defaultVersionCode`/`defaultVersionName` work
-  into that release; otherwise `versionCode 9 / versionName 2.1.0`.
+  into that release; otherwise `versionCode 10 / versionName 2.1.0` (bumped from
+  9 after Play rejected 9 as already used).
 - `./gradlew assembleRelease` + `scripts/validate-aab.sh` +
   `scripts/check-release-version.sh` as usual; verify the AAB against
   bundletool structural validation exactly as the 2.0 flow does.
@@ -700,11 +701,11 @@ Branch `android-17-api37`. Phase 5 flips the release to Android 17 as the store-
   **268 tests, 0 failures, 2 skipped** — identical to both prior calibrations.
 - Doze delivery (opt-in): **2/2 pass; awake 22 s, deep idle 45 s** — identical latencies.
 - Production AAB: `app/build/outputs/bundle/release/app-release.aab` —
-  **versionCode 9 / versionName 2.1.0 / `targetSdkVersion=37` / compileSdk 37 / minSdk 26**,
-  SHA-256 `93901ccaf279d8a7e85af3b3627a413656077e12809f60ced59b48d979b4c555`
-  (2026-11-10 rebuild; the earlier build of identical source hashed `1534f69c…`
-  — AAB hashes are per-build);
-  `bundletool validate` PASS (local 1.18.3 classpath), `jarsigner` verified,
+  **versionCode 10 / versionName 2.1.0 / `targetSdkVersion=37` / compileSdk 37 / minSdk 26**,
+  SHA-256 `8af1e752af5e45990e8bd745a2e5b460dd055253685e2cd7656aa84433799b13`
+  (2026-11-10 rebuild as versionCode 10; Play rejected 9 as already used — AAB hashes
+  are per-build);
+  `jarsigner` verified, structural validate PASS, manifest dump confirms `versionCode="10"`;
   signer `CN=CycleCare Upload`.
 
 ### What remains (owner)

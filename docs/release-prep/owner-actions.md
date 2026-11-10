@@ -3,7 +3,9 @@
 This is the evidence the repository can produce. The submission itself
 requires the owner's account and cannot be done from here.
 
-> **Update 2026-11-10 — covers the 2.1.0 release (versionCode 9).**
+> **Update 2026-11-10 — covers the 2.1.0 release (versionCode 10).**
+> The 2.1.0 release candidate was rebuilt as `versionCode` 10 after Play
+> rejected code 9 as already used. `minSdk` 26, target API 37 unchanged.
 > The line below used to read "Target API 36"; it is now API 37.
 > The 2.1.0 build targets Android 17 as required for the August 2027
 > Play requirement. The 2.0 artifact (versionCode 8, targetSdk 36,
@@ -86,13 +88,13 @@ Set the URL in: App content → Privacy policy.
 ## 11. What the repository already produces
 
 - Signed AAB: `app/build/outputs/bundle/release/app-release.aab`
-  - Version: `versionCode` 9, `versionName` 2.1.0 (targets API 37; compiles against API 37; `minSdk` 26)
-  - SHA-256: `93901ccaf279d8a7e85af3b3627a413656077e12809f60ced59b48d979b4c555` (rebuilt 2026-11-10 after a build-file repair; AAB hashes differ per build — this identifies the current artifact)
+  - Version: `versionCode` 10, `versionName` 2.1.0 (targets API 37; compiles against API 37; `minSdk` 26)
+  - SHA-256: `8af1e752af5e45990e8bd745a2e5b460dd055253685e2cd7656aa84433799b13` (rebuilt 2026-11-10 as versionCode 10 after Play rejected 9 as already used; AAB hashes differ per build — this identifies the current artifact)
   - Signer: `CN=CycleCare Upload` (unchanged upload key)
-  - Validation: bundletool 1.18.3 `validate` PASS; `jarsigner -verify`: jar verified; manifest dump confirms `targetSdkVersion="37"`
-  - History: 2.0 release candidate (`versionCode` 8, targetSdk 36) — SHA-256 `e681816ff71267e7b03a1625e936ef24816a4752805ce8f8e6c5050d4d241856`
+  - Validation: manifest dump confirms `versionCode="10"` / `targetSdkVersion="37"`; `jarsigner -verify`: jar verified; `scripts/validate-aab.sh` → PASS
+  - History: 2.0 release candidate (`versionCode` 8, targetSdk 36) — SHA-256 `e681816ff71267e7b03a1625e936ef24816a4752805ce8f8e6c5050d4d241856`; superseded 2.1.0 candidate (`versionCode` 9, targetSdk 37) — SHA-256 `93901ccaf279d8a7e85af3b3627a413656077e12809f60ced59b48d979b4c555`
 - Release workflow: `.github/workflows/release.yml` (tag + dispatch, protected `release` environment, 4 secrets)
-- Version: `versionCode` 9, `versionName` 2.1.0
+- Version: `versionCode` 10, `versionName` 2.1.0
 
 ## 12. Owner actions required before submission
 

@@ -28,7 +28,7 @@ exists. All 2026-10-20/23 API 36 numbers were taken on it.
 | Change | Where |
 |---|---|
 | `compileSdk` 35/36 → **37** for all **14 Android modules**, via a single source of truth (`androidCompileSdk = "37"` in `gradle/libs.versions.toml`) | 14 × `build.gradle.kts`, `gradle/libs.versions.toml` |
-| `targetSdk` 36 → **37**; `versionCode` 7→8 (2.0) → **9 (2.1.0)** | `app/build.gradle.kts` |
+| `targetSdk` 36 → **37**; `versionCode` 7→8 (2.0) → **9 (2.1.0)** → **10 (2.1.0, after Play rejected 9 as already used)** | `app/build.gradle.kts` |
 | Espresso pinned at **3.7.0** in the 6 Compose-test feature modules (they resolved 3.5.0 transitively, which fails every Compose UI test on Android 17 with `NoSuchMethodException: android.hardware.input.InputManager.getInstance()`) | `feature:{home,calendar,insights,logging,onboarding,privacy}/build.gradle.kts` |
 | `RtlLayoutTest` derived the selected-day tag from the hardcoded `2026-10-21`; now `LocalDate.now()` | `app/.../RtlLayoutTest.kt` |
 | **Layout defect fixed**: the calendar header "November 2026" could measure wider than the row at narrow widths and clip the next-month button out of composition entirely (zero bounds). The text column now takes `Modifier.weight(1f)` | `feature/calendar/CalendarScreen.kt` |
@@ -71,12 +71,12 @@ reminder architecture behaves on Android 17 exactly as it did on Android 16.
 | | |
 |---|---|
 | Path | `app/build/outputs/bundle/release/app-release.aab` |
-| Size | 10,243,812 bytes |
-| SHA-256 | `93901ccaf279d8a7e85af3b3627a413656077e12809f60ced59b48d979b4c555` (2026-11-10 rebuild after the `app/build.gradle.kts` script-compilation repair; the earlier build's hash was `1534f69c…`; AAB hashes are per-build) |
-| Manifest | `compileSdkVersion="37"`, `versionCode="9"`, `versionName="2.1.0"`, `minSdk="26"`, `targetSdkVersion="37"`, `package="com.cyclecare.tracker"` |
+| Size | 10,245,395 bytes |
+| SHA-256 | `8af1e752af5e45990e8bd745a2e5b460dd055253685e2cd7656aa84433799b13` (2026-11-10, versionCode 10 rebuild after Play rejected 9 as already used; AAB hashes are per-build) |
+| Manifest | `compileSdkVersion="37"`, `versionCode="10"`, `versionName="2.1.0"`, `minSdk="26"`, `targetSdkVersion="37"`, `package="com.cyclecare.tracker"` |
 | Signer | `CN=CycleCare Upload, OU=Mobile, O=CycleCare, L=Bengaluru, ST=Karnataka, C=IN` (same upload key as before) |
-| Validation | `bundletool` 1.18.3 `validate` → PASS (run from the Gradle cache; the GitHub `bundletool-all` 1.18.3 does not exist — 404 — classpath assembled from the cache + `protobuf-java` 3.22.3 from Maven Central); `jarsigner -verify` → `jar verified.`; structural `scripts/validate-aab.sh` → PASS |
-| `scripts/check-release-version.sh` | PASSED (versionCode 9, versionName 2.1.0) |
+| Validation | `jarsigner -verify` → `jar verified.`; structural `scripts/validate-aab.sh` → PASS; manifest dump confirms `versionCode="10"` / `targetSdkVersion="37"` (bundletool was run on the previous build; this rebuild differs only in versionCode) |
+| `scripts/check-release-version.sh` | PASSED (versionCode 10, versionName 2.1.0) |
 
 History: the 2.0 release candidate (versionCode 8, targetSdk 36) built and
 verified on 2026-11-10 — SHA-256
