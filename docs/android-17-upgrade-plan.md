@@ -675,6 +675,48 @@ test-harness incompatibilities, re-run Doze, confirm backup rules, record the ev
 **The AndroidX test stack supports API 37** (with the espresso pin). The CI instrumented lane is
 API 37, advisory; keep it non-gating until two consecutive green CI runs, then gate.
 
+---
+
+## 10. Phase 5 execution record — 2026-11-10
+
+Branch `android-17-api37`. Phase 5 flips the release to Android 17 as the store-facing target.
+
+### What changed
+
+1. `app/build.gradle.kts`: `targetSdk` 36 → **37**; `defaultVersionCode` 8 → **9**;
+   `defaultVersionName` "2.0" → **"2.1.0"**. `minSdk` unchanged (26). `compileSdk` already 37 (Phase 1).
+2. `docs/release-prep/owner-actions.md` — updated: covers 2.1.0; target API 37; artifact
+   section lists the 2.1.0 AAB with SHA-256; history retains the 2.0 candidate; owner actions
+   §12 now includes the Play Policy status check and the still-open exact-alarm declaration.
+3. `CycleCare-Redesign-Docs/20-release-readiness.md` and `22-phase-completion-plan.md` —
+   dated amendment notes superseding the API 36 statement (history preserved).
+4. New evidence record: `CycleCare-Redesign-Docs/26-android-17-verification.md`.
+
+### Verification (with `targetSdk = 37` applied)
+
+- `./gradlew test` — **505/505**. `lintDebug` — **0 errors** (the expected `OldTargetApi`
+  warning is gone; `targetSdk` 36 no longer flags).
+- Full instrumented suite on `cc37` with `targetSdk=37`:
+  **268 tests, 0 failures, 2 skipped** — identical to both prior calibrations.
+- Doze delivery (opt-in): **2/2 pass; awake 22 s, deep idle 45 s** — identical latencies.
+- Production AAB: `app/build/outputs/bundle/release/app-release.aab` —
+  **versionCode 9 / versionName 2.1.0 / `targetSdkVersion=37` / compileSdk 37 / minSdk 26**,
+  SHA-256 `93901ccaf279d8a7e85af3b3627a413656077e12809f60ced59b48d979b4c555`
+  (2026-11-10 rebuild; the earlier build of identical source hashed `1534f69c…`
+  — AAB hashes are per-build);
+  `bundletool validate` PASS (local 1.18.3 classpath), `jarsigner` verified,
+  signer `CN=CycleCare Upload`.
+
+### What remains (owner)
+
+- Play Console upload/submission of the 2.1.0 AAB; exact-alarm declaration;
+  health & ad declarations; privacy policy URL; support channel; feature-graphic
+  and screenshots. The internal → Alpha → 20% → 50% → 100% rollout is unchanged.
+- **Verify Play Console → Policy status** before upload (API 36 is required today;
+  API 37 expected August 2027; the upload of this artifact is unaffected either way).
+- Physical-device Doze + backup-restore sign-off.
+- Tag `v2.1.0` → `release.yml`, or upload manually; neither was done here.
+
 ### What remains for Phase 5 (2.1)
 
 - `targetSdk = 37` flip (decision: ships in 2.1), version bump `9 / 2.1.0`.
@@ -683,3 +725,73 @@ API 37, advisory; keep it non-gating until two consecutive green CI runs, then g
 - Physical-device Doze sign-off and backup-restore validation before the 2.1 release candidate.
 - Reminder channel audio under background restrictions — re-verify no service-based audio path
   is introduced (the one Phase-2-adjacent note).
+
+---
+
+## 11. Phase 3 execution record — 2026-11-10
+
+Branch `android-17-api37`. Phase 3 verifies large-window compatibility and fixes confirmed defects. No adaptive navigation, no `NavigationSuiteScaffold`, no redesign.
+
+**Note on the brief:** the task baseline said `targetSdk = 36` / version 2.0; Phase 5 had already shipped `targetSdk = 37` / 2.1.0 (this branch), and that state was preserved untouched.
+
+### Configurations tested (all API 37, `google_apis` images)
+
+| Configuration | AVD / size | What was done |
+|---|---|---|
+| Compact phone | `cc37` — 320x640 @ 160dpi (320dp) | Full instrumented suite; rotation; RTL; font scale (existing suites) |
+| Medium / expanded tablet | `cc37_tablet` — 1280x800 @ 160dpi (1280x800dp) | Manual sweep of all 8 screens; rotation; full instrumented suite |
+| Foldable unfolded | `cc37_fold` — 2200x2480 @ 420dpi (838x945dp) | Onboarding → Today; rotation; keyboard-visible check |
+| Foldable folded / window resize | `wm size 1080x2480` (437dp) on `cc37_fold` | Resize emulation: layout adapts, no clipping |
+| Multi-window (true split-screen) | — | **Not available headlessly** — `wm size` overrides used instead; documented limitation |
+
+### Containment (the one structural change)
+
+`CenterConstrainedBox` (new, `app/.../CenterConstrainedBox.kt`): paints the theme background, centers content, caps it at **840dp** (Material expanded breakpoint). Applied in two places: `MainShell` (content column; top/bottom bars stay full width) and the `CycleCareApp` branches (loading, onboarding, notification gate). `AppLockGate`'s scrim stays full-bleed with its content column capped. No-op on ≤840dp windows. Without it, every screen stretched to 1280dp; with it, tablet layouts read as a centered phone column.
+
+### Screen-by-screen (tablet 1280x800dp, all verified by screenshot)
+
+| Screen | Result |
+|---|---|
+| Onboarding (both steps) | Contained, centered; Continue reachable; state preserved |
+| Home / Dashboard | Contained; cards 2-up; banner full-width above nav (by design, matches the bar) |
+| Calendar | Contained; grid + both chevrons visible; day panel reachable |
+| Logging | Contained; chips wrap; Add-details expand; Save reachable |
+| Insights | Contained; charts/cards readable |
+| Settings (both sections) | Contained; 2-up summary cards; toggles reachable |
+| Privacy (PIN setup + app lock) | Contained after the keypad fix (below) |
+| Export | Contained; chips + buttons correct |
+| Notification gate | Contained, centered |
+| App-lock overlay | Full-bleed scrim, contained column (after fix) |
+
+RTL (app locale `ar`) verified on tablet: all screens mirror, nothing clipped. Rotation verified on tablet and foldable: state preserved, no crash, no navigation reset. Font scale 1.3/2.0 covered by existing `FontScaleAccessibilityTest` (composition-local, device-independent). Keyboard: opens on the medication field, field + Save reachable above the IME (foldable 838dp); rotation hides the IME (documented Android 17 default-visibility behavior), re-tap reopens.
+
+### Defects found and fixed
+
+1. **PIN keypad inflated on wide windows** (`PrivacyComponents.kt`): `Modifier.weight(1f).height(56.dp).aspectRatio(1.18f)` — the aspectRatio fought the weighted width and stretched each key into a slab covering the card title on tablets. Fixed by dropping `aspectRatio` (height + weight is the intended geometry; phone rendering unchanged). Regression test: `PrivacyScreenUiTest.keypadKeys_stayFixedHeightAndBelowTheTitleOnWideWindows` (renders at 1200dp, asserts 56dp keys, equal widths, no title overlap).
+2. **Onboarding flash on every cold start and recreation** (previously documented, now fixed): `CycleCareApp` rendered `OnboardingRoute` whenever `profile == null`, and `collectAsStateWithLifecycle(initialValue = null)` renders null until Room's first emission — so the app showed onboarding for a beat on every start/recreate. Fixed with an explicit tri-state: `ProfileLoadState.Loading / Absent / Present`; Loading paints only the app background. Regression tests: `loadingProfile_rendersNeitherOnboardingNorDashboard`, `absentProfile_showsOnboardingAfterLoading`.
+3. **Calendar test harness** (found at 840dp, not an app defect): the module test renders the screen without the shell, so on wide windows the outside-month day sits below the fold and `performClick` was unreliable; the label assertion was scroll-dependent. Fixed: the harness now applies the same 840dp cap as the app, scrolls the day into view before clicking, and scrolls the label into view before asserting.
+
+### Test-synchronization follow-ups (same root cause: the loading state is now honest)
+
+The tri-state made several "assert immediately after render" tests latently racy (they passed only when the profile emission won the race). All now wait deterministically: `firstLaunchWithoutProfile_showsOnboarding`, `populatedProfile_...requiresNotificationAccess`, three `appLock_*` tests, `MigratedV2DatabaseLaunchTest.theAppRendersTheMigratedHistory...`, and `logDraft_survivesActivityRecreate` (15s window on loaded emulators).
+
+### Validation (all on API 37)
+
+- `./gradlew assembleDebug` ✅
+- `./gradlew test` — **505/505** ✅
+- `./gradlew lintDebug` — **0 errors** (55 warnings, pre-existing set) ✅
+- Full instrumented suite, compact `cc37`: **271 tests, 0 failures, 2 skipped** (268 baseline + 3 new regression tests) ✅
+- Full instrumented suite, tablet `cc37_tablet`: all modules green; app module 161/161 green in a completed run. (One earlier completed tablet run failed `AppResetCancelsRemindersTest` — **environment contamination**: manual onboarding had armed real alarms on the device; cleared, then green. One run truncated by emulator instability — see risks.)
+- Doze delivery unchanged (22s/45s) — re-verified in Phase 5 with `targetSdk=37`.
+
+### Environment risks observed
+
+- ARM64 + Swiftshader emulators on this host are unstable under load (guest reboots, truncated runs, slow frames). The tablet full-suite passed in completed runs; compact runs are the reliable baseline.
+- Leaked `userdata-qemu.img.qcow2` overlays from crashed emulator sessions consumed ~6GB of disk; cleaned. If the emulator ever fails with "not enough disk space", check `~/.android/avd/*/`.
+
+### Deferred / not done
+
+- True multi-window (split-screen) interaction — not scriptable headlessly; resize emulation done instead.
+- Physical foldable (fold posture sensor) — emulator cannot reproduce hinge state.
+- Two-pane layouts / `NavigationSuiteScaffold` — explicitly out of scope; the 840dp containment is the Phase 3 answer. Two-pane calendar→day remains a candidate fast-follow (unchanged from the Phase 3 plan).
+- Large-screen screenshot corpus for the store listing (the 97 existing captures are phone-width).
