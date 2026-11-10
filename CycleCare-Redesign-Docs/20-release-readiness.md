@@ -140,3 +140,26 @@ complete them is prepared below.
 | Item | Note |
 |---|---|
 | Cloud sync | Deferred. The app ships local-first, and the roadmap treats sync as deferrable. The encrypted local export and import is the supported way to move data between devices. Recorded as a decision in `20-sync-decision.md`, and as Phase 8 in the ledger. |
+
+## Amendment — 2026-11-10 (Android 17 / API 37 upgrade, 2.1.0)
+
+The "Target API level" row above describes the state at the time it was
+written and is superseded. As of 2026-11-10:
+
+- The app **compiles against API 37 (Android 17)** and **targets API 37**
+  (since 2026-11-10). `versionName` is `2.1.0`, `versionCode` `9`.
+- The full instrumented suite was re-verified on API 37 (`cc37`, 320x640 at
+  160dpi): **268 tests, 0 failures, 2 skipped (opt-in Doze)**, identical to
+  the API 36 calibration. Doze delivery latencies on API 37: 22 s awake,
+  45 s deep idle — identical to API 36.
+- The CI instrumented lane runs on API 37 (advisory). See
+  `docs/android-17-upgrade-plan.md` §8/§9/§10 and
+  `26-android-17-verification.md` for the complete evidence trail.
+- The Play Console target API requirement had not moved as of the last
+  check: API 36 is required today (since 2026-08-31); API 37 is expected in
+  August 2027. **Confirm in Play Console → Policy status before upload.**
+- The exact-alarm (`SCHEDULE_EXACT_ALARM`) declaration remains open in
+  `play-console/data-safety-unresolved.md` and is a release dependency for
+  2.1.0 regardless of target API level.
+- The historical API 36 statement above is kept for the record; do not read
+  it as current.

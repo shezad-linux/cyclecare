@@ -1239,3 +1239,23 @@ decision before the item it blocks can be closed.
 | Hosted policy page | Owned by the user | `docs/privacy-policy.html` |
 | Performance under real load | Needs representative devices | The macrobenchmark module, with no baseline collected |
 | Notification disable rate, retention, conversion | Needs users | Nothing. The app has no analytics |
+
+## Amendment — 2026-11-10 (Android 17 / API 37 upgrade, 2.1.0)
+
+The "Target API level" row above describes the state at the time it was
+written and is superseded. As of 2026-11-10:
+
+- The app **compiles against and targets API 37 (Android 17)**.
+  `versionName` `2.1.0`, `versionCode` `9`. `minSdk` unchanged (26).
+- The verification evidence is recorded in `26-android-17-verification.md`
+  and `docs/android-17-upgrade-plan.md` (Phases 0–5).
+- The instrumented suite on API 37 (`cc37`): **268 tests, 0 failures,
+  2 skipped (opt-in Doze)**; Doze delivery 22 s / 45 s — identical to
+  the API 36 measurements.
+- Play Console target API requirement as of the last check: API 36 required
+  (since 2026-08-31); **API 37 expected August 2027**. Confirm in Play
+  Console → Policy status before upload.
+- The exact-alarm declaration (`SCHEDULE_EXACT_ALARM`) remains open —
+  release dependency for 2.1.0.
+- The historical API 36 statement above is kept for the record; do not
+  read it as current.

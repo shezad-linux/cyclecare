@@ -3,6 +3,13 @@
 This is the evidence the repository can produce. The submission itself
 requires the owner's account and cannot be done from here.
 
+> **Update 2026-11-10 — covers the 2.1.0 release (versionCode 9).**
+> The line below used to read "Target API 36"; it is now API 37.
+> The 2.1.0 build targets Android 17 as required for the August 2027
+> Play requirement. The 2.0 artifact (versionCode 8, targetSdk 36,
+> SHA-256 `e681816ff71267e7b03a1625e936ef24816a4752805ce8f8e6c5050d4d241856`)
+> is retained as the 2.0 release candidate and is unaffected.
+
 ## 1. Data safety form — answers from the verified implementation
 
 Source: `scripts/guard-privacy-manifest.sh` (merged manifest, 2026-10-23),
@@ -49,7 +56,8 @@ Health data is **not** shared with third parties for health purposes.
 
 ## 6. Target API / content rating / audience
 
-- Target API 36, min 26 — satisfies current requirement.
+- Target API 37, min 26 — exceeds the current Play requirement (API 36) and the
+  expected August 2027 requirement (API 37).
 - Content rating: complete the IARC questionnaire. Utility/health tracker, no user-to-user communication, not directed at children.
 - Target audience: 13+ (or 18+). Not designed for children under 13.
 
@@ -78,11 +86,13 @@ Set the URL in: App content → Privacy policy.
 ## 11. What the repository already produces
 
 - Signed AAB: `app/build/outputs/bundle/release/app-release.aab`
-  - SHA-256: `f43ff998797f29806fd356dd68e51b803e2a555e10ca18048c17ef4304e4f275`
-  - Signer: `CN=CycleCare Upload`
-  - Validation: bundletool structural pass; jarsigner verified
+  - Version: `versionCode` 9, `versionName` 2.1.0 (targets API 37; compiles against API 37; `minSdk` 26)
+  - SHA-256: `93901ccaf279d8a7e85af3b3627a413656077e12809f60ced59b48d979b4c555` (rebuilt 2026-11-10 after a build-file repair; AAB hashes differ per build — this identifies the current artifact)
+  - Signer: `CN=CycleCare Upload` (unchanged upload key)
+  - Validation: bundletool 1.18.3 `validate` PASS; `jarsigner -verify`: jar verified; manifest dump confirms `targetSdkVersion="37"`
+  - History: 2.0 release candidate (`versionCode` 8, targetSdk 36) — SHA-256 `e681816ff71267e7b03a1625e936ef24816a4752805ce8f8e6c5050d4d241856`
 - Release workflow: `.github/workflows/release.yml` (tag + dispatch, protected `release` environment, 4 secrets)
-- Version: `versionCode` 7, `versionName` 1.0
+- Version: `versionCode` 9, `versionName` 2.1.0
 
 ## 12. Owner actions required before submission
 
@@ -91,7 +101,12 @@ Set the URL in: App content → Privacy policy.
 3. Deploy `docs/privacy-policy.html` to a public HTTPS URL.
 4. Provision `support@cyclecare.app`.
 5. Run the physical-device Doze test and record it in `19-doze-verification.md`.
-6. Complete the Play Console declarations and store listing.
+6. Complete the Play Console declarations and store listing. **The
+   `SCHEDULE_EXACT_ALARM` special-app-access declaration remains open**
+   (`play-console/data-safety-unresolved.md`) — submit it with this release.
 7. Execute the device matrix.
 8. Perform the manual TalkBack pass.
 9. Visual sign-off on the red/white/black palette.
+10. **Verify the Play Console Policy status page** for the target API
+    requirement date before upload (API 36 required today; API 37 expected
+    August 2027) — uploading through Play, not straight from this artifact.
