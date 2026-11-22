@@ -227,4 +227,20 @@ dependencies {
     androidTestImplementation(libs.androidx.work.testing)
     androidTestImplementation(libs.truth)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    // kotlinx-serialization is pinned to 1.8.1 for the whole app. Room 2.8.5's
+    // generated serializers (e.g. FieldBundle$$serializer in room-migration)
+    // compile against serialization-core 1.8.1, where
+    // GeneratedSerializer.typeParametersSerializers() is a default method;
+    // lifecycle-viewmodel-savedstate 2.11.1 otherwise pulls in 1.7.3, where
+    // that method is abstract and every Room migration bundle class throws
+    // AbstractMethodError at startup. Both artifacts are verified present in
+    // the Gradle cache (offline-safe); no newer stable release of either
+    // exists, so this is a pin, not an upgrade.
+    configurations.all {
+        resolutionStrategy.force(
+            "org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1",
+            "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1",
+        )
+    }
 }
