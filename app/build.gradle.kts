@@ -25,8 +25,8 @@ plugins {
 // CYCLECARE_VERSION_NAME environment variables. The release workflow
 // passes back exactly the values the version check validated, so the
 // artifact that is built is the artifact that was checked.
-val defaultVersionCode = 10
-val defaultVersionName = "2.1.0"
+val defaultVersionCode = 11
+val defaultVersionName = "2.2.0"
 
 val releaseVersionCode: Int = run {
     val raw = (providers.gradleProperty("cyclecare.versionCode").orNull
