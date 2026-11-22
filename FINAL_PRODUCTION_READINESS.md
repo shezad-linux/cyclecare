@@ -184,10 +184,10 @@ Historical execution evidence supporting the runtime story: `CycleCare-Redesign-
 | Doze re-run | ⚠️ historical (cc37, 2026-11-09) — 2/2 pass; recommend re-run in the same emulator lane as the suite (§13.7) |
 | Timezone reschedule probe | ✅ probe sent (device), static path reviewed |
 | Memory baseline | ✅ manual `dumpsys meminfo` (no ceiling pressure) |
-| AAB rebuild (current code) | ✅ `app/build/outputs/bundle/release/app-release.aab`, SHA-256 `b184f6d0880c15b058f4f906cf504f6de3507a1d0d778e6d93c70b4e1ab2c091` |
+| AAB rebuild (current code) | ✅ `app/build/outputs/bundle/release/app-release.aab`, SHA-256 `93427a58191d9c34f9cbb361b2b52526624936e1a79807f6c8a6d5a091cb1687` (v2.2.0/code 11) |
 | `apksigner verify` (release APK) | ✅ v2: true, 1 signer |
 | `scripts/validate-aab.sh` | ✅ PASSED (structural fallback — no bundletool) |
-| Release APK SHA-256 | ✅ `2654ea2e9851b34e0f1ba2f8f70b6dfb8cfe4ba06dde09f5c351a8c5a9426db2` |
+| Release APK SHA-256 | ✅ `859b3424a6e11fd3a60c4b707e9cc8f7a989160746575b9eb1a943ccbb44e6ac` (rebuilt for release v2.2.0/code 11) |
 | Screenshots | ✅ `output/screenshots/manual-home-api37*.png` |
 | Logcat evidence | ✅ `output/logcat-api37.txt` |
 
