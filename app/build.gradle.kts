@@ -208,11 +208,11 @@ dependencies {
     implementation(libs.androidx.biometric)
 
     // AdMob
-    implementation("com.google.android.gms:play-services-ads:25.2.0")
+    implementation("com.google.android.gms:play-services-ads:25.5.0")
     implementation("com.google.android.ump:user-messaging-platform:4.0.0")
-    implementation("com.google.android.gms:play-services-base:18.5.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0")
-    implementation("com.google.guava:guava:32.1.3-android")
+    implementation("com.google.android.gms:play-services-base:18.11.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
+    implementation("com.google.guava:guava:33.8.0-android")
 
     debugImplementation(libs.androidx.compose.ui.tooling)
 

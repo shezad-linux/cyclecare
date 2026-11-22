@@ -159,9 +159,10 @@ fun CycleCareApp(
             logger = container.appLogger,
         )
     }
-    val profileState by container.profileRepository.observeProfile()
-        .map(::loadStateOf)
-        .collectAsStateWithLifecycle(initialValue = ProfileLoadState.Loading)
+    val profileFlow = remember {
+        container.profileRepository.observeProfile().map(::loadStateOf)
+    }
+    val profileState by profileFlow.collectAsStateWithLifecycle(initialValue = ProfileLoadState.Loading)
     val profile = (profileState as? ProfileLoadState.Present)?.profile
     val reminderRules by container.reminderRepository.observeRules().collectAsStateWithLifecycle(initialValue = emptyList())
     val consent by container.privacyRepository.observeConsent().collectAsStateWithLifecycle(
@@ -306,7 +307,7 @@ fun CycleCareApp(
             CenterConstrainedBox {
                 NotificationPermissionRequiredGate(
                     actionLabel = notificationPermissionStatus.recoveryLabel(context)
-                        ?: context.getString(R.string.allow_notifications),
+                        ?: stringResource(R.string.allow_notifications),
                     onResolveNotificationAccess = resolveNotificationAccess,
                 )
             }

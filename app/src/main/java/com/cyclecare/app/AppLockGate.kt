@@ -32,6 +32,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -70,9 +71,7 @@ internal fun AppLockGate(
     var lockedUntilMillis by rememberSaveable { mutableLongStateOf(0L) }
     var cooldownSecondsLeft by rememberSaveable { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
-    val capability by secureAuthController.capability.collectAsStateWithLifecycle(
-        initialValue = secureAuthController.capability.value,
-    )
+    val capability by secureAuthController.capability.collectAsStateWithLifecycle()
     val biometricEnabled by privacyRepository.isBiometricEnabled().collectAsStateWithLifecycle(initialValue = false)
     val now = System.currentTimeMillis()
     val isLockedOut = lockedUntilMillis > now
@@ -85,6 +84,14 @@ internal fun AppLockGate(
     val unlockTitle = stringResource(R.string.unlock_cyclecare)
     val unlockSubtitle = stringResource(R.string.unlock_cyclecare_subtitle)
     val tooManyFailedAttempts = stringResource(R.string.too_many_failed_attempts)
+    // Resolved in composition (not in the launch coroutine) so the newer
+    // androidx.compose.ui lint rule LocalContextResourcesRead stays quiet;
+    // the value tracks `failedAttempts` as a recomposable string.
+    val attemptsRemainingText = pluralStringResource(
+        R.plurals.attempts_remaining,
+        5 - failedAttempts,
+        5 - failedAttempts,
+    )
     val recoverAccessTitle = stringResource(R.string.recover_access)
     val recoverAccessSubtitle = stringResource(R.string.recover_access_subtitle)
     val useBiometricInstead = stringResource(R.string.use_biometric_instead)
@@ -252,11 +259,7 @@ internal fun AppLockGate(
                                         lockedUntilMillis = System.currentTimeMillis() + 30_000L
                                         message = tooManyFailedAttempts
                                     } else {
-                                        message = context.resources.getQuantityString(
-                                            R.plurals.attempts_remaining,
-                                            5 - failedAttempts,
-                                            5 - failedAttempts,
-                                        )
+                                        message = attemptsRemainingText
                                     }
                                 }
                             }
