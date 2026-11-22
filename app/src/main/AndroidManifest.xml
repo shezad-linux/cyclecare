@@ -8,6 +8,19 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!--
+      USE_FINGERPRINT is declared by `androidx.biometric:biometric:1.1.0`
+      (the legacy fingerprint-era permission). The app authenticates with
+      BiometricPrompt and never reads fingerprint state directly; the
+      permission is superseded by android.permission.USE_BIOMETRIC and
+      adds nothing to the merged manifest the app needs. Removing it here
+      keeps the disclosure (Data Safety form + merged manifest) accurate.
+      See API_DEPRECATION_AUDIT.md, D1 (2026-11-22).
+    -->
+    <uses-permission
+        android:name="android.permission.USE_FINGERPRINT"
+        tools:node="remove" />
+
     <application
         android:name=".CycleCareApplication"
         android:allowBackup="true"

@@ -133,6 +133,13 @@ fun rememberPlatformSecureAuthController(): SecureAuthController {
                 onCancel: () -> Unit,
             ) {
                 val currentCapability = capabilityState.value
+                // Wrapped so the modern (BiometricPrompt) credential path
+                // records a fresh capability reading, matching the legacy
+                // launcher callback, before the caller resumes.
+                val onAuthenticated: () -> Unit = {
+                    capabilityState.value = resolveSecureAuthCapability(context)
+                    onSuccess()
+                }
                 when {
                     preference == SecureAuthPreference.DeviceCredentialOnly -> {
                         launchDeviceCredentialConfirmation(
@@ -140,9 +147,10 @@ fun rememberPlatformSecureAuthController(): SecureAuthController {
                             title = title,
                             subtitle = subtitle,
                             launchIntent = credentialLauncher::launch,
+                            activity = activity,
                             pendingCredentialRequest = { request -> pendingCredentialRequest = request },
                             onFailure = onFailure,
-                            onSuccess = onSuccess,
+                            onSuccess = onAuthenticated,
                             onCancel = onCancel,
                         )
                     }
@@ -173,9 +181,10 @@ fun rememberPlatformSecureAuthController(): SecureAuthController {
                                                 title = title,
                                                 subtitle = subtitle,
                                                 launchIntent = credentialLauncher::launch,
+                                                activity = activity,
                                                 pendingCredentialRequest = { request -> pendingCredentialRequest = request },
                                                 onFailure = onFailure,
-                                                onSuccess = onSuccess,
+                                                onSuccess = onAuthenticated,
                                                 onCancel = onCancel,
                                             )
                                         }
@@ -222,9 +231,10 @@ fun rememberPlatformSecureAuthController(): SecureAuthController {
                             title = title,
                             subtitle = subtitle,
                             launchIntent = credentialLauncher::launch,
+                            activity = activity,
                             pendingCredentialRequest = { request -> pendingCredentialRequest = request },
                             onFailure = onFailure,
-                            onSuccess = onSuccess,
+                            onSuccess = onAuthenticated,
                             onCancel = onCancel,
                         )
                     }
@@ -247,11 +257,17 @@ private data class PendingCredentialRequest(
     val onCancel: () -> Unit,
 )
 
+/**
+ * Launches the system's lock-screen credential confirmation (deprecated use
+ * case of [KeyguardManager.createConfirmDeviceCredentialIntent] →
+ * `BiometricPrompt` since API 29; see `API_DEPRECATION_AUDIT.md`, D2).
+ */
 private fun launchDeviceCredentialConfirmation(
     context: Context,
     title: String,
     subtitle: String,
     launchIntent: (Intent) -> Unit,
+    activity: FragmentActivity?,
     pendingCredentialRequest: (PendingCredentialRequest) -> Unit,
     onFailure: (String) -> Unit,
     onSuccess: () -> Unit,
@@ -263,6 +279,30 @@ private fun launchDeviceCredentialConfirmation(
         return
     }
 
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        // Modern path: `BiometricPrompt` accepts the device-credential
+        // authenticator, which is the same lock-screen confirmation the
+        // deprecated intent launched. No `Intent` is produced, so the
+        // legacy launcher is not used.
+        launchDeviceCredentialConfirmationViaBiometricPrompt(
+            context = context,
+            activity = activity,
+            title = title,
+            subtitle = subtitle,
+            onSuccess = onSuccess,
+            onCancel = onCancel,
+            onFailure = onFailure,
+        )
+        return
+    }
+
+    if (activity == null) {
+        onFailure(context.getString(R.string.secure_authentication_unavailable_in_this_screen))
+        return
+    }
+    // API 26–28: the credential-confirmation intent is the only lock-screen
+    // entry point. Deprecated in API 31, retained here because the modern
+    // BiometricPrompt flow is unavailable at these API levels.
     @Suppress("DEPRECATION")
     val intent = keyguardManager.createConfirmDeviceCredentialIntent(title, subtitle)
     if (intent == null) {
@@ -272,4 +312,56 @@ private fun launchDeviceCredentialConfirmation(
 
     pendingCredentialRequest(PendingCredentialRequest(onSuccess = onSuccess, onCancel = onCancel))
     launchIntent(intent)
+}
+
+/**
+ * [BiometricPrompt]-based lock-screen confirmation (API 29+).
+ *
+ * Uses the device-credential authenticator so the prompt is the system
+ * credential dialog rather than a biometric modal. Mirrors the
+ * lifecycle of the legacy intent launch: success/cancel/failure
+ * callbacks, capability refresh on success.
+ */
+private fun launchDeviceCredentialConfirmationViaBiometricPrompt(
+    context: Context,
+    activity: FragmentActivity?,
+    title: String,
+    subtitle: String,
+    onSuccess: () -> Unit,
+    onCancel: () -> Unit,
+    onFailure: (String) -> Unit,
+) {
+    if (activity == null) {
+        onFailure(context.getString(R.string.secure_authentication_unavailable_in_this_screen))
+        return
+    }
+    val executor = ContextCompat.getMainExecutor(context)
+    val biometricPrompt = BiometricPrompt(
+        activity,
+        executor,
+        object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                onSuccess()
+            }
+
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                when {
+                    errorCode == BiometricPrompt.ERROR_USER_CANCELED ||
+                        errorCode == BiometricPrompt.ERROR_CANCELED -> onCancel()
+                    else -> onFailure(errString.toString())
+                }
+            }
+
+            override fun onAuthenticationFailed() {
+                onFailure(context.getString(R.string.biometric_not_recognized_try_again_or_use_your_screen_lock))
+            }
+        },
+    )
+    val promptInfo = BiometricPrompt.PromptInfo.Builder()
+        .setTitle(title)
+        .setSubtitle(subtitle)
+        .setAllowedAuthenticators(BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+        .setNegativeButtonText(context.getString(R.string.cancel))
+        .build()
+    biometricPrompt.authenticate(promptInfo)
 }

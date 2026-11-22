@@ -265,14 +265,23 @@ internal fun SavedStateHandle.toLoggingEditorState(): LoggingEditorState =
     LoggingEditorState(
         hydrationKey = get<String>(LoggingStateKeys.HydrationKey).orEmpty(),
         existingEntryId = get<String>(LoggingStateKeys.ExistingEntryId),
-        mood = get<String>(LoggingStateKeys.Mood)?.let(Mood::valueOf) ?: Mood.Stable,
-        painLevel = get<String>(LoggingStateKeys.PainLevel)?.let(PainLevel::valueOf) ?: PainLevel.None,
-        energyLevel = get<String>(LoggingStateKeys.EnergyLevel)?.let(EnergyLevel::valueOf) ?: EnergyLevel.Steady,
-        dischargeType = get<String>(LoggingStateKeys.DischargeType)?.let(DischargeType::valueOf) ?: DischargeType.None,
+        // Persisted values are read back with valueOf(); a state file that
+        // predates an enum rename must not crash the screen on restore.
+        // A corrupt value falls back to the same default a missing value
+        // would — the editor is a draft surface, so the loss is silent.
+        mood = parseSavedEnum(get<String>(LoggingStateKeys.Mood), Mood.Stable),
+        painLevel = parseSavedEnum(get<String>(LoggingStateKeys.PainLevel), PainLevel.None),
+        energyLevel = parseSavedEnum(get<String>(LoggingStateKeys.EnergyLevel), EnergyLevel.Steady),
+        dischargeType = parseSavedEnum(get<String>(LoggingStateKeys.DischargeType), DischargeType.None),
         medication = get<String>(LoggingStateKeys.Medication).orEmpty(),
         notes = get<String>(LoggingStateKeys.Notes).orEmpty(),
         isDetailsExpanded = get<Boolean>(LoggingStateKeys.DetailsExpanded) ?: false,
     )
+
+private inline fun <reified T : Enum<T>> parseSavedEnum(
+    raw: String?,
+    fallback: T,
+): T = raw?.let { rawValue -> enumValues<T>().firstOrNull { it.name == rawValue } } ?: fallback
 
 internal fun SavedStateHandle.persistLoggingEditorState(state: LoggingEditorState) {
     this[LoggingStateKeys.HydrationKey] = state.hydrationKey
