@@ -20,7 +20,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -62,9 +61,12 @@ internal fun AppLockGate(
     secureAuthController: SecureAuthController,
     onOpenPrivacyAfterRecovery: () -> Unit,
 ) {
-    val context = LocalContext.current
     var pinEntry by rememberSaveable { mutableStateOf("") }
     var message by rememberSaveable { mutableStateOf<String?>(null) }
+    // The attempts-remaining display is driven by this count and the plural
+    // string derived from it during composition; the wrong-PIN coroutine sets
+    // the count, so the display always matches the current attempt count.
+    var attemptsRemaining by rememberSaveable { mutableStateOf<Int?>(null) }
     var showResetConfirmation by rememberSaveable { mutableStateOf(false) }
     var autoBiometricAttempted by rememberSaveable { mutableStateOf(false) }
     var failedAttempts by rememberSaveable { mutableIntStateOf(0) }
@@ -84,14 +86,15 @@ internal fun AppLockGate(
     val unlockTitle = stringResource(R.string.unlock_cyclecare)
     val unlockSubtitle = stringResource(R.string.unlock_cyclecare_subtitle)
     val tooManyFailedAttempts = stringResource(R.string.too_many_failed_attempts)
-    // Resolved in composition (not in the launch coroutine) so the newer
-    // androidx.compose.ui lint rule LocalContextResourcesRead stays quiet;
-    // the value tracks `failedAttempts` as a recomposable string.
-    val attemptsRemainingText = pluralStringResource(
-        R.plurals.attempts_remaining,
-        5 - failedAttempts,
-        5 - failedAttempts,
-    )
+    // Derived in composition from the `attemptsRemaining` state rather than
+    // read from a Context inside the launch coroutine: the newer
+    // androidx.compose.ui lint rule LocalContextResourcesRead disallows the
+    // latter, and the count state guarantees the string tracks the current
+    // attempt (after the first wrong PIN, attemptsRemaining is 4).
+    val attemptsRemainingText = attemptsRemaining?.let { remaining ->
+        pluralStringResource(R.plurals.attempts_remaining, remaining, remaining)
+    }
+    val pinMessage = message ?: attemptsRemainingText
     val recoverAccessTitle = stringResource(R.string.recover_access)
     val recoverAccessSubtitle = stringResource(R.string.recover_access_subtitle)
     val useBiometricInstead = stringResource(R.string.use_biometric_instead)
@@ -118,6 +121,7 @@ internal fun AppLockGate(
             onSuccess = {
                 scope.launch {
                     failedAttempts = 0
+                    attemptsRemaining = null
                     privacyRepository.markUnlocked()
                     pinEntry = ""
                     message = null
@@ -236,7 +240,7 @@ internal fun AppLockGate(
                     title = stringResource(R.string.unlock_cyclecare),
                     subtitle = subtitle,
                     pinLength = pinEntry.length,
-                    message = message,
+                    message = pinMessage,
                     primaryActionLabel = if (isLockedOut) {
                         stringResource(R.string.wait_cooldown, cooldownSecondsLeft)
                     } else {
@@ -249,6 +253,7 @@ internal fun AppLockGate(
                                 val valid = privacyRepository.validatePin(pinEntry)
                                 if (valid) {
                                     failedAttempts = 0
+                                    attemptsRemaining = null
                                     privacyRepository.markUnlocked()
                                     pinEntry = ""
                                     message = null
@@ -257,9 +262,10 @@ internal fun AppLockGate(
                                     failedAttempts += 1
                                     if (failedAttempts >= 5) {
                                         lockedUntilMillis = System.currentTimeMillis() + 30_000L
+                                        attemptsRemaining = null
                                         message = tooManyFailedAttempts
                                     } else {
-                                        message = attemptsRemainingText
+                                        attemptsRemaining = 5 - failedAttempts
                                     }
                                 }
                             }
@@ -286,6 +292,7 @@ internal fun AppLockGate(
                                     scope.launch {
                                         privacyRepository.resetAppLock()
                                         pinEntry = ""
+                                        attemptsRemaining = null
                                         message = null
                                         failedAttempts = 0
                                         onOpenPrivacyAfterRecovery()
