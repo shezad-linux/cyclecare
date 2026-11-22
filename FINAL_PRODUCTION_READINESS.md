@@ -5,7 +5,7 @@
 
 > Note: This app is a Kotlin/Compose Android application (CycleCare), not a Flutter app — all Flutter-specific readiness items are recorded as N/A.
 
-**Overall verdict:** **CONDITIONAL GO** — with one conditional environment dependency: the compose instrumentation suite must be re-run on a healthy emulator (see §13 — the Pixel_10a 16 KB-page Play Store image proved flaky and unreliable for instrumentation; historical green evidence exists on `cc37`). All static/structural/unit/build verification is green; historical runtime evidence (2026-11-10, `cc37`) supports Android 17 runtime compliance.
+**Overall verdict:** **GO** — instrumented suite green on API 37 in the 2026-11-22 software-GPU run (§13.7: 271 tests, 0 failures, 0 errors, 2 skipped; the 16 KB-page-size Play Store image is unproven for instrumentation, but the swiftshader-backed run is a valid full pass). All static/structural/unit/build verification is green; historical runtime evidence (2026-11-10, `cc37`) supports Android 17 runtime compliance.
 
 ---
 
@@ -60,14 +60,14 @@ Release artifacts (current, 2026-11-22):
 | Suite | Result |
 |---|---|
 | Unit tests (`./gradlew test`) | **505/505 pass, 0 failures, 0 errors, 0 skipped** |
-| Instrumented (`connectedDebugAndroidTest`, Pixel_10a / API 37) | **Environment-limited** — see §13: 271 tests collected; 0 errors; 110 passed; 159 compose-instrumentation failures (`No compose hierarchies found`); 2 skipped (opt-in Doze). **Historical green evidence (26-android-17-verification.md, 2026-11-10, `cc37`): 268 tests, 0 failures, 2 skipped.** The current failure reproduces with the fully historical app+toolchain state → see §13 for the analysis. |
+| Instrumented (`connectedDebugAndroidTest`, Pixel_10a / API 37) | **Green** — 2026-11-22 swiftshader run (§13.7): 271 tests, 269 passed, 0 failures, 0 errors, 2 skipped. Earlier environment-limited run: 271 tests collected; 110 passed; 159 compose-instrumentation failures; see §13. |
 | Macrobenchmark (`benchmark/`) | N/A in scope (optional; not run). |
 
 ## 6. Android 17 Runtime Verification (Phase 8)
 
 | Area | Evidence | Status |
 |---|---|---|
-| Instrumented suite on API 37 | Pixel_10a — environment-limited (§13) | ⚠️ conditional |
+| Instrumented suite on API 37 | 2026-11-22 swiftshader run (§13.7): 269 passed, 0 failures | ✅ green |
 | Doze delivery (`ReminderDozeDeliveryTest`) | historical: awake 22 s, deep-idle 45 s, 2/2 pass (2026-11-09, `cc37`) | ✅ historical |
 | Timezone change reschedule | `adb shell am broadcast -a android.intent.action.TIMEZONE_CHANGED` — accepted ("Broadcasting: Intent { act=... }") on Pixel_10a; static: `ReminderRescheduleReceiver` listens, refreshes via WorkManager | ⚠️ probe on device (see §13) |
 | Memory limits (`dumpsys meminfo`) | App launched: Native Heap Pss 15,737 KB / Rss 16,736 KB; Dalvik Heap Total 8,305 KB — far below any ceiling (historical: cold start PSS ~193 MB, no growth trend under rotation) | ✅ acceptable |
@@ -79,7 +79,7 @@ Release artifacts (current, 2026-11-22):
 ## 7. Database Migration Results
 
 - Schema v3; migrations 1→2, 2→3 (with snapshot verification + divergence records); migration suite historical evidence: `core:database` 34/34 (2026-11-09, `cc37`, API 37).
-- Phase 8 note: migration suite is included in the instrumented suite — environment-limited (§13); the migration SQL is reviewed statically (§5 baseline + Phase 4 history).
+- Phase 8 note: migration suite passes in the instrumented run (§13.7); migration SQL also reviewed statically (§5 baseline + Phase 4 history).
 
 ## 8. Notification Reliability Findings
 
@@ -102,7 +102,7 @@ See [PRIVACY_SECURITY_AUDIT.md](PRIVACY_SECURITY_AUDIT.md):
 
 ## 10. Unverified Scenarios
 
-1. **Instrumented suites on API 37** — environment-limited on Pixel_10a (§13).
+1. **Instrumented suites on API 37** — green on Pixel_10a with software GPU (§13.7); historical cc37 run (268/268, 26-android-17-verification.md) retained as separate evidence.
 2. **Physical Android 17 device Doze behavior** — emulator only.
 3. **Google Play backup/restore via transport** — static verified; runtime needs physical device/Play pre-launch report.
 4. **UMP/AdMob edge-failure paths at runtime** — failure handlers reviewed statically; consent UI not displayed on this AVD config (regional).
@@ -112,7 +112,7 @@ See [PRIVACY_SECURITY_AUDIT.md](PRIVACY_SECURITY_AUDIT.md):
 
 ## 11. Outstanding Release Blockers
 
-1. **Instrumented suite re-run on a healthy emulator (CONDITIONAL GO driver).** Alternatives documented in §13: historical `cc37` AVD or the CI x86_64 `google_apis` lane (advisory).
+1. **Instrumented suite re-run on a healthy emulator (satisfied).** 2026-11-22 swiftshader run on Pixel_10a — 271 tests, 269 passed, 0 failures, 0 errors, 2 skipped (§13.7). Historical `cc37` re-run: boot refused on machine disk (§13.1); advisory alternative — CI x86_64 `google_apis` lane.
 2. **Play Console → Policy status verification** (owner action): API 36 required today; API 37 date formally unverified at 2026-11-22 (see `docs/android-17-upgrade-plan.md`).
 3. **Exact-alarm Play Console declaration** — submit alongside release (owner action).
 4. **Data Safety re-verification** after dependency bumps (version strings at submission must match the shipped artifacts).
@@ -121,13 +121,13 @@ See [PRIVACY_SECURITY_AUDIT.md](PRIVACY_SECURITY_AUDIT.md):
 
 ## 12. Final Verdict
 
-**VERDICT: CONDITIONAL GO.**
+**VERDICT: GO.**
 
-Conditions for full GO (declared when the environment-limited item is resolved):
-1. Instrumented suite green on API 37 on a healthy emulator (historical: 268/268 on `cc37`; recommend re-run on `cc37` or the CI x86_64 lane).
-2. AAB/APK builds green (✅ today), R8 green, release verification green (✅).
-3. Database migration results (✅ historical + static review; re-run pending environment).
-4. No release-blocking crashes (✅: no app crashes observed in any run; manual launches work).
+Conditions for full GO:
+1. ✅ Instrumented suite green on API 37 on a healthy emulator: 2026-11-22 swiftshader run (§13.7) — 269 passed, 0 failures, 0 errors, 2 skipped. The three instrumented defects found in this run are remediated (commits `3a406cd`, `9d0cbcf`). The cc37 reference re-run was not possible on this machine's disk (§13.1); the historical cc37 run (26-android-17-verification.md, 268/268) remains as separate evidence.
+2. ✅ AAB/APK builds green, R8 green, release verification green (§13.6).
+3. ✅ Database migration results: `MigratedV2DatabaseLaunchTest` passes in the instrumented run (§13.7); historical migration evidence 34/34 (2026-11-09, `cc37`).
+4. ✅ No release-blocking crashes: no app crashes observed in any run; manual launches work (§13.4).
 
 Historical execution evidence supporting the runtime story: `CycleCare-Redesign-Docs/26-android-17-verification.md` (2026-11-10): 268 instrumented tests, 0 failures, 2 skipped (Doze re-run: 2/2); migration 34/34; Room durability across emulator reboot verified; memory footprint far below limits; IME behavior on rotation documented (keyboard hides on rotation per Android 17 default-visibility behavior).
 
@@ -180,8 +180,8 @@ Historical execution evidence supporting the runtime story: `CycleCare-Redesign-
 
 | Item | Status |
 |---|---|
-| Instrumented suite (API 37, healthy emulator) | ⚠️ environment-limited on Pixel_10a (§13.3) — recommend re-run on `cc37`/CI lane |
-| Doze re-run | ⚠️ historical (cc37) — recommend re-run in the same emulator lane as the suite |
+| Instrumented suite (API 37, healthy emulator) | ✅ 2026-11-22 swiftshader run (§13.7): 271 tests, 269 passed, 0 failures, 0 errors, 2 skipped |
+| Doze re-run | ⚠️ historical (cc37, 2026-11-09) — 2/2 pass; recommend re-run in the same emulator lane as the suite (§13.7) |
 | Timezone reschedule probe | ✅ probe sent (device), static path reviewed |
 | Memory baseline | ✅ manual `dumpsys meminfo` (no ceiling pressure) |
 | AAB rebuild (current code) | ✅ `app/build/outputs/bundle/release/app-release.aab`, SHA-256 `b184f6d0880c15b058f4f906cf504f6de3507a1d0d778e6d93c70b4e1ab2c091` |
@@ -193,6 +193,24 @@ Historical execution evidence supporting the runtime story: `CycleCare-Redesign-
 
 ---
 
+### 13.7 Instrumented re-run on Pixel_10a with software GPU (2026-11-22)
+
+The environment-limited instrumented suite (§13.2/§13.3) was re-run on the same Pixel_10a AVD booted with `-gpu swiftshader_indirect` — the app composes and the automation bridge sees the hierarchy (no `No compose hierarchies` failures). This run found 3 real failures; both are fixed before the verdict flip:
+
+1. **Two `MigratedV2DatabaseLaunchTest` failures (`AbstractMethodError`, kotlinx-serialization skew).** Verified via javap on the cached artifacts: Room 2.8.5's `FieldBundle$$serializer` (room-migration-jvm 2.8.5) implements `GeneratedSerializer` but does **not** override `typeParametersSerializers()`; that method is a **default method in serialization-core 1.8.1** but an **abstract method in 1.7.3**, where the runtime resolved (`lifecycle-viewmodel-savedstate:2.11.1` POM pins core to 1.7.3). Every Room migration bundle class threw `AbstractMethodError` at startup. Fix (commit `3a406cd`): `app/build.gradle.kts` — `configurations.all { resolutionStrategy.force("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1", "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1") }` for all configurations. Both artifacts verified present in the Gradle cache; no newer stable release exists, so it is a pin, not an upgrade.
+2. **`appLock_wrongPinFiveTimes_StartsCooldown` timeout.** The `29b832b` lint refactor replaced the fresh `context.resources.getQuantityString(R.plurals.attempts_remaining, 5 - failedAttempts, …)` call with the composition-hoisted `attemptsRemainingText` val, which is stale at coroutine time (recomposition is async) — after the first wrong PIN the message read "5 attempts remaining" instead of "4" (historical cc37 verification ran before `29b832b`, so it passed there). Fix (commit `9d0cbcf`): state-driven `attemptsRemaining` (set by the wrong-PIN coroutine to `5 - failedAttempts`), plural string derived in composition via `pluralStringResource`, success/recovery paths reset it, gate reads no `Context` in the coroutine.
+
+Result: **271 tests, 269 passed, 0 failures, 0 errors, 2 skipped** (`./gradlew connectedDebugAndroidTest --continue`, swiftshader Pixel_10a). Previously failing tests — PASS:
+- `MigratedV2DatabaseLaunchTest::theAppRendersTheMigratedHistoryOnADatabaseMigratedFromV2` — PASS
+- `MigratedV2DatabaseLaunchTest::theAppShowsTheMigrationRecordOnADatabaseMigratedFromV2` — PASS
+- `CycleCareAppStateNavigationTest::appLock_wrongPinFiveTimes_startsCooldown` — PASS
+
+Additional verification after the fixes: `./gradlew test` (unit) 505/505 pass; `lintDebug` 0 errors (no AppLockGate findings); `:app:assembleRelease` green.
+
+Honest caveats: this pass is on software rendering (swiftshader), not the reference cc37 hardware-GPU image; `cc37` boot was refused on this machine's disk (§13.1), so the historical cc37 268/268 run (26-android-17-verification.md) remains separate unverified-by-me evidence.
+
+---
+
 ## 14. Final Verdict (Phase 10)
 
-**CONDITIONAL GO** — conditions above (§12). Declared 2026-11-22.
+**GO** — conditions above (§12) satisfied: instrumented suite green on API 37 (§13.7). Declared 2026-11-22.

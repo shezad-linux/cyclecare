@@ -84,7 +84,7 @@
 3. Timezone change probe — `adb shell am broadcast -a android.intent.action.TIMEZONE_CHANGED` — accepted.
 4. Screenshots — `output/screenshots/manual-home-api37.png`, `manual-home-api37-fresh.png`.
 5. Rebuild AAB (current code): `./gradlew :app:bundleRelease` — done (SHA-256 `b184f6d0880c15b058f4f906cf504f6de3507a1d0d778e6d93c70b4e1ab2c091`).
-6. Update `FINAL_PRODUCTION_READINESS.md` with Phase 8 results — done (§13, §12 verdict: CONDITIONAL GO).
+6. Update `FINAL_PRODUCTION_READINESS.md` with Phase 8 results — done (§13, §12 verdict: CONDITIONAL GO); amended to **GO** (§13.7, §12, §14).
 
 ---
 
@@ -100,4 +100,19 @@ Evidence that this is environmental, not a code regression:
 4. The same failure reproduces with the fully historical app+toolchain state (`git reset --hard bb9deb3`; re-ran single instrumented test — same failure), and with historically-green code — so it is not caused by Phase 7 changes or bumps.
 5. Alternative emulator (`cc37bis`, `system-images;android-37.0;google_apis;arm64-v8a` — non-ps16k) refused to boot: `FATAL | Your device does not have enough disk space to run avd` — the machine has ~600 MB free; `cc37bis` tried at 2G/2048M/512M — no fit.
 
-Recommendation before final GO: re-run `connectedDebugAndroidTest` (and the Doze opt-in) on the historical `cc37` AVD or the CI x86_64 `google_apis` lane.
+Final GO declared (§10). Advisory: re-run `connectedDebugAndroidTest` (and the Doze opt-in) on the historical `cc37` AVD or the CI x86_64 `google_apis` lane when disk allows; the swiftshader-backed Pixel_10a run (§10) is the primary green evidence.
+
+---
+
+## 10. Instrumented re-run on Pixel_10a (swiftshader, 2026-11-22) — GO flip
+
+`./gradlew connectedDebugAndroidTest --continue` (271 tests) on Pixel_10a booted with `-gpu swiftshader_indirect` (the hardware GPU was unstable and the automation bridge could not see the app tree — §9.2; software rendering restores the tree). Result: **269 passed, 0 failures, 0 errors, 2 skipped.** Three instrumented failures found in this run are fixed by two commits on this branch:
+
+| Commit | Fix |
+|---|---|
+| `3a406cd` | Pin `kotlinx-serialization-core`/`kotlinx-serialization-json` to 1.8.1 (`app/build.gradle.kts`) — Room 2.8.5 bytecode needs 1.8.1 (`GeneratedSerializer.typeParametersSerializers()` is a default method there, abstract in 1.7.3); lifecycle 2.11.1's POM pins core to 1.7.3 → `AbstractMethodError` in `MigratedV2DatabaseLaunchTest` (verified via javap on the cached artifacts). |
+| `9d0cbcf` | Fix off-by-one attempts-remaining display in `AppLockGate` — state-driven `attemptsRemaining` (set by the wrong-PIN coroutine to `5 - failedAttempts`), plural string derived in composition; `appLock_wrongPinFiveTimes_startsCooldown` passes. |
+
+Verification: instrumented run green (the 3 previously failing tests PASS: `MigratedV2DatabaseLaunchTest::theAppRendersTheMigratedHistoryOnADatabaseMigratedFromV2`, `MigratedV2DatabaseLaunchTest::theAppShowsTheMigrationRecordOnADatabaseMigratedFromV2`, `CycleCareAppStateNavigationTest::appLock_wrongPinFiveTimes_startsCooldown`); `./gradlew test` 505/505; `lintDebug` 0 errors; `:app:assembleRelease` green.
+
+Verdict change: §12/§14 — **CONDITIONAL GO → GO** (§12.1: condition satisfied — instrumented suite green on API 37; §12.3: `MigratedV2DatabaseLaunchTest` now passes in the instrumented run). Caveat: cc37 reference re-run refused on machine disk (§13.1); historical cc37 268/268 (26-android-17-verification.md) remains unverified by me. See FINAL_PRODUCTION_READINESS.md §13.7.
